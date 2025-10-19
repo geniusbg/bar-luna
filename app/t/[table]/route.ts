@@ -3,10 +3,11 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { table: string } }
+  { params }: { params: Promise<{ table: string }> }
 ) {
   try {
-    const tableNumber = parseInt(params.table);
+    const { table } = await params;
+    const tableNumber = parseInt(table);
 
     if (isNaN(tableNumber)) {
       return NextResponse.redirect(new URL('/bg/menu', request.url));
