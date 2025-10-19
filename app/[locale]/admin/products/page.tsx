@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { displayPrice } from '@/lib/currency';
+import Toast from '@/components/Toast';
 
 export default function AdminProductsPage() {
   const pathname = usePathname();
@@ -12,6 +13,7 @@ export default function AdminProductsPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -49,11 +51,13 @@ export default function AdminProductsPage() {
       if (response.ok) {
         // Reload products
         loadData();
+        setToast({ message: '✅ Продуктът е изтрит успешно', type: 'success' });
       } else {
-        alert('Грешка при изтриване на продукта');
+        const data = await response.json();
+        setToast({ message: data.error || 'Грешка при изтриване на продукта', type: 'error' });
       }
     } catch (error) {
-      alert('Грешка при изтриване на продукта');
+      setToast({ message: 'Грешка при изтриване на продукта', type: 'error' });
     }
   };
 
@@ -69,6 +73,14 @@ export default function AdminProductsPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-white">Продукти</h1>
         <Link

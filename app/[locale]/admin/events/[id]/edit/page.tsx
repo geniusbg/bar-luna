@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import EventForm from '@/components/EventForm';
+import Toast from '@/components/Toast';
 
 export default function EditEventPage() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function EditEventPage() {
   
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     loadEvent();
@@ -68,16 +70,22 @@ export default function EditEventPage() {
   }
 
   async function handleSubmit(data: any) {
-    const response = await fetch(`/api/events/${eventId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
 
-    if (response.ok) {
-      router.push(`/${locale}/admin/events`);
-    } else {
-      alert('Грешка при актуализиране на събитието');
+      if (response.ok) {
+        setToast({ message: '✅ Събитието е актуализирано успешно', type: 'success' });
+        setTimeout(() => router.push(`/${locale}/admin/events`), 1500);
+      } else {
+        const errorData = await response.json();
+        setToast({ message: errorData.error || 'Грешка при актуализиране на събитието', type: 'error' });
+      }
+    } catch (error) {
+      setToast({ message: 'Грешка при актуализиране на събитието', type: 'error' });
     }
   }
 
@@ -91,6 +99,14 @@ export default function EditEventPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Редактирай събитие</h1>
         <p className="text-gray-400">Актуализирай информацията за събитието</p>

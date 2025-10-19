@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Toast from '@/components/Toast';
 
 export default function AdminCategoriesPage() {
   const pathname = usePathname();
@@ -10,6 +11,7 @@ export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [formData, setFormData] = useState({
     name_bg: '',
     name_en: '',
@@ -72,8 +74,10 @@ export default function AdminCategoriesPage() {
 
     if (response.ok) {
       loadCategories();
+      setToast({ message: '✅ Категорията е изтрита успешно', type: 'success' });
     } else {
-      alert('Грешка при изтриване на категорията');
+      const data = await response.json();
+      setToast({ message: data.error || 'Грешка при изтриване на категорията', type: 'error' });
     }
   };
 
@@ -96,6 +100,14 @@ export default function AdminCategoriesPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <h1 className="text-3xl md:text-4xl font-bold text-white mb-6 md:mb-8">Категории</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">

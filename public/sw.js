@@ -31,7 +31,17 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch strategy - Network first, fallback to cache
+// Only cache same-origin requests, let external images pass through
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  // Skip caching for external domains
+  if (url.origin !== self.location.origin) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  
+  // Cache same-origin requests
   event.respondWith(
     fetch(event.request)
       .catch(() => caches.match(event.request))

@@ -50,9 +50,17 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete product error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    
+    // Check if it's a foreign key constraint error
+    if (error.code === 'P2003' || error.message?.includes('Foreign key constraint')) {
+      return NextResponse.json({ 
+        error: 'Не може да изтриеш продукт който е използван в поръчки. Вместо това го скрий.' 
+      }, { status: 400 });
+    }
+    
+    return NextResponse.json({ error: 'Грешка при изтриване' }, { status: 500 });
   }
 }
 

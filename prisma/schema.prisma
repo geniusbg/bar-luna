@@ -133,7 +133,7 @@ model OrderItem {
   orderId     String   @map("order_id")
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId   String   @map("product_id")
-  product     Product  @relation(fields: [productId], references: [id])
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
   productName String   @map("product_name") // Snapshot at order time
   quantity    Int      @default(1)
   priceBgn    Decimal  @map("price_bgn") @db.Decimal(10, 2)
