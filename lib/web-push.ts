@@ -1,3 +1,4 @@
+// @ts-ignore - web-push doesn't have official types
 import webpush from 'web-push';
 
 // Configure VAPID details
