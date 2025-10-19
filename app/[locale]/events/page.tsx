@@ -49,7 +49,7 @@ export default async function EventsPage({
                   className="bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden hover:bg-white/15 transition-all block group"
                 >
                   {event.imageUrl && (
-                    <div className="relative h-64 w-full overflow-hidden bg-gray-800">
+                    <div className="relative h-64 w-full overflow-hidden bg-white/10">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={event.imageUrl}

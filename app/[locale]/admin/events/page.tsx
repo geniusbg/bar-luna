@@ -40,7 +40,7 @@ export default async function AdminEventsPage({
               className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl overflow-hidden hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300"
             >
               {event.imageUrl && (
-                <div className="h-48 bg-black relative overflow-hidden">
+                <div className="h-48 bg-gradient-to-br from-gray-900/80 to-gray-900/40 relative overflow-hidden">
                   <img
                     src={event.imageUrl}
                     alt={event.titleBg}

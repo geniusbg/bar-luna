@@ -44,7 +44,7 @@ export default async function EventDetailPage({
         <div className="bg-gray-900/50 border border-gray-700 rounded-2xl overflow-hidden">
           {/* Event Image */}
           {event.imageUrl && (
-            <div className="relative h-96 w-full overflow-hidden bg-gray-800">
+            <div className="relative h-96 w-full overflow-hidden bg-gray-900/50">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={event.imageUrl}

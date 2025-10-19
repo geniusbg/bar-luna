@@ -120,7 +120,7 @@ export default async function HomePage({
                     className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl overflow-hidden hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 transform hover:-translate-y-1 block"
                   >
                     {event.imageUrl && (
-                      <div className="relative h-56 w-full overflow-hidden bg-gray-800">
+                      <div className="relative h-56 w-full overflow-hidden bg-gradient-to-br from-gray-900/80 to-gray-900/40">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={event.imageUrl}

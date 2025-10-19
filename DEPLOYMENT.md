@@ -1,6 +1,59 @@
 # Luna Bar - Deployment Guide
 
-## 🚀 Quick Start Deployment
+## 🚀 PM2 Production Deployment (VPS/Server)
+
+### Prerequisites
+- [ ] Node.js 18+ installed
+- [ ] PostgreSQL database running
+- [ ] PM2 installed globally: `npm install -g pm2`
+
+### Quick Deploy Steps
+
+1. **Clone and setup:**
+```bash
+git clone https://github.com/geniusbg/bar-luna.git
+cd bar-luna
+npm install
+```
+
+2. **Configure environment:**
+```bash
+cp env.example .env
+# Edit .env with your settings:
+# - PORT=4000
+# - DATABASE_URL=your_postgres_connection
+# - PUSHER credentials
+# - VAPID keys
+```
+
+3. **Setup database:**
+```bash
+npx prisma generate
+npx prisma db push
+npm run db:seed  # Optional: add sample data
+```
+
+4. **Build and start:**
+```bash
+npm run build
+pm2 start ecosystem.config.js
+```
+
+5. **Manage PM2:**
+```bash
+pm2 status           # Check status
+pm2 logs bar-luna    # View logs
+pm2 restart bar-luna # Restart app
+pm2 stop bar-luna    # Stop app
+pm2 save             # Save PM2 list
+pm2 startup          # Auto-start on server reboot
+```
+
+**App will run on:** `http://localhost:4000`
+
+---
+
+## 🌐 Vercel Deployment (Recommended for Easy Deploy)
 
 ### Prerequisites
 - [ ] GitHub account
