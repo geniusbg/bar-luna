@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -50,7 +50,9 @@ export default function Navigation() {
 
           {/* Right Side - Language Switcher & Mobile Menu Button */}
           <div className="flex items-center gap-4">
-            <LanguageSwitcher />
+            <Suspense fallback={<div className="w-24 h-8"></div>}>
+              <LanguageSwitcher />
+            </Suspense>
             
             {/* Mobile Menu Button */}
             <button
