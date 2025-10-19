@@ -19,8 +19,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Table not found' }, { status: 404 });
     }
 
-    // Generate QR code URL
-    const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/order?table=${tableNumber}`;
+    // Generate SHORT QR code URL (dynamic redirect)
+    const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/t/${tableNumber}`;
 
     // Generate QR code as data URL
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
@@ -32,12 +32,13 @@ export async function POST(request: Request) {
       }
     });
 
-    // Update table with QR code data
+    // Update table with QR code data and default redirect URL
     await prisma.barTable.update({
       where: { id: table.id },
       data: {
         qrCodeUrl: qrUrl,
-        qrCodeData: qrCodeDataUrl
+        qrCodeData: qrCodeDataUrl,
+        redirectUrl: `/order?table=${tableNumber}` // Default redirect
       }
     });
 
@@ -64,7 +65,8 @@ export async function GET() {
     const results = [];
 
     for (const table of tables) {
-      const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/order?table=${table.tableNumber}`;
+      // Generate SHORT QR code URL (dynamic redirect)
+      const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/t/${table.tableNumber}`;
       
       const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
         width: 400,
@@ -75,14 +77,17 @@ export async function GET() {
         where: { id: table.id },
         data: {
           qrCodeUrl: qrUrl,
-          qrCodeData: qrCodeDataUrl
+          qrCodeData: qrCodeDataUrl,
+          redirectUrl: `/order?table=${table.tableNumber}` // Default redirect
         }
       });
 
       results.push({
         tableNumber: table.tableNumber,
         tableName: table.tableName,
-        qrCodeDataUrl
+        qrCodeDataUrl,
+        qrUrl,
+        redirectUrl: `/order?table=${table.tableNumber}`
       });
     }
 

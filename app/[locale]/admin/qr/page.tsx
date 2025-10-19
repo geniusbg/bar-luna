@@ -70,6 +70,12 @@ export default function QRCodesPage() {
           )}
         </div>
         <div className="flex gap-4">
+          <a
+            href="/bg/admin/qr/redirects"
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all"
+          >
+            🔗 Управление на Redirects
+          </a>
           <button
             onClick={generateQRCodes}
             disabled={loading}

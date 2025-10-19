@@ -88,16 +88,19 @@ model Event {
 // ============================================
 
 model BarTable {
-  id          String       @id @default(uuid())
-  tableNumber Int          @unique @map("table_number")
-  tableName   String?      @map("table_name")
-  capacity    Int          @default(4)
-  location    String       @default("indoor") // indoor, terrace, bar
-  qrCodeUrl   String?      @map("qr_code_url") // URL to QR code page
-  qrCodeData  String?      @map("qr_code_data") @db.Text // Base64 QR image for printing
-  isActive    Boolean      @default(true) @map("is_active")
-  orders      Order[]
-  waiterCalls WaiterCall[]
+  id             String       @id @default(uuid())
+  tableNumber    Int          @unique @map("table_number")
+  tableName      String?      @map("table_name")
+  capacity       Int          @default(4)
+  location       String       @default("indoor") // indoor, terrace, bar
+  qrCodeUrl      String?      @map("qr_code_url") // URL to QR code page
+  qrCodeData     String?      @map("qr_code_data") @db.Text // Base64 QR image for printing
+  isActive       Boolean      @default(true) @map("is_active")
+  redirectUrl    String?      @map("redirect_url") // Dynamic redirect URL (default: /order?table=X)
+  scanCount      Int          @default(0) @map("scan_count") // Track QR code scans
+  lastScannedAt  DateTime?    @map("last_scanned_at") // Last scan timestamp
+  orders         Order[]
+  waiterCalls    WaiterCall[]
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
