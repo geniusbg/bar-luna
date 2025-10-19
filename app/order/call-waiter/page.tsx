@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Toast from '@/components/Toast';
 
-export default function CallWaiterPage() {
+function CallWaiterContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tableNumber = searchParams.get('table');
@@ -153,6 +153,27 @@ export default function CallWaiterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CallWaiterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
+            <img
+              src="/bg/luna-logo.svg"
+              alt="LUNA Logo"
+              className="h-64 w-64 md:h-96 md:w-96"
+            />
+          </div>
+          <p className="text-white text-3xl font-medium">Зареждане...</p>
+        </div>
+      </div>
+    }>
+      <CallWaiterContent />
+    </Suspense>
   );
 }
 

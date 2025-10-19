@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Price from '@/components/Price';
@@ -13,7 +13,7 @@ interface CartItem {
   quantity: number;
 }
 
-export default function OrderPage() {
+function OrderPageContent() {
   const searchParams = useSearchParams();
   const tableNumber = searchParams.get('table');
 
@@ -417,3 +417,26 @@ export default function OrderPage() {
   );
 }
 
+export default function OrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
+            <Image
+              src="/bg/luna-logo.svg"
+              alt="LUNA Logo"
+              width={384}
+              height={384}
+              className="h-64 w-64 md:h-96 md:w-96"
+              priority
+            />
+          </div>
+          <p className="text-white text-3xl font-medium">Зареждане...</p>
+        </div>
+      </div>
+    }>
+      <OrderPageContent />
+    </Suspense>
+  );
+}
