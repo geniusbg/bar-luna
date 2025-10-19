@@ -1,3 +1,17 @@
+# Production Deployment Guide
+
+## Latest Updates (October 2025)
+
+### Features Added:
+1. ✅ Dynamic QR Redirect System with tracking
+2. ✅ Full BG/EN/DE translations for Order & Call Waiter pages
+3. ✅ Real-time sync for order/call status changes across devices
+4. ✅ Mobile-optimized Staff Dashboard
+5. ✅ Toast notifications instead of alerts
+6. ✅ Favicon & PWA icon - circular logo
+
+---
+
 # QR Redirect System - Deployment Steps
 
 ## На Production сървъра изпълни следното:

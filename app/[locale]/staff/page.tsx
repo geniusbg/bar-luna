@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { getPusherClient } from '@/lib/pusher-client';
 import { playSound } from '@/lib/sound';
 import Toast from '@/components/Toast';
@@ -121,7 +122,7 @@ export default function StaffDashboard() {
       setNotifications(prev => [...prev, {
         id: `call-${data.callId}-${Date.now()}`,
         type: 'call',
-        title: `🚨 ПОВИКВАНЕ ОТ МАСА ${data.tableNumber}`,
+        title: `🚨 МАСА ${data.tableNumber}`,
         message: data.callType === 'payment_cash' ? 'Плащане с брой' : 
                  data.callType === 'payment_card' ? 'Плащане с карта' : 'Нужна помощ',
         data,
@@ -138,6 +139,30 @@ export default function StaffDashboard() {
         createdAt: data.timestamp
       };
       setWaiterCalls(prev => [newCall, ...prev]);
+    });
+
+    // Order status change notification
+    channel.bind('order-status-change', (data: any) => {
+      console.log('🔄 Order status changed:', data);
+      
+      // Update order in state
+      setOrders(prev => prev.map(order => 
+        order.id === data.orderId 
+          ? { ...order, status: data.status }
+          : order
+      ));
+    });
+
+    // Waiter call status change notification
+    channel.bind('call-status-change', (data: any) => {
+      console.log('🔄 Call status changed:', data);
+      
+      // Update call in state
+      setWaiterCalls(prev => prev.map(call => 
+        call.id === data.callId 
+          ? { ...call, status: data.status }
+          : call
+      ));
     });
 
     return () => {
@@ -303,16 +328,16 @@ export default function StaffDashboard() {
         />
       )}
 
-      {/* Notification Popups - Tiled Grid */}
+      {/* Notification Popups - Stacked on Mobile, Grid on Desktop */}
       {notifications.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-8">
-          <div className={`grid gap-4 w-full h-full items-center justify-items-center content-center ${
-            notifications.length === 1 ? 'grid-cols-1' :
-            notifications.length === 2 ? 'grid-cols-2' :
-            notifications.length <= 4 ? 'grid-cols-2 grid-rows-2' :
-            notifications.length <= 6 ? 'grid-cols-3 grid-rows-2' :
-            'grid-cols-3 grid-rows-3'
-          }`}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-2 md:p-8">
+          <div className={`flex flex-col md:grid gap-2 md:gap-4 w-full max-h-full overflow-y-auto md:overflow-visible ${
+            notifications.length === 1 ? 'md:grid-cols-1' :
+            notifications.length === 2 ? 'md:grid-cols-2' :
+            notifications.length <= 4 ? 'md:grid-cols-2 md:grid-rows-2' :
+            notifications.length <= 6 ? 'md:grid-cols-3 md:grid-rows-2' :
+            'md:grid-cols-3 md:grid-rows-3'
+          } md:h-full md:items-center md:justify-items-center md:content-center`}>
             {notifications.slice(0, 9).map((notif, index) => (
               <div
                 key={notif.id}
@@ -323,65 +348,45 @@ export default function StaffDashboard() {
                 }`}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <div className={`relative rounded-xl shadow-2xl border-4 ${
-                  notifications.length === 1 ? 'p-12' :
-                  notifications.length <= 4 ? 'p-8' :
-                  'p-6'
-                } ${
+                <div className={`relative rounded-xl shadow-2xl border-2 md:border-4 p-4 md:p-8 ${
                   notif.urgent 
-                    ? 'bg-red-600 border-red-300 animate-pulse' 
-                    : 'bg-white text-black border-white'
+                    ? 'bg-red-600 border-red-400 animate-pulse' 
+                    : 'bg-white text-black border-gray-300'
                 }`}>
                   {/* Badge showing position in queue */}
                   {notifications.length > 1 && (
-                    <div className={`absolute top-3 right-3 px-3 py-1 rounded-full font-bold text-sm ${
+                    <div className={`absolute top-2 md:top-3 right-2 md:right-3 px-2 md:px-3 py-1 rounded-full font-bold text-xs md:text-sm ${
                       notif.urgent ? 'bg-white/30 text-white' : 'bg-black/20 text-black'
                     }`}>
                       {index + 1}/{notifications.length}
                     </div>
                   )}
                   
-                  <div className={`flex items-center mb-3 ${
-                    notifications.length === 1 ? 'gap-6' : 
-                    notifications.length <= 4 ? 'gap-4' : 
-                    'gap-3'
-                  }`}>
-                    <div className={notifications.length === 1 ? 'text-6xl' : 
-                                   notifications.length <= 4 ? 'text-5xl' : 
-                                   'text-4xl'}>
-                      {notif.type === 'order' ? '🔔' : '🚨'}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={`font-bold mb-1 ${
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="text-2xl md:text-4xl">
+                        {notif.type === 'order' ? '🔔' : '🚨'}
+                      </div>
+                      <h3 className={`font-bold leading-tight flex-1 ${
                         notif.urgent ? 'text-white' : 'text-black'
-                      } ${
-                        notifications.length === 1 ? 'text-3xl' :
-                        notifications.length <= 4 ? 'text-2xl' :
-                        'text-xl'
-                      }`}>
+                      } text-base md:text-2xl`}>
                         {notif.title}
                       </h3>
-                      <p className={`font-semibold ${
-                        notif.urgent ? 'text-white' : 'text-black'
-                      } ${
-                        notifications.length === 1 ? 'text-xl' :
-                        notifications.length <= 4 ? 'text-lg' :
-                        'text-base'
-                      }`}>{notif.message}</p>
                     </div>
+                    <p className={`font-semibold leading-tight ${
+                      notif.urgent ? 'text-white' : 'text-black'
+                    } text-sm md:text-lg`}>
+                      {notif.message}
+                    </p>
                   </div>
                   
                   <div className="flex gap-2">
                     <button
                       onClick={() => dismissNotification(notif.id)}
-                      className={`flex-1 rounded-lg font-bold transition-all shadow-lg ${
+                      className={`flex-1 rounded-lg font-bold transition-all shadow-lg px-4 py-3 text-base md:text-lg ${
                         notif.urgent 
                           ? 'bg-white text-red-600 hover:bg-gray-100' 
                           : 'bg-black text-white hover:bg-gray-900'
-                      } ${
-                        notifications.length === 1 ? 'px-6 py-4 text-xl' :
-                        notifications.length <= 4 ? 'px-4 py-3 text-lg' :
-                        'px-3 py-2 text-base'
                       }`}
                     >
                       ✓ OK
@@ -390,12 +395,10 @@ export default function StaffDashboard() {
                     {notifications.length > 1 && index === 0 && (
                       <button
                         onClick={() => setNotifications([])}
-                        className={`rounded-lg font-bold transition-all whitespace-nowrap ${
+                        className={`rounded-lg font-bold transition-all whitespace-nowrap px-3 py-3 text-sm md:text-base ${
                           notif.urgent 
                             ? 'bg-white/20 text-white hover:bg-white/30' 
                             : 'bg-black/20 text-black hover:bg-black/30'
-                        } ${
-                          notifications.length <= 4 ? 'px-4 py-3 text-lg' : 'px-3 py-2 text-sm'
                         }`}
                       >
                         Всички
@@ -410,15 +413,29 @@ export default function StaffDashboard() {
       )}
 
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-2">Staff Dashboard</h1>
-            <p className="text-gray-300">Real-time поръчки и известия</p>
+      <div className="mb-6 md:mb-8">
+        {/* Logo Bar */}
+        <div className="flex items-center justify-between mb-6">
+          {/* Left - Logo */}
+          <div className="h-16 md:h-20 overflow-hidden flex items-center">
+            <Image 
+              src="/bg/logo_luna2.svg" 
+              alt="L.U.N.A." 
+              width={240}
+              height={240}
+              className="w-auto h-full object-contain"
+              priority
+            />
           </div>
 
-          {/* PWA & Push Status */}
-          <div className="flex gap-3">
+          {/* Center - Title */}
+          <div className="hidden md:block text-center flex-1">
+            <h1 className="text-3xl md:text-4xl font-bold text-white">Staff Dashboard</h1>
+            <p className="text-gray-400 text-sm">Real-time поръчки и известия</p>
+          </div>
+
+          {/* Right Side - PWA & Push Status (Desktop only) */}
+          <div className="hidden md:flex gap-3">
             {/* PWA Install Button */}
             {!isPWA && showPWAPrompt && (
               <button
@@ -435,70 +452,85 @@ export default function StaffDashboard() {
                 onClick={handleEnablePush}
                 className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl font-semibold transition-all shadow-lg flex items-center gap-2 animate-pulse"
               >
-                🔔 Активирай Push Notifications
+                🔔 Активирай Push
               </button>
             )}
 
-            {/* iOS HTTPS Warning */}
-            {isPWA && !pushEnabled && !isPushSupported() && (
-              <div className="bg-yellow-600/20 border border-yellow-500/30 rounded-xl px-4 py-3 max-w-md">
-                <div className="flex items-start gap-2">
-                  <span className="text-xl">⚠️</span>
-                  <div className="text-sm">
-                    <p className="text-yellow-200 font-semibold mb-1">iOS изисква HTTPS</p>
-                    <p className="text-yellow-300 text-xs">
-                      Push notifications работят на production с https:// домейн. На localhost работи само за Android.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Status Indicators */}
-            {isPWA && (
+            {isPWA && pushEnabled && (
               <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
                 <div className="flex items-center gap-2 text-sm">
-                  <div className={`w-3 h-3 rounded-full ${isPWA ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-                  <span className="text-gray-200">PWA: {isPWA ? 'ON' : 'OFF'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm mt-1">
-                  <div className={`w-3 h-3 rounded-full ${pushEnabled ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                  <span className="text-gray-200">Push: {pushEnabled ? 'ON' : 'OFF'}</span>
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-gray-200">PWA & Push Active</span>
                 </div>
               </div>
             )}
           </div>
         </div>
+
+        {/* Mobile Title & PWA Buttons */}
+        <div className="md:hidden flex flex-col gap-3">
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-white">Staff Dashboard</h1>
+            <p className="text-gray-400 text-xs">Real-time поръчки и известия</p>
+          </div>
+          {!isPWA && showPWAPrompt && (
+            <button
+              onClick={handleInstallPWA}
+              className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-semibold transition-all shadow-lg flex items-center justify-center gap-2 text-sm"
+            >
+              📱 Инсталирай App
+            </button>
+          )}
+
+          {isPWA && !pushEnabled && isPushSupported() && (
+            <button
+              onClick={handleEnablePush}
+              className="w-full px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl font-semibold transition-all shadow-lg flex items-center justify-center gap-2 animate-pulse text-sm"
+            >
+              🔔 Активирай Push
+            </button>
+          )}
+          
+          {isPWA && pushEnabled && (
+            <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-2 text-sm">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span className="text-gray-200">PWA & Push Active</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Waiter Calls Section with Tabs */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">
+      <div className="mb-6 md:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 md:mb-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white">
             🔔 Повиквания
           </h2>
           
           {/* Tabs for Calls */}
-          <div className="flex gap-2 bg-gray-800 p-1 rounded-lg">
+          <div className="flex gap-2 bg-gray-800 p-1 rounded-lg w-full sm:w-auto">
             <button
               onClick={() => setCallsTab('active')}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              className={`flex-1 sm:flex-none px-4 md:px-6 py-2 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base ${
                 callsTab === 'active'
                   ? 'bg-white text-black'
                   : 'text-gray-300 hover:bg-gray-700'
               }`}
             >
-              Активни ({waiterCalls.filter(c => c.status !== 'completed').length})
+              <span className="hidden sm:inline">Активни </span>({waiterCalls.filter(c => c.status !== 'completed').length})
             </button>
             <button
               onClick={() => setCallsTab('completed')}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              className={`flex-1 sm:flex-none px-4 md:px-6 py-2 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base ${
                 callsTab === 'completed'
                   ? 'bg-white text-black'
                   : 'text-gray-300 hover:bg-gray-700'
               }`}
             >
-              Завършени ({waiterCalls.filter(c => c.status === 'completed').length})
+              <span className="hidden sm:inline">Завършени </span>({waiterCalls.filter(c => c.status === 'completed').length})
             </button>
           </div>
         </div>
@@ -510,33 +542,32 @@ export default function StaffDashboard() {
               .map(call => (
               <div
                 key={call.id}
-                className={`rounded-xl p-6 border-2 ${
+                className={`rounded-xl p-4 md:p-6 border-2 ${
                   call.callType.includes('payment')
                     ? 'bg-red-500/20 border-red-500'
                     : 'bg-yellow-500/20 border-yellow-500'
                 }`}
               >
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-2xl font-bold text-white">
+                <div className="flex justify-between items-start mb-3 md:mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl md:text-2xl font-bold text-white">
                       Маса {call.tableNumber}
                     </h3>
-                    <p className="text-lg text-gray-200">
+                    <p className="text-base md:text-lg text-gray-200">
                       {call.message}
                     </p>
                     {call.createdAt && (
-                      <p className="text-sm text-gray-400 mt-1">
+                      <p className="text-xs md:text-sm text-gray-400 mt-1">
                         {new Date(call.createdAt).toLocaleString('bg-BG', {
                           day: '2-digit',
                           month: '2-digit',
-                          year: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit'
                         })}
                       </p>
                     )}
                   </div>
-                  <div className="text-3xl">
+                  <div className="text-2xl md:text-3xl">
                     {call.callType.includes('payment') ? '💰' : '🆘'}
                   </div>
                 </div>
@@ -545,12 +576,12 @@ export default function StaffDashboard() {
                     <button
                       onClick={() => acknowledgeCall(call.id)}
                       disabled={loadingActions[call.id]}
-                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="px-3 md:px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
                     >
                       {loadingActions[call.id] ? (
                         <>
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          <span>...</span>
+                          <span className="hidden sm:inline">...</span>
                         </>
                       ) : (
                         'Отивам'
@@ -559,12 +590,12 @@ export default function StaffDashboard() {
                     <button
                       onClick={() => completeCall(call.id)}
                       disabled={loadingActions[`complete_${call.id}`]}
-                      className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="px-3 md:px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
                     >
                       {loadingActions[`complete_${call.id}`] ? (
                         <>
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          <span>...</span>
+                          <span className="hidden sm:inline">...</span>
                         </>
                       ) : (
                         'Завърши'
@@ -576,12 +607,12 @@ export default function StaffDashboard() {
                   <button
                     onClick={() => completeCall(call.id)}
                     disabled={loadingActions[`complete_${call.id}`]}
-                    className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full px-3 md:px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
                   >
                     {loadingActions[`complete_${call.id}`] ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>...</span>
+                        <span className="hidden sm:inline">...</span>
                       </>
                     ) : (
                       <>✓ Завърши</>
@@ -647,32 +678,32 @@ export default function StaffDashboard() {
 
       {/* Orders Section with Tabs */}
       <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 md:mb-6">
+          <h2 className="text-xl md:text-2xl font-bold text-white">
             📋 Поръчки
           </h2>
           
           {/* Tabs */}
-          <div className="flex gap-2 bg-gray-800 p-1 rounded-lg">
+          <div className="flex gap-2 bg-gray-800 p-1 rounded-lg w-full sm:w-auto">
             <button
               onClick={() => setOrdersTab('active')}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              className={`flex-1 sm:flex-none px-4 md:px-6 py-2 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base ${
                 ordersTab === 'active'
                   ? 'bg-white text-black'
                   : 'text-gray-300 hover:bg-gray-700'
               }`}
             >
-              Активни ({orders.filter((o: any) => o.status !== 'completed').length})
+              <span className="hidden sm:inline">Активни </span>({orders.filter((o: any) => o.status !== 'completed').length})
             </button>
             <button
               onClick={() => setOrdersTab('completed')}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              className={`flex-1 sm:flex-none px-4 md:px-6 py-2 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base ${
                 ordersTab === 'completed'
                   ? 'bg-white text-black'
                   : 'text-gray-300 hover:bg-gray-700'
               }`}
             >
-              Завършени ({orders.filter((o: any) => o.status === 'completed').length})
+              <span className="hidden sm:inline">Завършени </span>({orders.filter((o: any) => o.status === 'completed').length})
             </button>
           </div>
         </div>
@@ -690,29 +721,28 @@ export default function StaffDashboard() {
                 .map((order: any) => (
                 <div
                   key={order.id}
-                  className="bg-gray-800 rounded-xl p-6 border-2 border-gray-700"
+                  className="bg-gray-800 rounded-xl p-4 md:p-6 border-2 border-gray-700"
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="text-2xl font-bold text-white">
+                  <div className="flex justify-between items-start mb-3 md:mb-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-lg md:text-2xl font-bold text-white">
                         Поръчка #{order.orderNumber}
                       </div>
-                      <div className="text-lg text-gray-300">
+                      <div className="text-base md:text-lg text-gray-300">
                         Маса {order.tableNumber}
                       </div>
                       {order.createdAt && (
-                        <div className="text-sm text-gray-400 mt-1">
+                        <div className="text-xs md:text-sm text-gray-400 mt-1">
                           {new Date(order.createdAt).toLocaleString('bg-BG', {
                             day: '2-digit',
                             month: '2-digit',
-                            year: 'numeric',
                             hour: '2-digit',
                             minute: '2-digit'
                           })}
                         </div>
                       )}
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    <div className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-semibold whitespace-nowrap ${
                       order.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
                       order.status === 'preparing' ? 'bg-blue-500/20 text-blue-300' :
                       order.status === 'ready' ? 'bg-green-500/20 text-green-300' : ''
@@ -724,19 +754,19 @@ export default function StaffDashboard() {
                   </div>
 
                   {/* Order Items */}
-                  <div className="mb-4 space-y-2">
+                  <div className="mb-3 md:mb-4 space-y-1 md:space-y-2">
                     {order.items && order.items.map((item: any) => (
-                      <div key={item.id} className="flex justify-between text-gray-200">
-                        <span>{item.quantity}x {item.productName}</span>
-                        <Price priceBgn={Number(item.priceBgn)} className="text-gray-200" />
+                      <div key={item.id} className="flex justify-between text-gray-200 text-sm md:text-base">
+                        <span className="truncate mr-2">{item.quantity}x {item.productName}</span>
+                        <Price priceBgn={Number(item.priceBgn)} className="text-gray-200 whitespace-nowrap" />
                       </div>
                     ))}
                   </div>
 
-                  <div className="border-t border-gray-700 pt-3 mb-4">
-                    <div className="flex justify-between text-xl font-bold text-white">
+                  <div className="border-t border-gray-700 pt-2 md:pt-3 mb-3 md:mb-4">
+                    <div className="flex justify-between text-base md:text-xl font-bold text-white">
                       <span>Общо:</span>
-                      <Price priceBgn={Number(order.totalBgn)} className="text-xl font-bold text-white" />
+                      <Price priceBgn={Number(order.totalBgn)} className="text-base md:text-xl font-bold text-white" />
                     </div>
                   </div>
 
@@ -746,15 +776,12 @@ export default function StaffDashboard() {
                       <button
                         onClick={() => updateOrderStatus(order.id, 'preparing')}
                         disabled={loadingActions[order.id]}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="px-3 md:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
                       >
                         {loadingActions[order.id] ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>...</span>
-                          </>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         ) : (
-                          'Приготвяме'
+                          <span>Приготвяме</span>
                         )}
                       </button>
                     )}
@@ -762,15 +789,12 @@ export default function StaffDashboard() {
                       <button
                         onClick={() => updateOrderStatus(order.id, 'ready')}
                         disabled={loadingActions[order.id]}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="px-3 md:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
                       >
                         {loadingActions[order.id] ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>...</span>
-                          </>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         ) : (
-                          'Готова'
+                          <span>Готова</span>
                         )}
                       </button>
                     )}
@@ -778,13 +802,10 @@ export default function StaffDashboard() {
                       <button
                         onClick={() => updateOrderStatus(order.id, 'completed')}
                         disabled={loadingActions[order.id]}
-                        className="col-span-2 px-4 py-2 bg-white text-black hover:bg-gray-200 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="col-span-2 px-3 md:px-4 py-2 bg-white text-black hover:bg-gray-200 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
                       >
                         {loadingActions[order.id] ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>...</span>
-                          </>
+                          <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
                         ) : (
                           '✓ Завърши'
                         )}

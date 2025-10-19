@@ -16,6 +16,18 @@ export async function PATCH(
       }
     });
 
+    // Notify all staff devices of status change
+    try {
+      const { pusherServer } = await import('@/lib/pusher-server');
+      await pusherServer.trigger('staff-channel', 'call-status-change', {
+        callId: call.id,
+        tableNumber: call.tableNumber,
+        status: call.status
+      });
+    } catch (pusherError) {
+      console.log('Pusher notification skipped:', pusherError);
+    }
+
     return NextResponse.json({ call });
   } catch (error) {
     console.error('Acknowledge call error:', error);
