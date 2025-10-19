@@ -6,30 +6,30 @@ export async function GET(
   { params }: { params: Promise<{ table: string }> }
 ) {
   try {
-    const { table } = await params;
-    const tableNumber = parseInt(table);
+    const { table: tableParam } = await params;
+    const tableNumber = parseInt(tableParam);
 
     if (isNaN(tableNumber)) {
       return NextResponse.redirect(new URL('/bg/menu', request.url));
     }
 
     // Find table and increment scan count
-    const table = await prisma.barTable.findUnique({
+    const barTable = await prisma.barTable.findUnique({
       where: { tableNumber }
     });
 
-    if (!table) {
+    if (!barTable) {
       return NextResponse.redirect(new URL('/bg/menu', request.url));
     }
 
     // Check if table is active
-    if (!table.isActive) {
+    if (!barTable.isActive) {
       return NextResponse.redirect(new URL('/bg/menu', request.url));
     }
 
     // Increment scan count and update last scanned timestamp
     await prisma.barTable.update({
-      where: { id: table.id },
+      where: { id: barTable.id },
       data: {
         scanCount: { increment: 1 },
         lastScannedAt: new Date()
@@ -37,7 +37,7 @@ export async function GET(
     });
 
     // Get redirect URL (default to order page with BG locale)
-    const redirectUrl = table.redirectUrl || `/bg/order?table=${tableNumber}`;
+    const redirectUrl = barTable.redirectUrl || `/bg/order?table=${tableNumber}`;
     
     // If it's a relative URL, use current domain
     if (redirectUrl.startsWith('/')) {
