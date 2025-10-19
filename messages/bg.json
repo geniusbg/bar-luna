@@ -1,0 +1,54 @@
+{
+  "common": {
+    "welcome": "Добре дошли",
+    "menu": "Меню",
+    "events": "Събития",
+    "contact": "Контакти",
+    "about": "За нас",
+    "language": "Език",
+    "currency": "Валута"
+  },
+  "home": {
+    "title": "LUNA Bar & Coffee",
+    "subtitle": "bar coffee lunch shisha & good mood",
+    "cta": "Виж менюто",
+    "location": "Русе, ул. Александровска 97"
+  },
+  "menu": {
+    "title": "Нашето меню",
+    "categories": {
+      "alcohol": "Алкохол",
+      "coffee": "Кафе",
+      "hot_drinks": "Топли напитки",
+      "cold_drinks": "Студени напитки",
+      "fresh": "Фреш",
+      "soft_drinks": "Безалкохолни",
+      "lemonades": "Лимонади"
+    },
+    "price": "Цена",
+    "available": "Налично",
+    "unavailable": "Изчерпано"
+  },
+  "events": {
+    "title": "Събития",
+    "upcoming": "Предстоящи събития",
+    "at_luna": "В LUNA Bar",
+    "partner_event": "Партньорско събитие",
+    "learn_more": "Научи повече"
+  },
+  "admin": {
+    "login": "Вход",
+    "logout": "Изход",
+    "dashboard": "Табло",
+    "products": "Продукти",
+    "categories": "Категории",
+    "events": "Събития",
+    "add_product": "Добави продукт",
+    "edit_product": "Редактирай продукт",
+    "delete": "Изтрий",
+    "save": "Запази",
+    "cancel": "Отказ"
+  }
+}
+
+

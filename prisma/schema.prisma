@@ -1,0 +1,212 @@
+// Prisma Schema for Luna Bar
+// Ordering System with QR Codes
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// MENU SYSTEM (existing)
+// ============================================
+
+model Category {
+  id        String    @id @default(uuid())
+  nameBg    String    @map("name_bg")
+  nameEn    String    @map("name_en")
+  nameDe    String    @map("name_de")
+  slug      String    @unique
+  order     Int       @default(0)
+  products  Product[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("categories")
+}
+
+model Product {
+  id            String      @id @default(uuid())
+  categoryId    String      @map("category_id")
+  category      Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  nameBg        String      @map("name_bg")
+  nameEn        String      @map("name_en")
+  nameDe        String      @map("name_de")
+  descriptionBg String?     @map("description_bg")
+  descriptionEn String?     @map("description_en")
+  descriptionDe String?     @map("description_de")
+  priceBgn      Decimal     @map("price_bgn") @db.Decimal(10, 2)
+  priceEur      Decimal     @map("price_eur") @db.Decimal(10, 2)
+  imageUrl      String?     @map("image_url")
+  isAvailable   Boolean     @default(true) @map("is_available")
+  isHidden      Boolean     @default(false) @map("is_hidden")
+  isFeatured    Boolean     @default(false) @map("is_featured")
+  allergens     String[]
+  order         Int         @default(0)
+  orderItems    OrderItem[]
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@index([categoryId])
+  @@index([isAvailable])
+  @@index([isHidden])
+  @@index([isFeatured])
+  @@map("products")
+}
+
+model Event {
+  id            String   @id @default(uuid())
+  titleBg       String   @map("title_bg")
+  titleEn       String   @map("title_en")
+  titleDe       String   @map("title_de")
+  descriptionBg String   @map("description_bg")
+  descriptionEn String   @map("description_en")
+  descriptionDe String   @map("description_de")
+  eventDate     DateTime @map("event_date")
+  location      String   // Primary location (used for display)
+  locationBg    String?  @map("location_bg") // Bulgarian location name
+  locationEn    String?  @map("location_en") // English location name
+  locationDe    String?  @map("location_de") // German location name
+  isExternal    Boolean  @default(false) @map("is_external")
+  externalUrl   String?  @map("external_url") // URL for external events
+  contactInfo   String?  @map("contact_info") // Contact details for external events
+  imageUrl      String?  @map("image_url")
+  isPublished   Boolean  @default(false) @map("is_published")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([eventDate])
+  @@index([isPublished])
+  @@map("events")
+}
+
+// ============================================
+// ORDERING SYSTEM (new)
+// ============================================
+
+model BarTable {
+  id          String       @id @default(uuid())
+  tableNumber Int          @unique @map("table_number")
+  tableName   String?      @map("table_name")
+  capacity    Int          @default(4)
+  location    String       @default("indoor") // indoor, terrace, bar
+  qrCodeUrl   String?      @map("qr_code_url") // URL to QR code page
+  qrCodeData  String?      @map("qr_code_data") @db.Text // Base64 QR image for printing
+  isActive    Boolean      @default(true) @map("is_active")
+  orders      Order[]
+  waiterCalls WaiterCall[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("bar_tables")
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  tableId       String?     @map("table_id")
+  table         BarTable?   @relation(fields: [tableId], references: [id])
+  tableNumber   Int         @map("table_number")
+  orderNumber   Int         @map("order_number") // Daily sequential number
+  status        String      @default("pending") @map("status") // pending, preparing, ready, completed, cancelled
+  paymentMethod String?     @map("payment_method") // cash, card, null
+  totalBgn      Decimal     @map("total_bgn") @db.Decimal(10, 2)
+  totalEur      Decimal     @map("total_eur") @db.Decimal(10, 2)
+  notes         String?
+  customerName  String?     @map("customer_name")
+  isPaid        Boolean     @default(false) @map("is_paid")
+  items         OrderItem[]
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  completedAt   DateTime?   @map("completed_at")
+
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@index([tableNumber])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String   @map("order_id")
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String   @map("product_id")
+  product     Product  @relation(fields: [productId], references: [id])
+  productName String   @map("product_name") // Snapshot at order time
+  quantity    Int      @default(1)
+  priceBgn    Decimal  @map("price_bgn") @db.Decimal(10, 2)
+  priceEur    Decimal  @map("price_eur") @db.Decimal(10, 2)
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model WaiterCall {
+  id             String    @id @default(uuid())
+  tableId        String?   @map("table_id")
+  table          BarTable? @relation(fields: [tableId], references: [id])
+  tableNumber    Int       @map("table_number")
+  callType       String    @map("call_type") // payment_cash, payment_card, help, service
+  status         String    @default("pending") // pending, acknowledged, completed
+  message        String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  acknowledgedAt DateTime? @map("acknowledged_at")
+  completedAt    DateTime? @map("completed_at")
+
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("waiter_calls")
+}
+
+// Staff/Admin users
+model Staff {
+  id               String             @id @default(uuid())
+  email            String             @unique
+  passwordHash     String             @map("password_hash")
+  name             String
+  role             String             @default("staff") // staff, manager, admin
+  isActive         Boolean            @default(true) @map("is_active")
+  pushSubscriptions PushSubscription[]
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  @@map("staff")
+}
+
+// Future: Hype Integration tracking
+model HypeSyncLog {
+  id        String   @id @default(uuid())
+  syncType  String   @map("sync_type") // menu, order, inventory
+  status    String // success, error
+  data      Json?
+  error     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt(sort: Desc)])
+  @@map("hype_sync_log")
+}
+
+// Web Push Subscriptions for PWA notifications
+model PushSubscription {
+  id           String   @id @default(uuid())
+  staffId      String?  @map("staff_id")
+  staff        Staff?   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  endpoint     String   @unique // Browser push endpoint
+  p256dh       String   // Encryption key
+  auth         String   // Auth secret
+  deviceName   String?  @map("device_name")
+  userAgent    String?  @map("user_agent")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  lastUsed     DateTime @default(now()) @map("last_used")
+
+  @@index([staffId])
+  @@index([isActive])
+  @@map("push_subscriptions")
+}
+
+

@@ -1,0 +1,54 @@
+{
+  "common": {
+    "welcome": "Willkommen",
+    "menu": "Menü",
+    "events": "Veranstaltungen",
+    "contact": "Kontakt",
+    "about": "Über uns",
+    "language": "Sprache",
+    "currency": "Währung"
+  },
+  "home": {
+    "title": "LUNA Bar & Coffee",
+    "subtitle": "Bar, Kaffee, Mittagessen, Shisha & gute Laune",
+    "cta": "Menü ansehen",
+    "location": "Ruse, Aleksandrovska Str. 97"
+  },
+  "menu": {
+    "title": "Unsere Speisekarte",
+    "categories": {
+      "alcohol": "Alkohol",
+      "coffee": "Kaffee",
+      "hot_drinks": "Heiße Getränke",
+      "cold_drinks": "Kalte Getränke",
+      "fresh": "Frische Säfte",
+      "soft_drinks": "Erfrischungsgetränke",
+      "lemonades": "Limonaden"
+    },
+    "price": "Preis",
+    "available": "Verfügbar",
+    "unavailable": "Ausverkauft"
+  },
+  "events": {
+    "title": "Veranstaltungen",
+    "upcoming": "Kommende Veranstaltungen",
+    "at_luna": "In der LUNA Bar",
+    "partner_event": "Partner-Veranstaltung",
+    "learn_more": "Mehr erfahren"
+  },
+  "admin": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "dashboard": "Dashboard",
+    "products": "Produkte",
+    "categories": "Kategorien",
+    "events": "Veranstaltungen",
+    "add_product": "Produkt hinzufügen",
+    "edit_product": "Produkt bearbeiten",
+    "delete": "Löschen",
+    "save": "Speichern",
+    "cancel": "Abbrechen"
+  }
+}
+
+

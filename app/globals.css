@@ -1,26 +1,281 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* L.U.N.A. Color Palette */
+  --luna-black: #000000;
+  --luna-white: #FFFFFF;
+  --luna-glow: #F5F5F5;
+  --luna-dark: #0A0A0A;
+  --luna-gray: #333333;
+  --luna-light-gray: #E5E5E5;
+  --luna-gold: #FFD700;
+  --luna-silver: #C0C0C0;
+  
+  /* Legacy variables for compatibility */
+  --background: var(--luna-black);
+  --foreground: var(--luna-white);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  background: var(--luna-black);
+  color: var(--luna-white);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* L.U.N.A. Moon Glow Effects */
+.luna-glow {
+  transition: all 0.3s ease-in-out;
+  position: relative;
+}
+
+.luna-glow:hover {
+  box-shadow: 
+    0 0 20px rgba(245, 245, 245, 0.3),
+    0 0 40px rgba(245, 245, 245, 0.2),
+    0 0 60px rgba(245, 245, 245, 0.1);
+  transform: translateY(-2px);
+}
+
+.luna-glow-strong {
+  /* Permanent white moon glow - always visible, not just on hover */
+  box-shadow: 
+    0 0 25px rgba(255, 255, 255, 0.6),
+    0 0 50px rgba(255, 255, 255, 0.4),
+    0 0 80px rgba(255, 255, 255, 0.3);
+}
+
+.luna-glow-strong:hover {
+  box-shadow: 
+    0 0 40px rgba(255, 255, 255, 0.8),
+    0 0 70px rgba(255, 255, 255, 0.6),
+    0 0 110px rgba(255, 255, 255, 0.4);
+}
+
+.luna-border {
+  border: 1px solid var(--luna-gray);
+  transition: all 0.3s ease-in-out;
+}
+
+.luna-border:hover {
+  border-color: var(--luna-glow);
+  box-shadow: 
+    0 0 15px rgba(245, 245, 245, 0.2),
+    inset 0 0 15px rgba(245, 245, 245, 0.1);
+}
+
+/* Logo optimizations */
+.logo-img {
+  transition: all 0.3s ease-in-out;
+  object-fit: cover;
+  border-radius: 50%;
+  overflow: hidden;
+  /* Crop the white glow effect */
+  object-position: center;
+  /* Remove white background/glow */
+  filter: contrast(1.2) brightness(1.1);
+}
+
+.logo-img:hover {
+  transform: scale(1.05);
+}
+
+/* Special styling for circular logo */
+.logo-circular {
+  border-radius: 50%;
+  overflow: hidden;
+  object-fit: cover;
+  object-position: center;
+  /* SVG doesn't need color filters */
+  background: transparent;
+}
+
+/* Force circular shape for SVG logo */
+.logo-svg {
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  /* Remove clip-path as it only clips content, not the element itself */
+  background: transparent !important;
+}
+
+/* Alternative approach - wrap SVG in circular container */
+.logo-container {
+  border-radius: 50%;
+  overflow: visible;
+  background: transparent;
+  display: inline-block;
+  position: relative;
+  transition: all 0.3s ease;
+  /* White moon glow effect - always white regardless of dark mode */
+  box-shadow: 
+    0 0 30px rgba(255, 255, 255, 0.8),
+    0 0 60px rgba(255, 255, 255, 0.6),
+    0 0 100px rgba(255, 255, 255, 0.4),
+    0 0 150px rgba(255, 255, 255, 0.2);
+  /* Prevent dark mode from affecting the glow */
+  -webkit-color-scheme: only light !important;
+  color-scheme: only light !important;
+  forced-color-adjust: none !important;
+}
+
+.logo-container:hover {
+  box-shadow: 
+    0 0 40px rgba(255, 255, 255, 1),
+    0 0 80px rgba(255, 255, 255, 0.8),
+    0 0 130px rgba(255, 255, 255, 0.6),
+    0 0 200px rgba(255, 255, 255, 0.4);
+}
+
+.logo-container img,
+.logo-container svg {
+  border-radius: 50% !important;
+  background: transparent !important;
+  /* Show the full SVG content with precise positioning */
+  object-fit: contain !important;
+  object-position: center !important;
+  transform: scale(1.40) translateX(.5%) translateY(-2.5%) !important;
+  display: block !important;
+  clip-path: circle(50%) !important;
+  width: 100% !important;
+  height: 100% !important;
+  /* Prevent dark mode color inversion - SVG is now white natively */
+  -webkit-color-scheme: only light !important;
+  color-scheme: only light !important;
+  forced-color-adjust: none !important;
+}
+
+/* Animations for notifications */
+@keyframes bounce-in {
+  0% {
+    transform: scale(0) translateY(-100px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) translateY(0);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.animate-bounce-in {
+  animation: bounce-in 0.5s ease-out;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+@keyframes progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.animate-progress {
+  animation: progress linear;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+/* Pulsing glow animation for loading */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 25px rgba(255, 255, 255, 0.4),
+      0 0 50px rgba(255, 255, 255, 0.3),
+      0 0 75px rgba(255, 255, 255, 0.2),
+      0 0 100px rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 40px rgba(255, 255, 255, 0.6),
+      0 0 80px rgba(255, 255, 255, 0.5),
+      0 0 120px rgba(255, 255, 255, 0.4),
+      0 0 160px rgba(255, 255, 255, 0.3),
+      0 0 200px rgba(255, 255, 255, 0.2);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 1s ease-in-out infinite;
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Print styles for QR codes */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .qr-card {
+    page-break-after: always;
+    page-break-inside: avoid;
+    margin: 0;
+    padding: 20mm;
+  }
+  
+  body {
+    background: white;
+  }
 }
