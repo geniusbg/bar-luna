@@ -1,22 +1,28 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useSearchParams, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import Price from '@/components/Price';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import Toast from '@/components/Toast';
 
 interface CartItem {
   productId: string;
-  name: string;
+  nameBg: string;
+  nameEn: string;
+  nameDe: string;
   priceBgn: number;
   quantity: number;
 }
 
 function OrderPageContent() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const tableNumber = searchParams.get('table');
-  const t = useTranslations('menu');
+  
+  // Get locale from URL path
+  const locale = pathname.split('/')[1] || 'bg';
 
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -24,6 +30,7 @@ function OrderPageContent() {
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     async function loadMenu() {
@@ -53,7 +60,9 @@ function OrderPageContent() {
       }
       return [...prev, {
         productId: product.id,
-        name: product.nameBg,
+        nameBg: product.nameBg,
+        nameEn: product.nameEn,
+        nameDe: product.nameDe,
         priceBgn: Number(product.priceBgn),
         quantity: 1
       }];
@@ -83,22 +92,41 @@ function OrderPageContent() {
     if (cart.length === 0) return;
 
     try {
+      // Prepare items with productName for the API
+      const orderItems = cart.map(item => ({
+        productId: item.productId,
+        productName: item.nameBg, // Always use Bulgarian name for orders
+        priceBgn: item.priceBgn,
+        quantity: item.quantity
+      }));
+
       const response = await fetch('/api/orders/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tableNumber: parseInt(tableNumber || '0'),
-          items: cart
+          items: orderItems
         })
       });
 
       if (response.ok) {
-        alert('✅ Поръчката е изпратена успешно!');
+        const successMsg = locale === 'bg' ? '✅ Поръчката е изпратена успешно!' : 
+                          locale === 'en' ? '✅ Order sent successfully!' : 
+                          '✅ Bestellung erfolgreich gesendet!';
+        setToast({ message: successMsg, type: 'success' });
         setCart([]);
         setShowCart(false);
+      } else {
+        const errorMsg = locale === 'bg' ? '❌ Грешка при изпращане на поръчка' : 
+                        locale === 'en' ? '❌ Error sending order' : 
+                        '❌ Fehler beim Senden der Bestellung';
+        setToast({ message: errorMsg, type: 'error' });
       }
     } catch (error) {
-      alert('❌ Грешка при изпращане на поръчка');
+      const errorMsg = locale === 'bg' ? '❌ Грешка при изпращане на поръчка' : 
+                      locale === 'en' ? '❌ Error sending order' : 
+                      '❌ Fehler beim Senden der Bestellung';
+      setToast({ message: errorMsg, type: 'error' });
     }
   };
 
@@ -124,8 +152,17 @@ function OrderPageContent() {
 
   return (
     <main className="min-h-screen bg-black pb-32">
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {/* Header */}
-      <div className="bg-black/95 backdrop-blur-lg border-b border-gray-800 sticky top-16 z-40">
+      <div className="bg-black/95 backdrop-blur-lg border-b border-gray-800 sticky top-0 z-40">
         <div className="container mx-auto px-4 py-2">
           <div className="flex justify-between items-center gap-4">
             <div className="h-16 overflow-hidden flex items-center">
@@ -141,29 +178,37 @@ function OrderPageContent() {
             
             {tableNumber && (
               <div className="flex-1 text-center">
-                <p className="text-white font-bold text-xl">Маса {tableNumber}</p>
+                <p className="text-white font-bold text-xl">
+                  {locale === 'bg' ? 'Маса' : locale === 'en' ? 'Table' : 'Tisch'} {tableNumber}
+                </p>
               </div>
             )}
             
-            <button
-              onClick={() => setShowCart(!showCart)}
-              className="relative px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all text-sm"
-            >
-              🛒 Количка
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold">
-                  {cartCount}
-                </span>
-              )}
-            </button>
+            <div className="flex items-center gap-3">
+              {/* Language Switcher */}
+              <LanguageSwitcher />
+              
+              {/* Cart Button */}
+              <button
+                onClick={() => setShowCart(!showCart)}
+                className="relative px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all text-sm"
+              >
+                🛒 {locale === 'bg' ? 'Количка' : locale === 'en' ? 'Cart' : 'Warenkorb'}
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Category Filter - Sticky */}
-      <div className="sticky top-[7.5rem] z-30 bg-black/95 backdrop-blur-lg border-b border-gray-800 py-4">
+      <div className="sticky top-[5rem] z-30 bg-black/95 backdrop-blur-lg border-b border-gray-800 py-4">
         <div className="container mx-auto px-4">
-          <div className="overflow-x-auto hide-scrollbar">
+          <div className="overflow-x-auto overflow-y-hidden hide-scrollbar">
             <div className="flex gap-3 min-w-max">
               <button
                 onClick={() => setSelectedCategory('all')}
@@ -173,10 +218,11 @@ function OrderPageContent() {
                     : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
                 }`}
               >
-                Всички ({products.length})
+                {locale === 'bg' ? 'Всички' : locale === 'en' ? 'All' : 'Alle'} ({products.length})
               </button>
               {categories.map((category: any) => {
                 const count = products.filter(p => p.categoryId === category.id).length;
+                const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameDe;
                 return (
                   <button
                     key={category.id}
@@ -187,7 +233,7 @@ function OrderPageContent() {
                         : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
                     }`}
                   >
-                    {category.nameBg} ({count})
+                    {categoryName} ({count})
                   </button>
                 );
               })}
@@ -203,41 +249,46 @@ function OrderPageContent() {
           .map(category => {
             const categoryProducts = products.filter(p => p.categoryId === category.id);
             if (categoryProducts.length === 0) return null;
+            
+            const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameDe;
 
             return (
               <div key={category.id} className="mb-16">
                 {/* Category Header */}
                 <div className="flex items-center gap-3 mb-8">
                   <div className="h-1 w-8 bg-white rounded-full"></div>
-                  <h2 className="text-3xl md:text-4xl font-bold text-white">{category.nameBg}</h2>
+                  <h2 className="text-3xl md:text-4xl font-bold text-white">{categoryName}</h2>
                   <div className="flex-1 h-px bg-gray-800"></div>
                 </div>
                 
                 {/* Products Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {categoryProducts.map((product: any) => (
-                  <div
-                    key={product.id}
-                    className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-4 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300"
-                  >
-                    <h3 className="text-lg md:text-xl font-bold text-white mb-3 group-hover:text-gray-200 transition-colors">
-                      {product.nameBg}
-                    </h3>
-                    
-                    <div className="flex justify-between items-center gap-3 pt-3 border-t border-gray-700/50">
-                      <Price
-                        priceBgn={Number(product.priceBgn)}
-                        className="text-xl font-bold text-white"
-                      />
-                      <button
-                        onClick={() => addToCart(product)}
-                        className="px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-xl font-bold transition-all text-sm md:text-base"
-                      >
-                        + Добави
-                      </button>
+                  {categoryProducts.map((product: any) => {
+                    const productName = locale === 'bg' ? product.nameBg : locale === 'en' ? product.nameEn : product.nameDe;
+                    return (
+                    <div
+                      key={product.id}
+                      className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-4 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300"
+                    >
+                      <h3 className="text-lg md:text-xl font-bold text-white mb-3 group-hover:text-gray-200 transition-colors">
+                        {productName}
+                      </h3>
+                      
+                      <div className="flex justify-between items-center gap-3 pt-3 border-t border-gray-700/50">
+                        <Price
+                          priceBgn={Number(product.priceBgn)}
+                          className="text-xl font-bold text-white"
+                        />
+                        <button
+                          onClick={() => addToCart(product)}
+                          className="px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-xl font-bold transition-all text-sm md:text-base"
+                        >
+                          + {locale === 'bg' ? 'Добави' : locale === 'en' ? 'Add' : 'Hinzufügen'}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -249,7 +300,9 @@ function OrderPageContent() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center">
           <div className="bg-slate-800 rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-slate-700 flex justify-between items-center sticky top-0 bg-slate-800">
-              <h2 className="text-2xl font-bold text-white">Вашата поръчка</h2>
+              <h2 className="text-2xl font-bold text-white">
+                {locale === 'bg' ? 'Вашата поръчка' : locale === 'en' ? 'Your Order' : 'Ihre Bestellung'}
+              </h2>
               <button
                 onClick={() => setShowCart(false)}
                 className="text-white text-3xl hover:text-gray-300"
@@ -260,14 +313,18 @@ function OrderPageContent() {
 
             <div className="p-6">
               {cart.length === 0 ? (
-                <p className="text-gray-200 text-center py-8">Количката е празна</p>
+                <p className="text-gray-200 text-center py-8">
+                  {locale === 'bg' ? 'Количката е празна' : locale === 'en' ? 'Cart is empty' : 'Warenkorb ist leer'}
+                </p>
               ) : (
                 <>
                   <div className="space-y-4 mb-6">
-                    {cart.map(item => (
+                    {cart.map(item => {
+                      const itemName = locale === 'bg' ? item.nameBg : locale === 'en' ? item.nameEn : item.nameDe;
+                      return (
                       <div key={item.productId} className="bg-slate-700 rounded-lg p-4 flex justify-between items-center">
                         <div className="flex-1">
-                          <h4 className="text-white font-semibold">{item.name}</h4>
+                          <h4 className="text-white font-semibold">{itemName}</h4>
                           <p className="text-gray-300">{item.priceBgn.toFixed(2)} лв.</p>
                         </div>
                         
@@ -293,12 +350,13 @@ function OrderPageContent() {
                           </button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <div className="border-t border-slate-700 pt-4 mb-6">
                     <div className="flex justify-between items-center text-xl font-bold text-white">
-                      <span>Общо:</span>
+                      <span>{locale === 'bg' ? 'Общо:' : locale === 'en' ? 'Total:' : 'Gesamt:'}</span>
                       <Price priceBgn={cartTotal} className="text-2xl" />
                     </div>
                   </div>
@@ -307,11 +365,13 @@ function OrderPageContent() {
                     onClick={submitOrder}
                     className="w-full px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-lg transition-all"
                   >
-                    ✅ Изпрати поръчка
+                    ✅ {locale === 'bg' ? 'Изпрати поръчка' : locale === 'en' ? 'Send Order' : 'Bestellung senden'}
                   </button>
 
                   <p className="text-gray-300 text-sm text-center mt-4">
-                    Поръчката ще бъде изпратена към персонала
+                    {locale === 'bg' ? 'Поръчката ще бъде изпратена към персонала' : 
+                     locale === 'en' ? 'Order will be sent to staff' : 
+                     'Bestellung wird an Personal gesendet'}
                   </p>
                 </>
               )}
@@ -324,10 +384,12 @@ function OrderPageContent() {
       {tableNumber && (
         <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 z-40">
           <a
-            href={`/bg/order/call-waiter?table=${tableNumber}`}
+            href={`/${locale}/order/call-waiter?table=${tableNumber}`}
             className="block w-full md:w-auto px-8 py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-lg text-center transition-all shadow-2xl"
           >
-            🔔 Повикай сервитьор
+            🔔 {locale === 'bg' ? 'Повикай сервитьор' : 
+                 locale === 'en' ? 'Call Waiter' : 
+                 'Kellner rufen'}
           </a>
         </div>
       )}

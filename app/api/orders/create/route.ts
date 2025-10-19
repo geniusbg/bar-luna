@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         data: {
           orderId: order.id,
           productId: item.productId,
-          productName: item.name,
+          productName: item.productName || item.name, // Support both formats
           quantity: item.quantity,
           priceBgn: item.priceBgn,
           priceEur: bgnToEur(item.priceBgn),

@@ -96,7 +96,7 @@ export default function MenuPage() {
 
         {/* Category Tabs - Sticky on scroll */}
         <div className="sticky top-16 z-30 bg-black/95 backdrop-blur-lg border-y border-gray-800 py-4 -mx-4 px-4 mb-8">
-          <div className="overflow-x-auto hide-scrollbar">
+          <div className="overflow-x-auto overflow-y-hidden hide-scrollbar">
             <div className="flex gap-3 min-w-max mx-auto justify-center px-4">
               {categories.map((category: any) => {
                 const categoryName = locale === 'bg' ? category.nameBg : 

@@ -35,8 +35,8 @@ export async function GET(
       }
     });
 
-    // Get redirect URL (default to order page)
-    const redirectUrl = table.redirectUrl || `/order?table=${tableNumber}`;
+    // Get redirect URL (default to order page with BG locale)
+    const redirectUrl = table.redirectUrl || `/bg/order?table=${tableNumber}`;
     
     // If it's a relative URL, use current domain
     if (redirectUrl.startsWith('/')) {

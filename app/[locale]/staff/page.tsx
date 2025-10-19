@@ -524,6 +524,17 @@ export default function StaffDashboard() {
                     <p className="text-lg text-gray-200">
                       {call.message}
                     </p>
+                    {call.createdAt && (
+                      <p className="text-sm text-gray-400 mt-1">
+                        {new Date(call.createdAt).toLocaleString('bg-BG', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    )}
                   </div>
                   <div className="text-3xl">
                     {call.callType.includes('payment') ? '💰' : '🆘'}
@@ -600,6 +611,16 @@ export default function StaffDashboard() {
                     <p className="text-lg text-gray-200">
                       {call.message}
                     </p>
+                    {call.createdAt && (
+                      <p className="text-sm text-gray-400 mt-1">
+                        Заявено: {new Date(call.createdAt).toLocaleString('bg-BG', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    )}
                   </div>
                   <div className="text-3xl">
                     {call.callType.includes('payment') ? '💰' : '🆘'}
@@ -610,7 +631,12 @@ export default function StaffDashboard() {
                 </div>
                 {call.completedAt && (
                   <p className="text-sm text-gray-400 mt-2 text-center">
-                    {new Date(call.completedAt).toLocaleTimeString('bg-BG')}
+                    Завършено: {new Date(call.completedAt).toLocaleString('bg-BG', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </p>
                 )}
               </div>
@@ -664,7 +690,7 @@ export default function StaffDashboard() {
                 .map((order: any) => (
                 <div
                   key={order.id}
-                  className="bg-gray-800 rounded-xl p-6 border-2 border-white500"
+                  className="bg-gray-800 rounded-xl p-6 border-2 border-gray-700"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -674,6 +700,17 @@ export default function StaffDashboard() {
                       <div className="text-lg text-gray-300">
                         Маса {order.tableNumber}
                       </div>
+                      {order.createdAt && (
+                        <div className="text-sm text-gray-400 mt-1">
+                          {new Date(order.createdAt).toLocaleString('bg-BG', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      )}
                     </div>
                     <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
                       order.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :

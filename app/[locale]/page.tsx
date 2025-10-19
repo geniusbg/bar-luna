@@ -82,6 +82,49 @@ export default async function HomePage({
 
       <div className="container mx-auto px-4 pb-20">
 
+        {/* Featured Categories Preview */}
+        <div className="mt-16 md:mt-24">
+          <div className="text-center mb-10 md:mb-12">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-3">
+              {locale === 'bg' ? 'Какво предлагаме' : locale === 'en' ? 'What We Offer' : 'Was wir anbieten'}
+            </h2>
+            <p className="text-gray-400 text-lg">
+              {locale === 'bg' ? 'Открий нашето разнообразие' : 
+               locale === 'en' ? 'Discover our variety' : 
+               'Entdecken Sie unsere Vielfalt'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            <div className="group relative bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 md:p-10 luna-glow hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500"></div>
+              <div className="relative">
+                <div className="text-6xl mb-6 transform group-hover:scale-110 transition-transform duration-300">🍸</div>
+                <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">Cocktails</h3>
+                <p className="text-gray-300 text-base md:text-lg">Свежи коктейли и класики</p>
+              </div>
+            </div>
+            
+            <div className="group relative bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 md:p-10 luna-glow hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500"></div>
+              <div className="relative">
+                <div className="text-6xl mb-6 transform group-hover:scale-110 transition-transform duration-300">☕</div>
+                <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">Coffee</h3>
+                <p className="text-gray-300 text-base md:text-lg">Costa & Richard кафе</p>
+              </div>
+            </div>
+            
+            <div className="group relative bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 md:p-10 luna-glow hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 transform hover:-translate-y-1 sm:col-span-2 lg:col-span-1 overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500"></div>
+              <div className="relative">
+                <div className="text-6xl mb-6 transform group-hover:scale-110 transition-transform duration-300">💨</div>
+                <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">Shisha</h3>
+                <p className="text-gray-300 text-base md:text-lg">Разнообразие от вкусове</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Upcoming Events Preview */}
         {events.length > 0 && (
           <div className="mt-16 md:mt-24">
@@ -168,49 +211,6 @@ export default async function HomePage({
             </div>
           </div>
         )}
-
-        {/* Featured Categories Preview */}
-        <div className="mt-16 md:mt-24">
-          <div className="text-center mb-10 md:mb-12">
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-3">
-              {locale === 'bg' ? 'Какво предлагаме' : locale === 'en' ? 'What We Offer' : 'Was wir anbieten'}
-            </h2>
-            <p className="text-gray-400 text-lg">
-              {locale === 'bg' ? 'Открий нашето разнообразие' : 
-               locale === 'en' ? 'Discover our variety' : 
-               'Entdecken Sie unsere Vielfalt'}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            <div className="group relative bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 md:p-10 luna-glow hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500"></div>
-              <div className="relative">
-                <div className="text-6xl mb-6 transform group-hover:scale-110 transition-transform duration-300">🍸</div>
-                <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">Cocktails</h3>
-                <p className="text-gray-300 text-base md:text-lg">Свежи коктейли и класики</p>
-              </div>
-            </div>
-            
-            <div className="group relative bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 md:p-10 luna-glow hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500"></div>
-              <div className="relative">
-                <div className="text-6xl mb-6 transform group-hover:scale-110 transition-transform duration-300">☕</div>
-                <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">Coffee</h3>
-                <p className="text-gray-300 text-base md:text-lg">Costa & Richard кафе</p>
-              </div>
-            </div>
-            
-            <div className="group relative bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 md:p-10 luna-glow hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 transform hover:-translate-y-1 sm:col-span-2 lg:col-span-1 overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500"></div>
-              <div className="relative">
-                <div className="text-6xl mb-6 transform group-hover:scale-110 transition-transform duration-300">💨</div>
-                <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">Shisha</h3>
-                <p className="text-gray-300 text-base md:text-lg">Разнообразие от вкусове</p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </main>
   );

@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       data: {
         qrCodeUrl: qrUrl,
         qrCodeData: qrCodeDataUrl,
-        redirectUrl: `/order?table=${tableNumber}` // Default redirect
+        redirectUrl: `/bg/order?table=${tableNumber}` // Default redirect
       }
     });
 
@@ -78,7 +78,7 @@ export async function GET() {
         data: {
           qrCodeUrl: qrUrl,
           qrCodeData: qrCodeDataUrl,
-          redirectUrl: `/order?table=${table.tableNumber}` // Default redirect
+          redirectUrl: `/bg/order?table=${table.tableNumber}` // Default redirect
         }
       });
 

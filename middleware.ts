@@ -14,8 +14,8 @@ export const config = {
     // - _next (Next.js internals)
     // - Static files (uploads, images, etc)
     // - PWA files (manifest, service worker, icons)
-    // - /order (QR code routes)
-    '/((?!api|_next/static|_next/image|favicon.ico|uploads|order|manifest.json|sw.js|icon-|badge-).*)',
+    // - /t (QR redirect short links)
+    '/((?!api|_next/static|_next/image|favicon.ico|uploads|t|manifest.json|sw.js|icon-|badge-).*)',
   ]
 };
 

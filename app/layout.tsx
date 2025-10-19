@@ -40,9 +40,13 @@ export default function RootLayout({
     <html lang="bg" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="icon" type="image/jpeg" sizes="32x32" href="/luna-logo.jpg" />
+        <link rel="icon" type="image/jpeg" sizes="16x16" href="/luna-logo.jpg" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/luna-logo.jpg" />
+        <link rel="shortcut icon" href="/luna-logo.jpg" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="msapplication-TileImage" content="/luna-logo.jpg" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}

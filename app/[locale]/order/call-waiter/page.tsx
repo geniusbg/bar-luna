@@ -1,27 +1,54 @@
 'use client';
 
 import { useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import Toast from '@/components/Toast';
 
 function CallWaiterContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const tableNumber = searchParams.get('table');
+  
+  // Get locale from URL path
+  const locale = pathname.split('/')[1] || 'bg';
 
   const [calling, setCalling] = useState(false);
   const [called, setCalled] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const callWaiter = async (callType: string) => {
     setCalling(true);
 
     try {
+      // Get localized message
+      const messages = {
+        payment_cash: {
+          bg: 'Плащане с брой',
+          en: 'Payment with cash',
+          de: 'Zahlung mit Bargeld'
+        },
+        payment_card: {
+          bg: 'Плащане с карта',
+          en: 'Payment with card',
+          de: 'Zahlung mit Karte'
+        },
+        help: {
+          bg: 'Нужна помощ',
+          en: 'Need help',
+          de: 'Brauche Hilfe'
+        }
+      };
+
+      const message = messages[callType as keyof typeof messages][locale as 'bg' | 'en' | 'de'];
+
       const response = await fetch('/api/waiter-call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tableNumber: parseInt(tableNumber || '0'),
           callType,
-          message: callType === 'payment_cash' ? 'Плащане с брой' : callType === 'payment_card' ? 'Плащане с карта' : 'Нужна помощ'
+          message
         })
       });
 
@@ -30,9 +57,17 @@ function CallWaiterContent() {
         setTimeout(() => {
           router.back();
         }, 3000);
+      } else {
+        const errorMsg = locale === 'bg' ? '❌ Грешка при повикване' : 
+                        locale === 'en' ? '❌ Error calling waiter' : 
+                        '❌ Fehler beim Anrufen des Kellners';
+        setToast({ message: errorMsg, type: 'error' });
       }
     } catch (error) {
-      alert('❌ Грешка при повикване');
+      const errorMsg = locale === 'bg' ? '❌ Грешка при повикване' : 
+                      locale === 'en' ? '❌ Error calling waiter' : 
+                      '❌ Fehler beim Anrufen des Kellners';
+      setToast({ message: errorMsg, type: 'error' });
     } finally {
       setCalling(false);
     }
@@ -44,10 +79,12 @@ function CallWaiterContent() {
         <div className="text-center">
           <div className="text-8xl mb-8">✅</div>
           <h1 className="text-4xl font-bold text-white mb-4">
-            Сервитьорът е повикан!
+            {locale === 'bg' ? 'Сервитьорът е повикан!' : 
+             locale === 'en' ? 'Waiter has been called!' : 
+             'Kellner wurde gerufen!'}
           </h1>
           <p className="text-xl text-gray-200">
-            Маса {tableNumber}
+            {locale === 'bg' ? 'Маса' : locale === 'en' ? 'Table' : 'Tisch'} {tableNumber}
           </p>
         </div>
       </div>
@@ -56,14 +93,25 @@ function CallWaiterContent() {
 
   return (
     <div className="min-h-screen bg-black">
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       <div className="container mx-auto px-4 py-20">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-5xl font-bold text-white mb-4">
-              Повикай сервитьор
+              {locale === 'bg' ? 'Повикай сервитьор' : 
+               locale === 'en' ? 'Call Waiter' : 
+               'Kellner rufen'}
             </h1>
             <p className="text-2xl text-gray-200">
-              Маса {tableNumber}
+              {locale === 'bg' ? 'Маса' : locale === 'en' ? 'Table' : 'Tisch'} {tableNumber}
             </p>
           </div>
 
@@ -76,10 +124,14 @@ function CallWaiterContent() {
             >
               <div className="text-6xl mb-4">💵</div>
               <h2 className="text-2xl font-bold text-white mb-2">
-                Плащане с брой
+                {locale === 'bg' ? 'Плащане с брой' : 
+                 locale === 'en' ? 'Payment with Cash' : 
+                 'Zahlung mit Bargeld'}
               </h2>
               <p className="text-gray-200">
-                Сервитьорът ще дойде с бележката
+                {locale === 'bg' ? 'Сервитьорът ще дойде с бележката' : 
+                 locale === 'en' ? 'Waiter will come with the bill' : 
+                 'Kellner kommt mit der Rechnung'}
               </p>
             </button>
 
@@ -91,10 +143,14 @@ function CallWaiterContent() {
             >
               <div className="text-6xl mb-4">💳</div>
               <h2 className="text-2xl font-bold text-white mb-2">
-                Плащане с карта
+                {locale === 'bg' ? 'Плащане с карта' : 
+                 locale === 'en' ? 'Payment with Card' : 
+                 'Zahlung mit Karte'}
               </h2>
               <p className="text-gray-200">
-                Сервитьорът ще донесе POS терминал
+                {locale === 'bg' ? 'Сервитьорът ще донесе POS терминал' : 
+                 locale === 'en' ? 'Waiter will bring POS terminal' : 
+                 'Kellner bringt POS-Terminal'}
               </p>
             </button>
 
@@ -106,10 +162,14 @@ function CallWaiterContent() {
             >
               <div className="text-6xl mb-4">🙋</div>
               <h2 className="text-2xl font-bold text-white mb-2">
-                Нужна ми е помощ
+                {locale === 'bg' ? 'Нужна ми е помощ' : 
+                 locale === 'en' ? 'I Need Help' : 
+                 'Ich brauche Hilfe'}
               </h2>
               <p className="text-gray-200">
-                Сервитьорът ще дойде веднага
+                {locale === 'bg' ? 'Сервитьорът ще дойде веднага' : 
+                 locale === 'en' ? 'Waiter will come immediately' : 
+                 'Kellner kommt sofort'}
               </p>
             </button>
           </div>
@@ -119,7 +179,9 @@ function CallWaiterContent() {
               onClick={() => router.back()}
               className="px-8 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-all"
             >
-              ← Назад към менюто
+              ← {locale === 'bg' ? 'Назад към менюто' : 
+                   locale === 'en' ? 'Back to Menu' : 
+                   'Zurück zum Menü'}
             </button>
           </div>
         </div>
@@ -128,22 +190,31 @@ function CallWaiterContent() {
   );
 }
 
+function LoadingScreen() {
+  const pathname = usePathname();
+  const locale = pathname.split('/')[1] || 'bg';
+  
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="text-center">
+        <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
+          <img
+            src="/bg/luna-logo.svg"
+            alt="LUNA Logo"
+            className="h-64 w-64 md:h-96 md:w-96"
+          />
+        </div>
+        <p className="text-white text-3xl font-medium">
+          {locale === 'bg' ? 'Зареждане...' : locale === 'en' ? 'Loading...' : 'Laden...'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function CallWaiterPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
-            <img
-              src="/bg/luna-logo.svg"
-              alt="LUNA Logo"
-              className="h-64 w-64 md:h-96 md:w-96"
-            />
-          </div>
-          <p className="text-white text-3xl font-medium">Зареждане...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<LoadingScreen />}>
       <CallWaiterContent />
     </Suspense>
   );
