@@ -24,9 +24,10 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
+              "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' data: https://fonts.gstatic.com",
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https: wss:",
+              "connect-src 'self' https: wss: ws: https://sockjs-mt1.pusher.com wss://ws-eu.pusher.com",
               "worker-src 'self' blob:",
               "frame-src 'self'",
               "manifest-src 'self'"
