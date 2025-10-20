@@ -21,7 +21,7 @@ export default function StaffDashboard() {
   const [ordersTab, setOrdersTab] = useState<'active' | 'completed'>('active');
   const [callsTab, setCallsTab] = useState<'active' | 'completed'>('active');
   const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   
   // PWA & Push states
   const [isPWA, setIsPWA] = useState(false);
