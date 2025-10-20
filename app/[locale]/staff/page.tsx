@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { getPusherClient } from '@/lib/pusher-client';
 import { playSound } from '@/lib/sound';
@@ -28,7 +28,11 @@ export default function StaffDashboard() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [showPWAPrompt, setShowPWAPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  
+  // Ref to prevent multiple simultaneous refreshes
+  const isRefreshingRef = useRef(false);
 
+  // ONE-TIME SETUP: PWA, Push, Service Worker (separate useEffect to prevent re-registration)
   useEffect(() => {
     // Check if running as PWA
     const checkPWA = () => {
@@ -46,7 +50,7 @@ export default function StaffDashboard() {
     };
     checkPush();
 
-    // Register service worker
+    // Register service worker ONCE
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
         .then(registration => {
@@ -80,6 +84,14 @@ export default function StaffDashboard() {
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []); // Empty deps - run ONCE on mount
+
+  // DATA & PUSHER SETUP (separate useEffect for data loading and real-time)
+  useEffect(() => {
 
     // Load initial data
     async function loadData() {
@@ -171,7 +183,7 @@ export default function StaffDashboard() {
     channel.bind('call-status-change', (data: any) => {
       console.log('🔄 Call status changed:', data);
       
-      // Update call in state
+      // Update call in state (silently, don't show toast - it's from another device)
       setWaiterCalls(prev => prev.map(call => 
         call.id === data.callId 
           ? { ...call, status: data.status }
@@ -181,7 +193,8 @@ export default function StaffDashboard() {
 
     // Smart refresh on visibility change (for iOS when returning from background)
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && !isRefreshingRef.current) {
+        isRefreshingRef.current = true;
         console.log('📱 App became visible - checking for updates...');
         
         try {
@@ -193,31 +206,18 @@ export default function StaffDashboard() {
           const ordersData = await ordersRes.json();
           const callsData = await callsRes.json();
 
-          // Check for new orders
-          const newOrders = ordersData.orders?.filter((newOrder: any) => 
-            !orders.find(existingOrder => existingOrder.id === newOrder.id)
-          ) || [];
-          
-          if (newOrders.length > 0) {
-            console.log(`🔔 Found ${newOrders.length} new orders while in background`);
-            playSound('order');
-          }
-
-          // Check for new calls
-          const newCalls = callsData.calls?.filter((newCall: any) => 
-            !waiterCalls.find(existingCall => existingCall.id === newCall.id)
-          ) || [];
-          
-          if (newCalls.length > 0) {
-            console.log(`🚨 Found ${newCalls.length} new calls while in background`);
-            playSound('urgent');
-          }
-
-          // Always update to latest data
+          // Just update data, let Pusher handle new notifications
           setOrders(ordersData.orders || []);
           setWaiterCalls(callsData.calls || []);
+          
+          console.log('✅ Data refreshed');
         } catch (error) {
           console.error('Refresh error:', error);
+        } finally {
+          // Reset flag after 2 seconds to prevent rapid re-triggers
+          setTimeout(() => {
+            isRefreshingRef.current = false;
+          }, 2000);
         }
       }
     };
@@ -230,7 +230,7 @@ export default function StaffDashboard() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, [orders, waiterCalls]);
+  }, []); // Empty deps - setup once, use refs for state access
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     setLoadingActions(prev => ({ ...prev, [orderId]: true }));
