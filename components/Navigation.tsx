@@ -6,17 +6,48 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import LanguageSwitcher from './LanguageSwitcher';
 
+// Translations
+const translations: Record<string, Record<string, string>> = {
+  bg: {
+    home: 'Начало',
+    menu: 'Меню',
+    events: 'Събития',
+    contact: 'Контакти'
+  },
+  en: {
+    home: 'Home',
+    menu: 'Menu',
+    events: 'Events',
+    contact: 'Contact'
+  },
+  de: {
+    home: 'Startseite',
+    menu: 'Speisekarte',
+    events: 'Veranstaltungen',
+    contact: 'Kontakt'
+  }
+};
+
 export default function Navigation() {
   const pathname = usePathname();
   const locale = pathname.split('/')[1] || 'bg';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const t = translations[locale] || translations.bg;
+
   const navLinks = [
-    { href: `/${locale}`, label: 'Начало' },
-    { href: `/${locale}/menu`, label: 'Меню' },
-    { href: `/${locale}/events`, label: 'Събития' },
-    { href: `/${locale}/contact`, label: 'Контакти' },
+    { href: `/${locale}`, label: t.home, exact: true },
+    { href: `/${locale}/menu`, label: t.menu },
+    { href: `/${locale}/events`, label: t.events },
+    { href: `/${locale}/contact`, label: t.contact },
   ];
+
+  const isActive = (href: string, exact?: boolean) => {
+    if (exact) {
+      return pathname === href || pathname === `${href}/`;
+    }
+    return pathname.startsWith(href);
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-lg border-b border-gray-800">
@@ -41,7 +72,11 @@ export default function Navigation() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-gray-300 hover:text-white transition-colors font-medium"
+                className={`transition-colors font-medium ${
+                  isActive(link.href, link.exact)
+                    ? 'text-white border-b-2 border-white'
+                    : 'text-gray-300 hover:text-white'
+                }`}
               >
                 {link.label}
               </Link>
@@ -83,7 +118,11 @@ export default function Navigation() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block py-3 px-4 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors font-medium"
+                className={`block py-3 px-4 rounded-lg transition-colors font-medium ${
+                  isActive(link.href, link.exact)
+                    ? 'text-white bg-white/10 border-l-4 border-white'
+                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                }`}
               >
                 {link.label}
               </Link>

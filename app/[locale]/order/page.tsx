@@ -208,8 +208,42 @@ function OrderPageContent() {
       {/* Category Filter - Sticky */}
       <div className="sticky top-[5rem] z-30 bg-black/95 backdrop-blur-lg border-b border-gray-800 py-4">
         <div className="container mx-auto px-4">
-          <div className="overflow-x-auto overflow-y-hidden hide-scrollbar">
+          {/* Mobile: Horizontal scroll */}
+          <div className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar">
             <div className="flex gap-3 min-w-max">
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
+                  selectedCategory === 'all'
+                    ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
+                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
+                }`}
+              >
+                {locale === 'bg' ? 'Всички' : locale === 'en' ? 'All' : 'Alle'} ({products.length})
+              </button>
+              {categories.map((category: any) => {
+                const count = products.filter(p => p.categoryId === category.id).length;
+                const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameDe;
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
+                      selectedCategory === category.id
+                        ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
+                        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
+                    }`}
+                  >
+                    {categoryName} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          
+          {/* Desktop: Multi-row grid */}
+          <div className="hidden md:block">
+            <div className="flex flex-wrap gap-3 justify-center max-w-6xl mx-auto">
               <button
                 onClick={() => setSelectedCategory('all')}
                 className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
