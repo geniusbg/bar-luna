@@ -228,7 +228,6 @@ export default function StaffDashboard() {
       channel.unbind_all();
       pusher.unsubscribe('staff-channel');
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []); // Empty deps - setup once, use refs for state access
 
