@@ -51,10 +51,31 @@ export default function StaffDashboard() {
       navigator.serviceWorker.register('/sw.js')
         .then(registration => {
           console.log('✅ Service Worker registered:', registration);
+          
+          // Listen for updates
+          registration.addEventListener('updatefound', () => {
+            console.log('🔄 Service Worker update found');
+          });
         })
         .catch(error => {
           console.error('❌ Service Worker registration failed:', error);
         });
+      
+      // Listen for SW update messages
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'SW_UPDATED') {
+          console.log('🔄 New version available:', event.data.version);
+          // Show update toast
+          setToast({ 
+            message: '🔄 Нова версия! Презареждане...', 
+            type: 'info' 
+          });
+          // Reload after 2 seconds
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
+      });
     }
 
     // Listen for PWA install prompt
@@ -415,9 +436,9 @@ export default function StaffDashboard() {
       {/* Header */}
       <div className="mb-6 md:mb-8">
         {/* Logo Bar */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between gap-3 mb-4 md:mb-6">
           {/* Left - Logo */}
-          <div className="h-16 md:h-20 overflow-hidden flex items-center">
+          <div className="h-12 md:h-20 overflow-hidden flex items-center">
             <Image 
               src="/bg/logo_luna2.svg" 
               alt="L.U.N.A." 
@@ -428,16 +449,16 @@ export default function StaffDashboard() {
             />
           </div>
 
-          {/* Center - Title */}
-          <div className="hidden md:block text-center flex-1">
-            <h1 className="text-3xl md:text-4xl font-bold text-white">Staff Dashboard</h1>
-            <p className="text-gray-400 text-sm">Real-time поръчки и известия</p>
-          </div>
+          {/* Right - Title & PWA Status */}
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="text-right">
+              <h1 className="text-xl md:text-4xl font-bold text-white">Staff Dashboard</h1>
+              <p className="text-gray-400 text-sm">Real-time поръчки и известия</p>
+            </div>
 
-          {/* Right Side - PWA & Push Status (Desktop only) */}
-          <div className="hidden md:flex gap-3">
-            {/* PWA Install Button */}
-            {!isPWA && showPWAPrompt && (
+            <div className="hidden md:flex gap-3">
+              {/* PWA Install Button */}
+              {!isPWA && showPWAPrompt && (
               <button
                 onClick={handleInstallPWA}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-semibold transition-all shadow-lg flex items-center gap-2"
@@ -456,24 +477,21 @@ export default function StaffDashboard() {
               </button>
             )}
 
-            {/* Status Indicators */}
-            {isPWA && pushEnabled && (
-              <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span className="text-gray-200">PWA & Push Active</span>
+              {/* Status Indicators */}
+              {isPWA && pushEnabled && (
+                <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span className="text-gray-200">PWA & Push Active</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Mobile Title & PWA Buttons */}
-        <div className="md:hidden flex flex-col gap-3">
-          <div className="text-center">
-            <h1 className="text-xl font-bold text-white">Staff Dashboard</h1>
-            <p className="text-gray-400 text-xs">Real-time поръчки и известия</p>
-          </div>
+        {/* Mobile PWA Buttons */}
+        <div className="md:hidden flex flex-col gap-2">
           {!isPWA && showPWAPrompt && (
             <button
               onClick={handleInstallPWA}
@@ -520,7 +538,7 @@ export default function StaffDashboard() {
                   : 'text-gray-300 hover:bg-gray-700'
               }`}
             >
-              <span className="hidden sm:inline">Активни </span>({waiterCalls.filter(c => c.status !== 'completed').length})
+              Активни ({waiterCalls.filter(c => c.status !== 'completed').length})
             </button>
             <button
               onClick={() => setCallsTab('completed')}
@@ -530,7 +548,7 @@ export default function StaffDashboard() {
                   : 'text-gray-300 hover:bg-gray-700'
               }`}
             >
-              <span className="hidden sm:inline">Завършени </span>({waiterCalls.filter(c => c.status === 'completed').length})
+              Завършени ({waiterCalls.filter(c => c.status === 'completed').length})
             </button>
           </div>
         </div>
@@ -693,7 +711,7 @@ export default function StaffDashboard() {
                   : 'text-gray-300 hover:bg-gray-700'
               }`}
             >
-              <span className="hidden sm:inline">Активни </span>({orders.filter((o: any) => o.status !== 'completed').length})
+              Активни ({orders.filter((o: any) => o.status !== 'completed').length})
             </button>
             <button
               onClick={() => setOrdersTab('completed')}
@@ -703,7 +721,7 @@ export default function StaffDashboard() {
                   : 'text-gray-300 hover:bg-gray-700'
               }`}
             >
-              <span className="hidden sm:inline">Завършени </span>({orders.filter((o: any) => o.status === 'completed').length})
+              Завършени ({orders.filter((o: any) => o.status === 'completed').length})
             </button>
           </div>
         </div>

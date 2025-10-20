@@ -1,33 +1,46 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
-const CACHE_NAME = 'luna-bar-v1';
+const CACHE_VERSION = 'v2.0'; // Increment this for updates
+const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff'
 ];
 
 // Install service worker
 self.addEventListener('install', (event) => {
+  console.log(`[SW] Installing version ${CACHE_VERSION}`);
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
   );
+  // Force immediate activation
   self.skipWaiting();
 });
 
 // Activate service worker
 self.addEventListener('activate', (event) => {
+  console.log(`[SW] Activating version ${CACHE_VERSION}`);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
+            console.log(`[SW] Deleting old cache: ${cacheName}`);
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
+  // Take control immediately
   self.clients.claim();
+  
+  // Force reload all clients to get new version
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION });
+    });
+  });
 });
 
 // Fetch strategy - Network first, fallback to cache
