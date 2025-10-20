@@ -34,13 +34,6 @@ self.addEventListener('activate', (event) => {
   );
   // Take control immediately
   self.clients.claim();
-  
-  // Force reload all clients to get new version
-  self.clients.matchAll().then(clients => {
-    clients.forEach(client => {
-      client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION });
-    });
-  });
 });
 
 // Fetch strategy - Network first, fallback to cache

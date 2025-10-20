@@ -65,15 +65,8 @@ export default function StaffDashboard() {
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'SW_UPDATED') {
           console.log('🔄 New version available:', event.data.version);
-          // Show update toast
-          setToast({ 
-            message: '🔄 Нова версия! Презареждане...', 
-            type: 'info' 
-          });
-          // Reload after 2 seconds
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
+          // Just log, don't auto-reload (prevents infinite loop on iOS)
+          console.log('💡 Refresh the page to get the latest version');
         }
       });
     }
@@ -186,12 +179,58 @@ export default function StaffDashboard() {
       ));
     });
 
+    // Smart refresh on visibility change (for iOS when returning from background)
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        console.log('📱 App became visible - checking for updates...');
+        
+        try {
+          const [ordersRes, callsRes] = await Promise.all([
+            fetch('/api/orders/all'),
+            fetch('/api/waiter-call/all')
+          ]);
+
+          const ordersData = await ordersRes.json();
+          const callsData = await callsRes.json();
+
+          // Check for new orders
+          const newOrders = ordersData.orders?.filter((newOrder: any) => 
+            !orders.find(existingOrder => existingOrder.id === newOrder.id)
+          ) || [];
+          
+          if (newOrders.length > 0) {
+            console.log(`🔔 Found ${newOrders.length} new orders while in background`);
+            playSound('order');
+          }
+
+          // Check for new calls
+          const newCalls = callsData.calls?.filter((newCall: any) => 
+            !waiterCalls.find(existingCall => existingCall.id === newCall.id)
+          ) || [];
+          
+          if (newCalls.length > 0) {
+            console.log(`🚨 Found ${newCalls.length} new calls while in background`);
+            playSound('urgent');
+          }
+
+          // Always update to latest data
+          setOrders(ordersData.orders || []);
+          setWaiterCalls(callsData.calls || []);
+        } catch (error) {
+          console.error('Refresh error:', error);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       channel.unbind_all();
       pusher.unsubscribe('staff-channel');
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [orders, waiterCalls]);
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     setLoadingActions(prev => ({ ...prev, [orderId]: true }));
