@@ -15,7 +15,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "LUNA Bar & Coffee - Русе",
   description: "bar coffee lunch shisha & good mood - Русе, ул. Александровска 97",
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -39,7 +38,6 @@ export default function RootLayout({
   return (
     <html lang="bg" suppressHydrationWarning>
       <head>
-        <link rel="manifest" href="/manifest.json" />
         <link rel="icon" type="image/jpeg" sizes="32x32" href="/luna-logo.jpg" />
         <link rel="icon" type="image/jpeg" sizes="16x16" href="/luna-logo.jpg" />
         <link rel="apple-touch-icon" sizes="180x180" href="/luna-logo.jpg" />
@@ -47,6 +45,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="msapplication-TileImage" content="/luna-logo.jpg" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#000000" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}

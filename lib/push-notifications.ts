@@ -188,8 +188,8 @@ export async function showTestNotification() {
   if (Notification.permission === 'granted') {
     new Notification('Luna Bar Test', {
       body: 'Notifications are working! 🎉',
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      icon: '/luna-icon-192.png',
+      badge: '/luna-icon-192.png',
       vibrate: [200, 100, 200]
     } as NotificationOptions & { vibrate?: number[] });
   }

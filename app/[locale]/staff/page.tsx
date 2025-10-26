@@ -2,10 +2,13 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
+import { signOut, useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 import { getPusherClient } from '@/lib/pusher-client';
 import { playSound } from '@/lib/sound';
 import Toast from '@/components/Toast';
 import Price from '@/components/Price';
+import ServiceWorkerUpdater from '@/components/ServiceWorkerUpdater';
 import { 
   isPushSupported, 
   isSubscribed, 
@@ -22,6 +25,9 @@ export default function StaffDashboard() {
   const [callsTab, setCallsTab] = useState<'active' | 'completed'>('active');
   const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  
+  // Loading state
+  const [initialLoading, setInitialLoading] = useState(true);
   
   // PWA & Push states
   const [isPWA, setIsPWA] = useState(false);
@@ -50,30 +56,6 @@ export default function StaffDashboard() {
     };
     checkPush();
 
-    // Register service worker ONCE
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(registration => {
-          console.log('✅ Service Worker registered:', registration);
-          
-          // Listen for updates
-          registration.addEventListener('updatefound', () => {
-            console.log('🔄 Service Worker update found');
-          });
-        })
-        .catch(error => {
-          console.error('❌ Service Worker registration failed:', error);
-        });
-      
-      // Listen for SW update messages
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'SW_UPDATED') {
-          console.log('🔄 New version available:', event.data.version);
-          // Just log, don't auto-reload (prevents infinite loop on iOS)
-          console.log('💡 Refresh the page to get the latest version');
-        }
-      });
-    }
 
     // Listen for PWA install prompt
     const handleBeforeInstallPrompt = (e: any) => {
@@ -106,8 +88,14 @@ export default function StaffDashboard() {
 
         setOrders(ordersData.orders || []);
         setWaiterCalls(callsData.calls || []);
+        
+        // Show loading for 2 seconds
+        setTimeout(() => {
+          setInitialLoading(false);
+        }, 2000);
       } catch (error) {
         console.error('Load data error:', error);
+        setInitialLoading(false);
       }
     }
     loadData();
@@ -181,8 +169,6 @@ export default function StaffDashboard() {
 
     // Waiter call status change notification
     channel.bind('call-status-change', (data: any) => {
-      console.log('🔄 Call status changed:', data);
-      
       // Update call in state (silently, don't show toast - it's from another device)
       setWaiterCalls(prev => prev.map(call => 
         call.id === data.callId 
@@ -195,7 +181,6 @@ export default function StaffDashboard() {
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible' && !isRefreshingRef.current) {
         isRefreshingRef.current = true;
-        console.log('📱 App became visible - checking for updates...');
         
         try {
           const [ordersRes, callsRes] = await Promise.all([
@@ -376,8 +361,62 @@ export default function StaffDashboard() {
     }
   };
 
+  const pathname = usePathname();
+  const locale = pathname.split('/')[1] || 'bg';
+
+  const { data: session } = useSession();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const handleLogout = async () => {
+    if (confirm('Сигурни ли сте, че искате да излезете?')) {
+      await signOut({ redirect: false });
+      
+      const currentOrigin = window.location.origin;
+      const loginUrl = `${currentOrigin}/${locale}/staff/login`;
+      window.location.href = loginUrl;
+    }
+  };
+
+  // Prevent back button after logout
+  useEffect(() => {
+    const handlePopState = (e: any) => {
+      // Clear session if user tries to go back after logout
+      if (!session) {
+        window.history.pushState(null, '', window.location.href);
+        window.location.href = `/${locale}/staff/login`;
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [session, locale]);
+
+  // Show loading screen
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
+            <Image 
+              src="/bg/luna-logo.svg"
+              alt="LUNA Logo" 
+              width={384}
+              height={384}
+              className="h-64 w-64 md:h-96 md:w-96"
+              priority
+            />
+          </div>
+          <p className="text-white text-3xl font-medium">Зареждане...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-900 p-8">
+    <div className="min-h-screen bg-gray-900">
+      <ServiceWorkerUpdater />
+      
+      <div className="p-8">
       {/* Toast Notification */}
       {toast && (
         <Toast
@@ -487,7 +526,7 @@ export default function StaffDashboard() {
             />
           </div>
 
-          {/* Right - Title & PWA Status */}
+          {/* Right - Title & PWA Status & User Menu */}
           <div className="flex items-center gap-3 md:gap-4">
             <div className="text-right">
               <h1 className="text-xl md:text-4xl font-bold text-white">Staff Dashboard</h1>
@@ -524,11 +563,51 @@ export default function StaffDashboard() {
                   </div>
                 </div>
               )}
+
+              {/* User Menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 px-4 py-3 bg-gray-800 rounded-xl hover:bg-gray-700 transition-colors border border-gray-700"
+                >
+                  <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold">
+                    {(session?.user as any)?.name?.[0] || 'S'}
+                  </div>
+                  <span className="text-white font-medium hidden lg:block">
+                    {(session?.user as any)?.name || 'Staff'}
+                  </span>
+                  <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl">
+                    <div className="p-4 border-b border-gray-700">
+                      <p className="text-white font-semibold">{(session?.user as any)?.name}</p>
+                      <p className="text-sm text-gray-400">{(session?.user as any)?.email}</p>
+                      <span className="mt-1 inline-block px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-300">
+                        {(session?.user as any)?.role}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        handleLogout();
+                      }}
+                      className="w-full text-left px-4 py-3 text-red-400 hover:bg-gray-700 transition-colors flex items-center gap-2"
+                    >
+                      <span>🚪</span>
+                      Изход
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Mobile PWA Buttons */}
+        {/* Mobile PWA Buttons & User Menu */}
         <div className="md:hidden flex flex-col gap-2">
           {!isPWA && showPWAPrompt && (
             <button
@@ -556,6 +635,48 @@ export default function StaffDashboard() {
               </div>
             </div>
           )}
+
+          {/* Mobile User Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="w-full flex items-center gap-2 px-4 py-3 bg-gray-800 rounded-xl hover:bg-gray-700 transition-colors border border-gray-700 justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold">
+                  {(session?.user as any)?.name?.[0] || 'S'}
+                </div>
+                <span className="text-white font-medium">
+                  {(session?.user as any)?.name || 'Staff'}
+                </span>
+              </div>
+              <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showUserMenu && (
+              <div className="mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4">
+                <div className="mb-3 pb-3 border-b border-gray-700">
+                  <p className="text-white font-semibold">{(session?.user as any)?.name}</p>
+                  <p className="text-sm text-gray-400">{(session?.user as any)?.email}</p>
+                  <span className="mt-1 inline-block px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-300">
+                    {(session?.user as any)?.role}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    handleLogout();
+                  }}
+                  className="w-full text-left px-4 py-3 text-red-400 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <span>🚪</span>
+                  Изход
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -929,6 +1050,7 @@ export default function StaffDashboard() {
             </div>
           )
         )}
+      </div>
       </div>
     </div>
   );

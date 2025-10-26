@@ -165,7 +165,34 @@ model WaiterCall {
   @@map("waiter_calls")
 }
 
-// Staff/Admin users
+// User roles enum
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+}
+
+// User model with role hierarchy
+model User {
+  id               String             @id @default(uuid())
+  email            String             @unique
+  passwordHash     String             @map("password_hash")
+  name             String
+  role             UserRole           @default(STAFF)
+  isActive         Boolean            @default(true) @map("is_active")
+  createdBy        String?            @map("created_by") // Admin who created this user
+  creator          User?              @relation("UserCreator", fields: [createdBy], references: [id])
+  createdUsers     User[]             @relation("UserCreator") // Users created by this admin
+  pushSubscriptions PushSubscription[]
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
+
+// Staff model (legacy - keep for backwards compatibility)
 model Staff {
   id               String             @id @default(uuid())
   email            String             @unique
@@ -196,7 +223,9 @@ model HypeSyncLog {
 // Web Push Subscriptions for PWA notifications
 model PushSubscription {
   id           String   @id @default(uuid())
-  staffId      String?  @map("staff_id")
+  userId       String?  @map("user_id")
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  staffId      String?  @map("staff_id") // Legacy - keep for migration
   staff        Staff?   @relation(fields: [staffId], references: [id], onDelete: Cascade)
   endpoint     String   @unique // Browser push endpoint
   p256dh       String   // Encryption key
@@ -207,6 +236,7 @@ model PushSubscription {
   createdAt    DateTime @default(now()) @map("created_at")
   lastUsed     DateTime @default(now()) @map("last_used")
 
+  @@index([userId])
   @@index([staffId])
   @@index([isActive])
   @@map("push_subscriptions")

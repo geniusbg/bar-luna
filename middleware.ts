@@ -15,7 +15,7 @@ export const config = {
     // - Static files (uploads, images, etc)
     // - PWA files (manifest, service worker, icons)
     // - /t (QR redirect short links)
-    '/((?!api|_next/static|_next/image|favicon.ico|uploads|t|manifest.json|sw.js|icon-|badge-).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|uploads|t|manifest.*\.json|sw\.js|luna-icon|luna-logo).*)',
   ]
 };
 

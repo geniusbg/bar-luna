@@ -1,6 +1,6 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
-const CACHE_VERSION = 'v2.0'; // Increment this for updates
+const CACHE_VERSION = 'v3.0'; // Increment this for updates (change when you update the app)
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff'
@@ -34,6 +34,16 @@ self.addEventListener('activate', (event) => {
   );
   // Take control immediately
   self.clients.claim();
+  
+  // Notify all clients about update
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'SW_UPDATED',
+        version: CACHE_VERSION
+      });
+    });
+  });
 });
 
 // Fetch strategy - Network first, fallback to cache
@@ -62,8 +72,8 @@ self.addEventListener('push', (event) => {
   let data = {
     title: 'Luna Bar',
     body: 'Ново известие',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: '/luna-icon-192.png',
+    badge: '/luna-icon-192.png',
     tag: 'luna-notification-' + Date.now(),
     vibrate: [200, 100, 200, 100, 200],
     requireInteraction: true,
@@ -92,8 +102,8 @@ self.addEventListener('push', (event) => {
 
   const notificationOptions = {
     body: data.body,
-    icon: data.icon || '/icon-192.png',
-    badge: data.badge || '/icon-192.png',
+    icon: data.icon || '/luna-icon-192.png',
+    badge: data.badge || '/luna-icon-192.png',
     tag: data.tag,
     vibrate: data.vibrate,
     requireInteraction: data.requireInteraction,

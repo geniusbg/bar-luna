@@ -1,23 +1,84 @@
-import { prisma } from '@/lib/prisma';
+'use client';
 
-async function getStats() {
-  const [categories, products, events] = await Promise.all([
-    prisma.category.count(),
-    prisma.product.count(),
-    prisma.event.count()
-  ]);
+import React, { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 
-  return { categories, products, events };
-}
+export default function AdminDashboard({
+  params
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = React.use(params);
+  const { data: session, status } = useSession();
+  
+  // Redirect if not authenticated or wrong role
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      window.location.href = `/${locale}/admin/login`;
+      return;
+    }
+    
+    if (status === 'authenticated' && session?.user) {
+      const userRole = (session.user as any)?.role;
+      if (userRole === 'STAFF') {
+        window.location.href = `/${locale}/staff`;
+      }
+    }
+  }, [status, session, locale]);
 
-export default async function AdminDashboard() {
-  const stats = await getStats();
+  // Prevent back button after logout
+  useEffect(() => {
+    const handlePopState = (e: any) => {
+      if (!session) {
+        window.history.pushState(null, '', window.location.href);
+        window.location.href = `/${locale}/admin/login`;
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [session, locale]);
+
+  const [stats, setStats] = useState({ categories: 0, products: 0, events: 0 });
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/stats').then(res => res.json()).then(data => {
+      setStats(data);
+      // Show loading for 2 seconds
+      setTimeout(() => {
+        setInitialLoading(false);
+      }, 2000);
+    });
+  }, []);
+
+  // Show loading while checking session or initial loading
+  if (status === 'loading' || initialLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
+            <Image 
+              src="/bg/luna-logo.svg"
+              alt="LUNA Logo" 
+              width={384}
+              height={384}
+              className="h-64 w-64 md:h-96 md:w-96"
+              priority
+            />
+          </div>
+          <p className="text-white text-3xl font-medium">Зареждане...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
       {/* Welcome Header */}
       <div className="mb-10">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">Dashboard</h1>
+        <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">Admin Dashboard</h1>
         <p className="text-gray-400 text-lg">Управление на LUNA Bar</p>
       </div>
       

@@ -40,8 +40,8 @@ export async function POST(request: Request) {
           const payload = {
             title,
             body,
-            icon: '/icon-192.png',
-            badge: '/icon-192.png',
+            icon: '/luna-icon-192.png',
+            badge: '/luna-icon-192.png',
             url: url || '/bg/staff',
             tag: 'luna-notification',
             requireInteraction: true,

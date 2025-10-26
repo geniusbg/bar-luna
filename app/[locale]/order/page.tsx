@@ -165,7 +165,7 @@ function OrderPageContent() {
       <div className="bg-black/95 backdrop-blur-lg border-b border-gray-800 sticky top-0 z-40">
         <div className="container mx-auto px-4 py-2">
           <div className="flex justify-between items-center gap-4">
-            <div className="h-16 overflow-hidden flex items-center">
+            <div className="h-16 md:h-24 overflow-hidden flex items-center">
               <Image 
                 src="/bg/logo_luna2.svg" 
                 alt="L.U.N.A." 
@@ -176,30 +176,32 @@ function OrderPageContent() {
               />
             </div>
             
-            {tableNumber && (
-              <div className="flex-1 text-center">
-                <p className="text-white font-bold text-xl">
-                  {locale === 'bg' ? 'Маса' : locale === 'en' ? 'Table' : 'Tisch'} {tableNumber}
-                </p>
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex items-center gap-2 md:gap-3">
+                {tableNumber && (
+                  <div className="bg-white/10 px-3 py-1 rounded-full border border-white/20 -ml-2 md:ml-0">
+                    <p className="text-white font-semibold text-sm whitespace-nowrap">
+                      {locale === 'bg' ? 'Маса' : locale === 'en' ? 'Table' : 'Tisch'} {tableNumber}
+                    </p>
+                  </div>
+                )}
+                
+                {/* Cart Button */}
+                <button
+                  onClick={() => setShowCart(!showCart)}
+                  className="relative px-4 py-2.5 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all text-sm md:text-base"
+                >
+                  🛒 {locale === 'bg' ? 'Количка' : locale === 'en' ? 'Cart' : 'Warenkorb'}
+                  {cartCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 md:w-7 md:h-7 flex items-center justify-center text-xs md:text-sm font-bold">
+                      {cartCount}
+                    </span>
+                  )}
+                </button>
               </div>
-            )}
-            
-            <div className="flex items-center gap-3">
+              
               {/* Language Switcher */}
               <LanguageSwitcher />
-              
-              {/* Cart Button */}
-              <button
-                onClick={() => setShowCart(!showCart)}
-                className="relative px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all text-sm"
-              >
-                🛒 {locale === 'bg' ? 'Количка' : locale === 'en' ? 'Cart' : 'Warenkorb'}
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold">
-                    {cartCount}
-                  </span>
-                )}
-              </button>
             </div>
           </div>
         </div>

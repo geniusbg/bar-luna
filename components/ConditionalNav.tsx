@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 import Navigation from '@/components/Navigation';
+import { SessionProvider } from 'next-auth/react';
 
 export default function ConditionalNav({ children }: { children?: ReactNode }) {
   const pathname = usePathname();
@@ -11,12 +12,12 @@ export default function ConditionalNav({ children }: { children?: ReactNode }) {
   const hideNav = pathname.includes('/admin') || pathname.includes('/staff') || pathname.includes('/order');
   
   return (
-    <>
+    <SessionProvider>
       {!hideNav && <Navigation />}
       <div className={hideNav ? '' : 'pt-16'}>
         {children}
       </div>
-    </>
+    </SessionProvider>
   );
 }
 
