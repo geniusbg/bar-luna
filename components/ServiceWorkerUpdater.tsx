@@ -29,14 +29,14 @@ export default function ServiceWorkerUpdater() {
         }
       });
       
-      // Check for updates periodically (every 1 hour)
+      // Check for updates periodically (every 15 minutes)
       const updateInterval = setInterval(() => {
         navigator.serviceWorker.getRegistration().then(registration => {
           if (registration) {
             registration.update();
           }
         });
-      }, 3600000); // Check every 1 hour
+      }, 900000); // Check every 15 minutes
       
       return () => clearInterval(updateInterval);
     }

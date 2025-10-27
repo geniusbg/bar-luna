@@ -212,6 +212,8 @@ export default function MenuPage() {
                       <Price
                         priceBgn={Number(product.priceBgn)}
                         className="text-2xl font-bold text-white"
+                        unit={product.unit}
+                        quantity={product.quantity}
                       />
                     </div>
                   </div>

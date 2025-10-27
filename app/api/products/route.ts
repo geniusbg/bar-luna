@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function POST(request: Request) {
   try {
@@ -18,6 +20,8 @@ export async function POST(request: Request) {
         priceBgn: data.price_bgn,
         priceEur: data.price_eur,
         imageUrl: data.image_url || null,
+        unit: data.unit || 'pcs',
+        quantity: data.quantity || 1,
         isAvailable: data.is_available !== undefined ? data.is_available : true,
         isHidden: data.is_hidden !== undefined ? data.is_hidden : false,
         isFeatured: data.is_featured !== undefined ? data.is_featured : false,
@@ -35,15 +39,40 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('category_id');
 
+    // Check if user is SUPER_ADMIN
+    const userRole = (session?.user as any)?.role;
+    const showHidden = userRole === 'SUPER_ADMIN';
+
+    // Get products with category information for sorting
     const products = await prisma.product.findMany({
-      where: categoryId ? { categoryId } : undefined,
-      orderBy: { order: 'asc' }
+      where: categoryId 
+        ? { categoryId, isHidden: showHidden ? undefined : false }
+        : { isHidden: showHidden ? undefined : false },
+      include: {
+        category: {
+          select: {
+            order: true,
+            nameBg: true
+          }
+        }
+      }
     });
 
-    return NextResponse.json({ products }, { status: 200 });
+    // Sort by category order first, then by product order
+    const sortedProducts = products.sort((a, b) => {
+      // First sort by category order
+      if (a.category.order !== b.category.order) {
+        return a.category.order - b.category.order;
+      }
+      // Then sort by product order
+      return a.order - b.order;
+    });
+
+    return NextResponse.json({ products: sortedProducts }, { status: 200 });
   } catch (error) {
     console.error('Get products error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

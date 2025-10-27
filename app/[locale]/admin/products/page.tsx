@@ -188,6 +188,11 @@ export default function AdminProductsPage() {
                 <div className="text-right ml-3">
                   <div className="text-xl font-bold text-white">{displayPrice(Number(product.priceBgn), 'BGN')}</div>
                   <div className="text-xs text-gray-400">{displayPrice(Number(product.priceBgn), 'EUR')}</div>
+                  {product.unit && product.quantity && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {product.quantity} {product.unit === 'pcs' ? 'бр.' : product.unit}
+                    </div>
+                  )}
                   <div className="mt-1">
                     {product.isHidden ? (
                       <span className="px-2 py-0.5 rounded-full text-xs bg-gray-500/20 text-gray-300 inline-block">

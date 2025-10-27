@@ -23,6 +23,8 @@ export async function PUT(
         priceBgn: data.price_bgn,
         priceEur: data.price_eur,
         imageUrl: data.image_url || null,
+        unit: data.unit || 'pcs',
+        quantity: data.quantity || 1,
         isAvailable: data.is_available !== undefined ? data.is_available : true,
         isHidden: data.is_hidden !== undefined ? data.is_hidden : false,
         isFeatured: data.is_featured !== undefined ? data.is_featured : false,
