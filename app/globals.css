@@ -35,12 +35,13 @@ body {
 /* Select and Option styling */
 select {
   color: white !important;
-  background-color: #374151 !important;
+  background-color: #1f2937 !important;
 }
 
 select option {
   color: white !important;
-  background-color: #374151 !important;
+  background-color: #1f2937 !important;
+  padding: 8px;
 }
 
 /* L.U.N.A. Moon Glow Effects */
