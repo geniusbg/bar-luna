@@ -207,14 +207,19 @@ export default function MenuPage() {
                       </p>
                     )}
                     
-                    {/* Price - with gradient background */}
-                    <div className="pt-4 border-t border-gray-700/50">
+                    {/* Price and Unit */}
+                    <div className="pt-4 border-t border-gray-700/50 flex justify-between items-center">
                       <Price
                         priceBgn={Number(product.priceBgn)}
                         className="text-2xl font-bold text-white"
-                        unit={product.unit}
-                        quantity={product.quantity}
+                        showBoth={true}
+                        inline={true}
                       />
+                      {product.unit && product.quantity && (
+                        <span className="text-sm text-gray-400">
+                          {product.quantity} {product.unit === 'pcs' ? 'бр.' : product.unit}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

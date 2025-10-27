@@ -14,6 +14,8 @@ interface CartItem {
   nameDe: string;
   priceBgn: number;
   quantity: number;
+  unit?: string;
+  productQuantity?: number;
 }
 
 function OrderPageContent() {
@@ -64,7 +66,9 @@ function OrderPageContent() {
         nameEn: product.nameEn,
         nameDe: product.nameDe,
         priceBgn: Number(product.priceBgn),
-        quantity: 1
+        quantity: 1,
+        unit: product.unit,
+        productQuantity: product.quantity
       }];
     });
   };
@@ -310,14 +314,23 @@ function OrderPageContent() {
                         {productName}
                       </h3>
                       
-                      <div className="flex justify-between items-center gap-3 pt-3 border-t border-gray-700/50">
-                        <Price
-                          priceBgn={Number(product.priceBgn)}
-                          className="text-xl font-bold text-white"
-                        />
+                      <div className="pt-3 border-t border-gray-700/50">
+                        <div className="flex justify-between items-center gap-3">
+                          <Price
+                            priceBgn={Number(product.priceBgn)}
+                            className="text-xl font-bold text-white"
+                            showBoth={true}
+                            inline={true}
+                          />
+                          {product.unit && product.quantity && (
+                            <span className="text-sm text-gray-400">
+                              {product.quantity} {product.unit === 'pcs' ? 'бр.' : product.unit}
+                            </span>
+                          )}
+                        </div>
                         <button
                           onClick={() => addToCart(product)}
-                          className="px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-xl font-bold transition-all text-sm md:text-base"
+                          className="w-full mt-2 px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-xl font-bold transition-all text-sm md:text-base"
                         >
                           + {locale === 'bg' ? 'Добави' : locale === 'en' ? 'Add' : 'Hinzufügen'}
                         </button>
@@ -358,32 +371,38 @@ function OrderPageContent() {
                     {cart.map(item => {
                       const itemName = locale === 'bg' ? item.nameBg : locale === 'en' ? item.nameEn : item.nameDe;
                       return (
-                      <div key={item.productId} className="bg-slate-700 rounded-lg p-4 flex justify-between items-center">
-                        <div className="flex-1">
+                      <div key={item.productId} className="bg-slate-700 rounded-lg p-4 flex flex-col">
+                        <div className="flex justify-between items-start mb-2">
                           <h4 className="text-white font-semibold">{itemName}</h4>
-                          <p className="text-gray-300">{item.priceBgn.toFixed(2)} лв.</p>
+                          {item.unit && item.productQuantity && (
+                            <span className="text-sm text-gray-400">
+                              {item.productQuantity} {item.unit === 'pcs' ? 'бр.' : item.unit}
+                            </span>
+                          )}
                         </div>
-                        
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                            className="w-8 h-8 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-bold"
-                          >
-                            −
-                          </button>
-                          <span className="text-white font-bold w-8 text-center">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                            className="w-8 h-8 bg-white hover:bg-gray-200 text-black rounded-lg font-bold"
-                          >
-                            +
-                          </button>
-                          <button
-                            onClick={() => removeFromCart(item.productId)}
-                            className="ml-2 text-red-400 hover:text-red-300"
-                          >
-                            🗑️
-                          </button>
+                        <div className="flex justify-between items-center">
+                          <p className="text-gray-300">{item.priceBgn.toFixed(2)} лв.</p>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                              className="w-8 h-8 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-bold"
+                            >
+                              −
+                            </button>
+                            <span className="text-white font-bold w-8 text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                              className="w-8 h-8 bg-white hover:bg-gray-200 text-black rounded-lg font-bold"
+                            >
+                              +
+                            </button>
+                            <button
+                              onClick={() => removeFromCart(item.productId)}
+                              className="ml-2 text-red-400 hover:text-red-300"
+                            >
+                              🗑️
+                            </button>
+                          </div>
                         </div>
                       </div>
                       );
