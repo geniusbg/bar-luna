@@ -4,6 +4,7 @@
   "short_name": "Luna Admin",
   "description": "Management Panel",
   "start_url": "/bg/admin",
+  "scope": "/bg/admin",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#000000",

@@ -4,6 +4,7 @@
   "short_name": "Luna Staff",
   "description": "Real-time Orders & Notifications",
   "start_url": "/bg/staff",
+  "scope": "/bg/staff",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#000000",
