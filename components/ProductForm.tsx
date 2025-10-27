@@ -78,7 +78,7 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
         >
           {categories.map((cat: Category) => (
             <option key={cat.id} value={cat.id} style={{ color: 'white', background: '#374151' }}>
-              {cat.name_bg}
+              {cat.nameBg}
             </option>
           ))}
         </select>
