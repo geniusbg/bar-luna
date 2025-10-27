@@ -118,6 +118,8 @@ body {
   position: relative;
   transition: all 0.3s ease;
   /* White moon glow effect - always white regardless of dark mode */
+  min-width: 256px;
+  min-height: 256px;
   box-shadow: 
     0 0 30px rgba(255, 255, 255, 0.8),
     0 0 60px rgba(255, 255, 255, 0.6),

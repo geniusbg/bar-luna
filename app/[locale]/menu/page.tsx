@@ -42,13 +42,13 @@ export default function MenuPage() {
     return (
       <main className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
+          <div className="logo-container h-80 w-80 md:h-[28rem] md:w-[28rem] mx-auto mb-10 animate-pulse-glow">
             <Image
               src="/bg/luna-logo.svg"
               alt="LUNA Logo"
-              width={384}
-              height={384}
-              className="h-64 w-64 md:h-96 md:w-96"
+              width={448}
+              height={448}
+              className="h-80 w-80 md:h-[28rem] md:w-[28rem]"
               priority
             />
           </div>

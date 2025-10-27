@@ -416,7 +416,7 @@ export default function StaffDashboard() {
     <div className="min-h-screen bg-gray-900">
       <ServiceWorkerUpdater />
       
-      <div className="p-8">
+      <div className="pt-4 md:pt-8 px-8 pb-8">
       {/* Toast Notification */}
       {toast && (
         <Toast
@@ -515,7 +515,7 @@ export default function StaffDashboard() {
         {/* Logo Bar */}
         <div className="flex items-center justify-between gap-3 mb-4 md:mb-6">
           {/* Left - Logo */}
-          <div className="h-12 md:h-20 overflow-hidden flex items-center">
+          <div className="h-16 md:h-24 overflow-hidden flex items-center">
             <Image 
               src="/bg/logo_luna2.svg" 
               alt="L.U.N.A." 

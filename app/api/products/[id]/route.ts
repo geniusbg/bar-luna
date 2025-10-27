@@ -45,22 +45,24 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    await prisma.product.delete({
-      where: { id }
+    // Instead of deleting, hide the product (soft delete)
+    // This preserves order history while removing it from the menu
+    
+    const product = await prisma.product.update({
+      where: { id },
+      data: {
+        isHidden: true,
+        isAvailable: false
+      }
     });
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ 
+      success: true,
+      message: 'Продуктът е скрит успешно. Историята на поръчките е запазена.'
+    }, { status: 200 });
   } catch (error: any) {
     console.error('Delete product error:', error);
-    
-    // Check if it's a foreign key constraint error
-    if (error.code === 'P2003' || error.message?.includes('Foreign key constraint')) {
-      return NextResponse.json({ 
-        error: 'Не може да изтриеш продукт който е използван в поръчки. Вместо това го скрий.' 
-      }, { status: 400 });
-    }
-    
-    return NextResponse.json({ error: 'Грешка при изтриване' }, { status: 500 });
+    return NextResponse.json({ error: 'Грешка при скриване' }, { status: 500 });
   }
 }
 

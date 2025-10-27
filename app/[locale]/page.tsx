@@ -37,7 +37,7 @@ export default async function HomePage({
                   alt="L.U.N.A." 
                   width={500}
                   height={500}
-                  className="h-48 w-48 md:h-80 md:w-80"
+                  className="h-48 w-48 md:h-80 md:w-80 animate-pulse-glow"
                   priority
                 />
               </div>
