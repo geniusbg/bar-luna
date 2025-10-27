@@ -22,6 +22,8 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
     description_de: '',
     category_id: categories[0]?.id || '',
     price_bgn: 0,
+    unit: 'pcs',
+    quantity: 1,
     is_available: true,
     is_hidden: false,
     is_featured: false,
@@ -38,7 +40,7 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
       const checked = (e.target as HTMLInputElement).checked;
       setFormData({ ...formData, [name]: checked });
     } else if (type === 'number') {
-      setFormData({ ...formData, [name]: parseFloat(value) || 0 });
+      setFormData({ ...formData, [name]: value === '' ? '' : parseFloat(value) || 0 });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -161,15 +163,16 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
           <input
             type="number"
             name="price_bgn"
-            value={formData.price_bgn}
+            value={formData.price_bgn || ''}
             onChange={handleChange}
             step="0.01"
             min="0"
             className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white500 focus:outline-none"
+            placeholder="0.00"
             required
           />
           <p className="text-gray-400 text-sm mt-1">
-            EUR: €{bgnToEur(formData.price_bgn).toFixed(2)}
+            EUR: €{bgnToEur(formData.price_bgn || 0).toFixed(2)}
           </p>
         </div>
         <div>
@@ -189,6 +192,40 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
           />
           <p className="text-sm text-gray-400 mt-1">
             Използвай за да контролираш реда на продуктите в менюто
+          </p>
+        </div>
+      </div>
+
+      {/* Unit and Quantity */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-gray-300 font-semibold mb-2">Мерна единица *</label>
+          <select
+            name="unit"
+            value={formData.unit}
+            onChange={handleChange}
+            className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white500 focus:outline-none"
+            required
+          >
+            <option value="pcs">бр. (броя)</option>
+            <option value="ml">ml (милилитри)</option>
+            <option value="g">g (грамове)</option>
+            <option value="kg">kg (килограми)</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-gray-300 font-semibold mb-2">Количество *</label>
+          <input
+            type="number"
+            name="quantity"
+            value={formData.quantity}
+            onChange={handleChange}
+            min="1"
+            className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white500 focus:outline-none"
+            required
+          />
+          <p className="text-sm text-gray-400 mt-1">
+            Пример: 500 (ml), 200 (g), 1 (kg), 1 (pcs)
           </p>
         </div>
       </div>

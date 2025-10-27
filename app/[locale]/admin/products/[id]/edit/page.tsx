@@ -47,6 +47,8 @@ export default function EditProductPage({
           price_bgn: Number(p.priceBgn),
           price_eur: Number(p.priceEur),
           image_url: p.imageUrl || '',
+          unit: p.unit || 'pcs',
+          quantity: p.quantity || 1,
           is_available: p.isAvailable,
           is_hidden: p.isHidden,
           is_featured: p.isFeatured,

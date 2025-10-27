@@ -21,6 +21,8 @@ export interface Product {
   price_bgn: number;
   price_eur: number;
   image_url?: string;
+  unit?: string; // ml, g, kg, pcs
+  quantity?: number;
   is_available: boolean;
   is_featured: boolean;
   allergens?: string[];
