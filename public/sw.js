@@ -1,12 +1,13 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
-const CACHE_VERSION = 'v3.2.1'; // Increment this for updates (change when you update the app)
+const CACHE_VERSION = 'v3.2.2'; // Increment this for updates (change when you update the app)
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
   '/bg/admin',
   '/bg/menu',
-  '/bg'
+  '/bg',
+  '/offline.html'
 ];
 
 // Install service worker
@@ -88,7 +89,16 @@ self.addEventListener('fetch', (event) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // Re-throw error if no cache
+          // If navigation request and no cache, serve offline.html
+          if (request.mode === 'navigate') {
+            return caches.match('/offline.html').then(offlinePage => {
+              return offlinePage || new Response('Server offline', { 
+                status: 503, 
+                headers: { 'Content-Type': 'text/html' } 
+              });
+            });
+          }
+          // For non-navigation requests, re-throw error
           throw new Error('No cache available');
         });
       })
