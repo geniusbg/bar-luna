@@ -99,8 +99,8 @@ export default function EditEventPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Toast Notification */}
-      {toast && (
+      {/* Toast Notification - hidden when offline */}
+      {toast && typeof window !== 'undefined' && !(window as any).__isOffline && (
         <Toast
           message={toast.message}
           type={toast.type}

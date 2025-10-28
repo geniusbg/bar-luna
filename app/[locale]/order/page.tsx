@@ -33,6 +33,27 @@ function OrderPageContent() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
+
+  // Health check function
+  const checkServerHealth = async (): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/health', {
+        method: 'GET',
+        signal: AbortSignal.timeout(2000) // 2 second timeout
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  // Expose offline state for ConditionalNav to detect
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__checkServerHealth = checkServerHealth;
+    }
+  }, []);
 
   useEffect(() => {
     async function loadMenu() {
@@ -42,7 +63,7 @@ function OrderPageContent() {
         setCategories(data.categories || []);
         setProducts(data.products || []);
       } catch (error) {
-        console.error('Error loading menu:', error);
+        // Error loading menu
       } finally {
         setLoading(false);
       }
@@ -71,6 +92,13 @@ function OrderPageContent() {
         productQuantity: product.quantity
       }];
     });
+
+    // Show toast notification
+    const productName = locale === 'bg' ? product.nameBg : locale === 'en' ? product.nameEn : product.nameDe;
+    setToast({
+      message: `${productName} ${locale === 'bg' ? 'добавено в кошницата' : locale === 'en' ? 'added to cart' : 'zum Warenkorb hinzugefügt'}`,
+      type: 'success'
+    });
   };
 
   const removeFromCart = (productId: string) => {
@@ -95,6 +123,27 @@ function OrderPageContent() {
   const submitOrder = async () => {
     if (cart.length === 0) return;
 
+    // Health check before submitting
+    const isHealthy = await checkServerHealth();
+    if (!isHealthy) {
+      // Trigger offline banner with server down flag
+      setIsOffline(true);
+      if (typeof window !== 'undefined') {
+        if ((window as any).__setOfflineState) {
+          (window as any).__setOfflineState(true);
+        }
+        // Set server down flag
+        if ((window as any).__setServerDown) {
+          (window as any).__setServerDown(true);
+        }
+      }
+      setToast({ 
+        message: 'Сървърът е недостъпен. Моля, опитайте отново след няколко секунди.', 
+        type: 'error' 
+      });
+      return;
+    }
+
     try {
       // Prepare items with productName for the API
       const orderItems = cart.map(item => ({
@@ -104,7 +153,7 @@ function OrderPageContent() {
         quantity: item.quantity
       }));
 
-      const response = await fetch('/api/orders/create', {
+        const response = await fetch('/api/orders/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -156,8 +205,8 @@ function OrderPageContent() {
 
   return (
     <main className="min-h-screen bg-black pb-32">
-      {/* Toast Notifications */}
-      {toast && (
+      {/* Toast Notifications - hidden when server is offline */}
+      {toast && !isOffline && (
         <Toast
           message={toast.message}
           type={toast.type}

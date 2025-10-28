@@ -1,14 +1,16 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
-const CACHE_VERSION = 'v3.1'; // Increment this for updates (change when you update the app)
+const CACHE_VERSION = 'v3.2.1'; // Increment this for updates (change when you update the app)
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
-  '/bg/staff'
+  '/bg/staff',
+  '/bg/admin',
+  '/bg/menu',
+  '/bg'
 ];
 
 // Install service worker
 self.addEventListener('install', (event) => {
-  console.log(`[SW] Installing version ${CACHE_VERSION}`);
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
@@ -19,13 +21,11 @@ self.addEventListener('install', (event) => {
 
 // Activate service worker
 self.addEventListener('activate', (event) => {
-  console.log(`[SW] Activating version ${CACHE_VERSION}`);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log(`[SW] Deleting old cache: ${cacheName}`);
             return caches.delete(cacheName);
           }
         })
@@ -34,33 +34,64 @@ self.addEventListener('activate', (event) => {
   );
   // Take control immediately
   self.clients.claim();
-  
-  // Notify all clients about update
-  self.clients.matchAll().then(clients => {
-    clients.forEach(client => {
-      client.postMessage({
-        type: 'SW_UPDATED',
-        version: CACHE_VERSION
-      });
-    });
-  });
 });
 
 // Fetch strategy - Network first, fallback to cache
 // Only cache same-origin requests, let external images pass through
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+  const request = event.request;
   
   // Skip caching for external domains
   if (url.origin !== self.location.origin) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(fetch(request));
     return;
   }
   
-  // Cache same-origin requests
+  // For POST/PUT/DELETE requests: Always go to network and detect offline
+  if (request.method !== 'GET') {
+    event.respondWith(
+      fetch(request).catch(() => {
+        // Notify clients that server is offline
+        self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'SERVER_OFFLINE',
+              message: 'Сървърът е недостъпен'
+            });
+          });
+        });
+        // Re-throw the error to show normal browser error
+        throw new Error('Server offline');
+      })
+    );
+    return;
+  }
+  
+  
+  // For same-origin GET requests: Network first, fallback to cache
   event.respondWith(
-    fetch(event.request)
-      .catch(() => caches.match(event.request))
+    fetch(request)
+      .then((response) => {
+        // Only cache successful responses
+        if (response.ok) {
+          const clonedResponse = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, clonedResponse);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        // For non-API routes, try cache
+        return caches.match(request).then(cachedResponse => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // Re-throw error if no cache
+          throw new Error('No cache available');
+        });
+      })
   );
 });
 

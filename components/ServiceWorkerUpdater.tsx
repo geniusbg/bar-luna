@@ -21,22 +21,18 @@ export default function ServiceWorkerUpdater() {
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'SW_UPDATED') {
           console.log('🔄 New version available:', event.data.version);
-          // Automatically reload to get the latest version
-          console.log('💡 Reloading to get the latest version...');
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
+          // Don't auto-reload - let user do it manually to avoid UX issues
         }
       });
       
-      // Check for updates periodically (every 15 minutes)
+      // Check for updates periodically (every 5 minutes)
       const updateInterval = setInterval(() => {
         navigator.serviceWorker.getRegistration().then(registration => {
           if (registration) {
             registration.update();
           }
         });
-      }, 900000); // Check every 15 minutes
+      }, 300000); // Check every 5 minutes
       
       return () => clearInterval(updateInterval);
     }
