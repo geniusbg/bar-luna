@@ -391,8 +391,15 @@ export default function StaffDashboard() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [session, locale]);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!initialLoading && !session) {
+      window.location.href = `/${locale}/staff/login`;
+    }
+  }, [session, initialLoading, locale]);
+
   // Show loading screen
-  if (initialLoading) {
+  if (initialLoading || !session) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">

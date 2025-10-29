@@ -24,16 +24,37 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
     };
 
     // Listen for online/offline events
-    const handleOnline = () => {
-      setIsChecking(true);
-      onStatusChange?.(false);
-      
-      // Close modal after 1 second, data will be refreshed on next fetch
-      setTimeout(() => {
-        setIsOffline(false);
-        setIsServerDown(false);
+    const handleOnline = async () => {
+      // When network comes back, check if server is actually up
+      try {
+        const response = await fetch('/api/health', {
+          method: 'GET',
+          signal: AbortSignal.timeout(2000)
+        });
+        
+        if (response.ok) {
+          // Server is actually up
+          setIsChecking(true);
+          onStatusChange?.(false);
+          
+          // Close modal after 1 second, data will be refreshed on next fetch
+          setTimeout(() => {
+            setIsOffline(false);
+            setIsServerDown(false);
+            setIsChecking(false);
+          }, 1000);
+        } else {
+          // Network is up but server is down - stay offline
+          setIsOffline(true);
+          setIsServerDown(true);
+          setIsChecking(false);
+        }
+      } catch (error) {
+        // Server still down even though network is up
+        setIsOffline(true);
+        setIsServerDown(true);
         setIsChecking(false);
-      }, 1000);
+      }
     };
 
     const handleOffline = () => {
@@ -148,7 +169,7 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
             {isChecking 
               ? 'Вече имате интернет връзка. Приложението е готово за използване.'
               : isServerDown
-                ? 'Сървърът е временно недостъпен. Приложението ще се опита автоматично да се свърже отново.'
+                ? 'Сървърът е временно недостъпен. Приложението проверява автоматично на всеки 10 секунди дали сървърът е отново онлайн.'
                 : 'Моля, проверете интернет връзката си и опитайте отново.'
             }
           </p>

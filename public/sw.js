@@ -109,6 +109,16 @@ self.addEventListener('fetch', (event) => {
           }
           // If navigation request and no cache, serve offline.html
           if (request.mode === 'navigate') {
+            // Notify clients that server is offline
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                client.postMessage({
+                  type: 'SERVER_OFFLINE',
+                  message: 'Сървърът е недостъпен'
+                });
+              });
+            });
+            
             return caches.match('/offline.html').then(offlinePage => {
               if (offlinePage) {
                 return offlinePage;
