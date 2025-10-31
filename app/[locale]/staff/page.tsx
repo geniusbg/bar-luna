@@ -380,6 +380,11 @@ export default function StaffDashboard() {
   // Prevent back button after logout
   useEffect(() => {
     const handlePopState = (e: any) => {
+      // Don't redirect if offline
+      if (typeof window !== 'undefined' && (window as any).__isOffline) {
+        return;
+      }
+      
       // Clear session if user tries to go back after logout
       if (!session) {
         window.history.pushState(null, '', window.location.href);
@@ -393,6 +398,11 @@ export default function StaffDashboard() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
+    // Don't redirect if offline - offline banner will handle it
+    if (typeof window !== 'undefined' && (window as any).__isOffline) {
+      return;
+    }
+    
     if (!initialLoading && !session) {
       window.location.href = `/${locale}/staff/login`;
     }

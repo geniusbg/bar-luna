@@ -80,16 +80,28 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
 
   // Periodic health check when offline
   useEffect(() => {
-    if (!isOffline) return;
+    if (!isOffline) {
+      // Clear any existing interval if going online
+      return;
+    }
+
+    console.log('🔄 Starting periodic health check (every 10 seconds)');
 
     const checkHealth = async () => {
       try {
+        console.log('🔍 Health check: Checking server status...');
+        // Use cache: 'no-cache' to avoid stale responses
         const response = await fetch('/api/health', {
           method: 'GET',
-          signal: AbortSignal.timeout(2000)
+          cache: 'no-cache',
+          signal: AbortSignal.timeout(3000) // 3 second timeout
         });
 
-        if (response.ok) {
+        console.log('🔍 Health check response:', response.status, response.ok);
+
+        // If we get a 200 OK, server is back online
+        if (response.status === 200 && response.ok) {
+          console.log('✅ Server is back online!');
           setIsChecking(true);
           setIsServerDown(false);
           onStatusChange?.(false);
@@ -99,9 +111,17 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
             setIsOffline(false);
             setIsChecking(false);
           }, 1000);
+          return;
         }
+        
+        // If we get 503 or other error status, server is still down
+        console.log('❌ Server still offline (status:', response.status, ')');
+        setIsServerDown(true);
       } catch (error) {
-        // Server still offline
+        // Network error or timeout - server is still offline
+        // This is expected when server is down, so we just continue checking
+        console.log('❌ Server still offline (network error)');
+        setIsServerDown(true);
       }
     };
 
@@ -109,7 +129,10 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
     checkHealth();
     const interval = setInterval(checkHealth, 10000);
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log('🛑 Stopping periodic health check');
+      clearInterval(interval);
+    };
   }, [isOffline, onStatusChange]);
 
   // Expose offline state globally

@@ -14,6 +14,11 @@ export default function AdminDashboard({
   
   // Redirect if not authenticated or wrong role
   useEffect(() => {
+    // Don't redirect if offline - offline banner will handle it
+    if (typeof window !== 'undefined' && (window as any).__isOffline) {
+      return;
+    }
+    
     if (status === 'unauthenticated') {
       window.location.href = `/${locale}/admin/login`;
       return;
@@ -30,6 +35,11 @@ export default function AdminDashboard({
   // Prevent back button after logout
   useEffect(() => {
     const handlePopState = (e: any) => {
+      // Don't redirect if offline
+      if (typeof window !== 'undefined' && (window as any).__isOffline) {
+        return;
+      }
+      
       if (!session) {
         window.history.pushState(null, '', window.location.href);
         window.location.href = `/${locale}/admin/login`;

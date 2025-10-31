@@ -1,6 +1,6 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
-const CACHE_VERSION = 'v3.2.1'; // Increment this for updates (change when you update the app)
+const CACHE_VERSION = 'v3.2.3'; // Increment this for updates (change when you update the app)
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
@@ -21,7 +21,7 @@ self.addEventListener('install', (event) => {
             cache.add(url).catch(err => {
               // If offline.html can't be cached, create it inline
               if (url === '/offline.html') {
-                return cache.put(url, new Response('<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Server Offline</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}.container{max-width:500px;width:100%;text-align:center;background:#1e293b;border-radius:16px;padding:40px;border:1px solid #334155}h1{font-size:24px;font-weight:700;margin-bottom:12px}p{color:#cbd5e1;line-height:1.6;margin-bottom:24px}.button{background:#fff;color:#0f172a;padding:12px 24px;border-radius:8px;border:none;font-weight:600;font-size:16px;cursor:pointer;transition:background 0.2s}.button:hover{background:#e2e8f0}</style></head><body><div class="container"><h1>Временно проблем със сървъра</h1><p>Сървърът е временно недостъпен. Моля, опитайте отново след няколко секунди.</p><button class="button" onclick="window.location.reload()">Опитай отново</button></div></body></html>', {
+                return cache.put(url, new Response('<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Server Offline</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}.container{max-width:500px;width:100%;text-align:center;background:#1e293b;border-radius:16px;padding:40px;border:1px solid #334155}h1{font-size:24px;font-weight:700;margin-bottom:12px}p{color:#cbd5e1;line-height:1.6;margin-bottom:24px}</style></head><body><div class="container"><h1>Временен проблем със сървъра</h1><p>Сървърът е временно недостъпен. Приложението проверява автоматично на всеки 10 секунди дали сървърът е отново онлайн.</p></div></body></html>', {
                   headers: { 'Content-Type': 'text/html' }
                 }));
               }
@@ -102,12 +102,33 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
+        // For API routes, return JSON error instead of offline.html
+        // IMPORTANT: This check must be FIRST before any cache lookups
+        if (url.pathname.startsWith('/api/')) {
+          console.log('🔴 SW: API route failed, returning JSON error:', url.pathname);
+          // Notify clients that server is offline
+          self.clients.matchAll().then(clients => {
+            clients.forEach(client => {
+              client.postMessage({
+                type: 'SERVER_OFFLINE',
+                message: 'Сървърът е недостъпен'
+              });
+            });
+          });
+          // Return JSON error for API routes
+          return new Response(JSON.stringify({ error: 'Server offline' }), {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        
         // For non-API routes, try cache
         return caches.match(request).then(cachedResponse => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // If navigation request and no cache, serve offline.html
+          // If navigation request and no cache, try to serve main page first (so React app loads)
           if (request.mode === 'navigate') {
             // Notify clients that server is offline
             self.clients.matchAll().then(clients => {
@@ -119,24 +140,127 @@ self.addEventListener('fetch', (event) => {
               });
             });
             
-            return caches.match('/offline.html').then(offlinePage => {
-              if (offlinePage) {
-                return offlinePage;
-              }
-              // Fallback if offline.html is not cached
-              return new Response('Server offline', { 
-                status: 503, 
-                headers: { 'Content-Type': 'text/html' } 
-              });
+            // Return minimal HTML with modal that preserves the current URL (no redirect)
+            const offlineModalHTML = `<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Временен проблем със сървъра</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .modal {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 32px;
+      border: 1px solid #334155;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    }
+    .icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: #f59e0b;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    p {
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 0;
+    }
+    .checking {
+      background: #10b981 !important;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="modal">
+    <div class="icon" id="icon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+    </div>
+    <h1 id="title">Временен проблем със сървъра</h1>
+    <p id="message">Сървърът е временно недостъпен. Приложението проверява автоматично на всеки 10 секунди дали сървърът е отново онлайн.</p>
+  </div>
+  <script>
+    // Prevent redirect to login when offline
+    if (typeof window !== 'undefined') {
+      window.__isOffline = true;
+    }
+    
+    let checkInterval;
+    async function checkHealth() {
+      try {
+        const response = await fetch('/api/health', {
+          method: 'GET',
+          cache: 'no-cache',
+          signal: AbortSignal.timeout(3000)
+        });
+        if (response.status === 200 && response.ok) {
+          document.getElementById('icon').className = 'icon checking';
+          document.getElementById('title').textContent = 'Връзката е възстановена!';
+          document.getElementById('message').textContent = 'Вече имате интернет връзка. Приложението е готово за използване.';
+          // Mark as online before reload
+          if (typeof window !== 'undefined') {
+            window.__isOffline = false;
+          }
+          clearInterval(checkInterval);
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        }
+      } catch (error) {
+        // Server still offline
+      }
+    }
+    checkHealth();
+    checkInterval = setInterval(checkHealth, 10000);
+  </script>
+</body>
+</html>`;
+            
+            return new Response(offlineModalHTML, {
+              status: 503,
+              headers: { 'Content-Type': 'text/html' }
             });
           }
-          // For non-navigation requests, try to serve offline.html
-          return caches.match('/offline.html').then(offlinePage => {
-            if (offlinePage) {
-              return offlinePage;
-            }
-            // Re-throw only if absolutely nothing available
-            throw new Error('No cache available');
+          // For non-navigation non-API requests, return error (don't serve offline.html)
+          // This prevents HTML from being returned for API-like requests
+          return new Response('Resource not available offline', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain' }
           });
         });
       })

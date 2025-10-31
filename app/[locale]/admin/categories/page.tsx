@@ -42,30 +42,55 @@ export default function AdminCategoriesPage() {
   };
 
   const handleModalSubmit = async (data: any) => {
-    const url = editingCategory 
-      ? `/api/categories/${editingCategory.id}` 
-      : '/api/categories';
-    
-    const method = editingCategory ? 'PUT' : 'POST';
+    try {
+      const url = editingCategory 
+        ? `/api/categories/${editingCategory.id}`
+        : '/api/categories';
+      
+      const method = editingCategory ? 'PUT' : 'POST';
 
-    const response = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
 
-    if (response.ok) {
-      loadCategories();
-      setToast({ 
-        message: editingCategory ? '✅ Категорията е обновена успешно' : '✅ Категорията е добавена успешно', 
-        type: 'success' 
-      });
-    } else {
-      const errorData = await response.json();
-      setToast({ 
-        message: errorData.error || 'Грешка при запазване на категорията', 
-        type: 'error' 
-      });
+      // Check if server is offline (503 or network error)
+      if (response.status === 503 || !response.ok) {
+        // Trigger offline banner
+        if (typeof window !== 'undefined' && (window as any).__setOfflineState) {
+          (window as any).__setOfflineState(true);
+        }
+        if (typeof window !== 'undefined' && (window as any).__setServerDown) {
+          (window as any).__setServerDown(true);
+        }
+        return; // Don't show toast, offline banner will show
+      }
+
+      if (response.ok) {
+        loadCategories();
+        setToast({ 
+          message: editingCategory ? '✅ Категорията е обновена успешно' : '✅ Категорията е добавена успешно', 
+          type: 'success' 
+        });
+      } else {
+        const errorData = await response.json();
+        setToast({ 
+          message: errorData.error || 'Грешка при запазване на категорията', 
+          type: 'error' 
+        });
+      }
+    } catch (error: any) {
+      // Network error or server offline
+      if (error.name === 'TypeError' || error.message?.includes('fetch')) {
+        // Trigger offline banner
+        if (typeof window !== 'undefined' && (window as any).__setOfflineState) {
+          (window as any).__setOfflineState(true);
+        }
+        if (typeof window !== 'undefined' && (window as any).__setServerDown) {
+          (window as any).__setServerDown(true);
+        }
+      }
     }
   };
 
@@ -74,16 +99,41 @@ export default function AdminCategoriesPage() {
       return;
     }
 
-    const response = await fetch(`/api/categories/${id}`, {
-      method: 'DELETE'
-    });
+    try {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: 'DELETE'
+      });
 
-    if (response.ok) {
-      loadCategories();
-      setToast({ message: '✅ Категорията е изтрита успешно', type: 'success' });
-    } else {
-      const data = await response.json();
-      setToast({ message: data.error || 'Грешка при изтриване на категорията', type: 'error' });
+      // Check if server is offline (503 or network error)
+      if (response.status === 503 || !response.ok) {
+        // Trigger offline banner
+        if (typeof window !== 'undefined' && (window as any).__setOfflineState) {
+          (window as any).__setOfflineState(true);
+        }
+        if (typeof window !== 'undefined' && (window as any).__setServerDown) {
+          (window as any).__setServerDown(true);
+        }
+        return; // Don't show toast, offline banner will show
+      }
+
+      if (response.ok) {
+        loadCategories();
+        setToast({ message: '✅ Категорията е изтрита успешно', type: 'success' });
+      } else {
+        const data = await response.json();
+        setToast({ message: data.error || 'Грешка при изтриване на категорията', type: 'error' });
+      }
+    } catch (error: any) {
+      // Network error or server offline
+      if (error.name === 'TypeError' || error.message?.includes('fetch')) {
+        // Trigger offline banner
+        if (typeof window !== 'undefined' && (window as any).__setOfflineState) {
+          (window as any).__setOfflineState(true);
+        }
+        if (typeof window !== 'undefined' && (window as any).__setServerDown) {
+          (window as any).__setServerDown(true);
+        }
+      }
     }
   };
 
