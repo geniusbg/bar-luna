@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
-// Hardcoded version as fallback (should match sw.js CACHE_VERSION)
-const FALLBACK_VERSION = 'v3.3.3';
+import { SW_VERSION } from '@/lib/sw-version';
 
 export default function ServiceWorkerVersion() {
   const [version, setVersion] = useState<string | null>(null);
@@ -23,7 +21,7 @@ export default function ServiceWorkerVersion() {
         .catch((error) => {
           console.warn('⚠️ Service Worker not available:', error);
           setSwSupported(false);
-          setVersion(FALLBACK_VERSION);
+          setVersion(SW_VERSION);
         });
 
       // Listen for version response
@@ -37,11 +35,11 @@ export default function ServiceWorkerVersion() {
 
       navigator.serviceWorker.addEventListener('message', handleMessage);
 
-      // Fallback: If no version received after 3 seconds, use hardcoded version
+      // Fallback: If no version received after 3 seconds, use lib version
       const fallbackTimer = setTimeout(() => {
         if (!version) {
           console.warn('⚠️ SW version not received, using fallback');
-          setVersion(FALLBACK_VERSION);
+          setVersion(SW_VERSION);
           setSwSupported(false);
         }
       }, 3000);
@@ -53,7 +51,7 @@ export default function ServiceWorkerVersion() {
     } else {
       // Service Worker not supported at all
       console.warn('⚠️ Service Worker not supported');
-      setVersion(FALLBACK_VERSION);
+      setVersion(SW_VERSION);
       setSwSupported(false);
     }
   }, [version]);
