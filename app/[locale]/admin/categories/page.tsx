@@ -41,7 +41,7 @@ export default function AdminCategoriesPage() {
     setEditingCategory(null);
   };
 
-  const handleModalSubmit = async (data: any) => {
+  const handleModalSubmit = async (data: any): Promise<boolean> => {
     try {
       const url = editingCategory 
         ? `/api/categories/${editingCategory.id}`
@@ -64,7 +64,7 @@ export default function AdminCategoriesPage() {
         if (typeof window !== 'undefined' && (window as any).__setServerDown) {
           (window as any).__setServerDown(true);
         }
-        return; // Don't show toast, offline banner will show
+        return false; // Keep modal open
       }
 
       if (response.ok) {
@@ -73,12 +73,14 @@ export default function AdminCategoriesPage() {
           message: editingCategory ? '✅ Категорията е обновена успешно' : '✅ Категорията е добавена успешно', 
           type: 'success' 
         });
+        return true; // Close modal
       } else {
         const errorData = await response.json();
         setToast({ 
           message: errorData.error || 'Грешка при запазване на категорията', 
           type: 'error' 
         });
+        return false; // Keep modal open
       }
     } catch (error: any) {
       // Network error or server offline
@@ -91,6 +93,7 @@ export default function AdminCategoriesPage() {
           (window as any).__setServerDown(true);
         }
       }
+      return false; // Keep modal open
     }
   };
 

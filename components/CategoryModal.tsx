@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 interface CategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: any) => Promise<boolean>; // Returns true on success
   category?: any; // For editing existing category
 }
 
@@ -65,8 +65,11 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category }: C
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
-    onClose();
+    const success = await onSubmit(formData);
+    // Only close modal if submission was successful
+    if (success) {
+      onClose();
+    }
   };
 
   if (!isOpen) return null;
