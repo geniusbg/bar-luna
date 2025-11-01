@@ -1,6 +1,6 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
-const CACHE_VERSION = 'v3.3.2'; // Increment this for updates (change when you update the app)
+const CACHE_VERSION = 'v3.3.3'; // Increment this for updates (change when you update the app)
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
@@ -10,7 +10,7 @@ const urlsToCache = [
   '/offline.html'
 ];
 
-// Listen for messages from clients (e.g., version requests)
+// Listen for messages from clients (e.g., version requests, skip waiting)
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'GET_VERSION') {
     // Send version back to client
@@ -21,6 +21,12 @@ self.addEventListener('message', (event) => {
         client.postMessage({ type: 'SW_VERSION', version: CACHE_VERSION });
       });
     });
+  }
+  
+  // Handle skip waiting request (force immediate activation)
+  if (event.data?.type === 'SKIP_WAITING') {
+    console.log('⚡ SKIP_WAITING received, activating new SW immediately');
+    self.skipWaiting();
   }
 });
 
