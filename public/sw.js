@@ -1,7 +1,7 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
 // ⚠️ SYNC THIS VERSION WITH lib/sw-version.ts
-const CACHE_VERSION = 'v3.3.5';
+const CACHE_VERSION = 'v3.3.6';
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
@@ -252,13 +252,15 @@ self.addEventListener('fetch', (event) => {
         if (response.status === 200 && response.ok) {
           document.getElementById('icon').className = 'icon checking';
           document.getElementById('title').textContent = 'Връзката е възстановена!';
-          document.getElementById('message').textContent = 'Вече имате интернет връзка. Натиснете F5 или refresh за да продължите.';
-          // Mark as online
+          document.getElementById('message').textContent = 'Вече имате интернет връзка. Приложението е готово за използване.';
+          // Mark as online before reload
           if (typeof window !== 'undefined') {
             window.__isOffline = false;
           }
           clearInterval(checkInterval);
-          // Don't auto-reload - let user manually refresh to preserve any open forms/modals
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
         }
       } catch (error) {
         // Server still offline
