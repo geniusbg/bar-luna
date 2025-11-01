@@ -20,7 +20,14 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'SERVER_OFFLINE') {
         setIsOffline(true);
-        setIsServerDown(true); // Server is down
+        // Check if it's network offline or server down
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          // Network is offline, not server issue
+          setIsServerDown(false);
+        } else {
+          // Network is online but server is down
+          setIsServerDown(true);
+        }
         setIsChecking(false);
         onStatusChange?.(true);
       }
@@ -140,53 +147,15 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
     };
   }, [isOffline, onStatusChange, isIOS]);
 
-  // iOS fallback: Intercept fetch errors if Service Worker is not reliable
+  // Check initial online state on mount
   useEffect(() => {
-    if (!isIOS || typeof window === 'undefined') return;
-
-    // Wrap fetch to catch network errors on iOS
-    const originalFetch = window.fetch;
-    let lastHealthCheck = 0;
-    const HEALTH_CHECK_INTERVAL = 15000; // 15 seconds for passive checks
-
-    window.fetch = async (...args) => {
-      try {
-        const response = await originalFetch(...args);
-        return response;
-      } catch (error: any) {
-        // Check if it's a network error
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-          const now = Date.now();
-          // Only trigger offline state if enough time has passed (avoid spam)
-          if (now - lastHealthCheck > HEALTH_CHECK_INTERVAL) {
-            lastHealthCheck = now;
-            // Try health check to confirm server is down
-            try {
-              const healthResponse = await originalFetch('/api/health', {
-                cache: 'no-cache',
-                signal: AbortSignal.timeout(2000)
-              });
-              if (!healthResponse.ok) {
-                setIsOffline(true);
-                setIsServerDown(true);
-                onStatusChange?.(true);
-              }
-            } catch {
-              // Server is definitely down
-              setIsOffline(true);
-              setIsServerDown(true);
-              onStatusChange?.(true);
-            }
-          }
-        }
-        throw error; // Re-throw to maintain original behavior
-      }
-    };
-
-    return () => {
-      window.fetch = originalFetch; // Restore original fetch
-    };
-  }, [isIOS, onStatusChange]);
+    if (typeof window !== 'undefined' && !navigator.onLine) {
+      // Browser is offline on load
+      setIsOffline(true);
+      setIsServerDown(false); // Network offline, not server
+      onStatusChange?.(true);
+    }
+  }, [onStatusChange]);
 
   // Expose offline state globally
   useEffect(() => {
@@ -245,7 +214,7 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
             {isChecking 
               ? 'Вече имате интернет връзка. Приложението е готово за използване.'
               : isServerDown
-                ? 'Сървърът е временно недостъпен. Приложението проверява автоматично на всеки 10 секунди дали сървърът е отново онлайн.'
+                ? `Сървърът е временно недостъпен. Приложението проверява автоматично на всеки ${isIOS ? '5' : '10'} секунди дали сървърът е отново онлайн.`
                 : 'Моля, проверете интернет връзката си и опитайте отново.'
             }
           </p>

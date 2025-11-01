@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 // Hardcoded version as fallback (should match sw.js CACHE_VERSION)
-const FALLBACK_VERSION = 'v3.3.1';
+const FALLBACK_VERSION = 'v3.3.2';
 
 export default function ServiceWorkerVersion() {
   const [version, setVersion] = useState<string | null>(null);

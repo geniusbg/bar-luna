@@ -1,6 +1,6 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
-const CACHE_VERSION = 'v3.3.1'; // Increment this for updates (change when you update the app)
+const CACHE_VERSION = 'v3.3.2'; // Increment this for updates (change when you update the app)
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
