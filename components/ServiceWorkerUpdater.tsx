@@ -42,9 +42,8 @@ export default function ServiceWorkerUpdater() {
       
       // Listen for controller change (new SW activated)
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('🔄 New Service Worker activated! Reloading page...');
-        // Reload once when new SW takes control
-        window.location.reload();
+        console.log('🔄 New Service Worker activated! Page will use new version on next navigation.');
+        // Don't auto-reload to preserve form data and open modals
       });
       
       // Check for updates periodically (every 1 minute for PWA apps)
