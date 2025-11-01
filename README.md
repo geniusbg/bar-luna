@@ -33,6 +33,26 @@ Modern QR-based ordering system for Luna Bar in Ruse, Bulgaria.
 - **Styling:** Tailwind CSS
 - **i18n:** next-intl
 - **QR Codes:** qrcode library
+- **PWA:** Service Workers, Offline Support, Push Notifications
+
+## 📱 Mobile & PWA Support
+
+### Service Worker & Offline Mode
+- ✅ **Android**: Full Service Worker support (localhost + production)
+- ⚠️ **iOS**: Service Worker only on **HTTPS** (production)
+  - On `http://localhost` → May work
+  - On `http://192.168.x.x` → **Does NOT work**
+  - **Solution**: Deploy to production (HTTPS) or use Android for testing
+
+### Version Display
+- **SW button** (bottom-right corner) shows current Service Worker version
+- 🟢 Green dot = SW working perfectly
+- 🟠 Orange dot = SW limited (iOS HTTP fallback)
+
+### Offline Detection
+- iOS uses fetch interceptor fallback when SW not available
+- Health checks every 5 seconds on iOS (10 on Android)
+- Full documentation: `OFFLINE_FUNCTIONALITY.md`
 
 ## 📋 Prerequisites
 

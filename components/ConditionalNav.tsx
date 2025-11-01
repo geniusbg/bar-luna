@@ -5,6 +5,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { SessionProvider } from 'next-auth/react';
 import OfflineBanner from '@/components/OfflineBanner';
+import ServiceWorkerVersion from '@/components/ServiceWorkerVersion';
 
 export default function ConditionalNav({ children }: { children?: ReactNode }) {
   const pathname = usePathname();
@@ -33,6 +34,7 @@ export default function ConditionalNav({ children }: { children?: ReactNode }) {
   return (
     <SessionProvider>
       <OfflineBanner onStatusChange={handleStatusChange} />
+      <ServiceWorkerVersion />
       <div className={isOffline ? 'pointer-events-none opacity-50' : ''}>
         {!hideNav && <Navigation />}
         <div className={hideNav ? '' : 'pt-16'}>

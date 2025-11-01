@@ -1,6 +1,6 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
-const CACHE_VERSION = 'v3.2.3'; // Increment this for updates (change when you update the app)
+const CACHE_VERSION = 'v3.3.1'; // Increment this for updates (change when you update the app)
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
@@ -9,6 +9,20 @@ const urlsToCache = [
   '/bg',
   '/offline.html'
 ];
+
+// Listen for messages from clients (e.g., version requests)
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'GET_VERSION') {
+    // Send version back to client
+    event.ports[0]?.postMessage({ type: 'SW_VERSION', version: CACHE_VERSION });
+    // Also broadcast to all clients
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({ type: 'SW_VERSION', version: CACHE_VERSION });
+      });
+    });
+  }
+});
 
 // Install service worker
 self.addEventListener('install', (event) => {

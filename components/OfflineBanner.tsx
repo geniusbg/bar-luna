@@ -12,6 +12,9 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
   const [isChecking, setIsChecking] = useState(false);
   const [isServerDown, setIsServerDown] = useState(false);
 
+  // Detect iOS
+  const isIOS = typeof window !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent);
+
   useEffect(() => {
     // Listen for SW messages (server offline detection)
     const handleMessage = (event: MessageEvent) => {
@@ -85,7 +88,9 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
       return;
     }
 
-    console.log('🔄 Starting periodic health check (every 10 seconds)');
+    // iOS needs more frequent checks as browser events are unreliable
+    const checkInterval = isIOS ? 5000 : 10000; // 5 seconds for iOS, 10 for others
+    console.log(`🔄 Starting periodic health check (every ${checkInterval/1000} seconds)`);
 
     const checkHealth = async () => {
       try {
@@ -125,15 +130,63 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
       }
     };
 
-    // Check immediately, then every 10 seconds
+    // Check immediately, then at interval
     checkHealth();
-    const interval = setInterval(checkHealth, 10000);
+    const interval = setInterval(checkHealth, checkInterval);
 
     return () => {
       console.log('🛑 Stopping periodic health check');
       clearInterval(interval);
     };
-  }, [isOffline, onStatusChange]);
+  }, [isOffline, onStatusChange, isIOS]);
+
+  // iOS fallback: Intercept fetch errors if Service Worker is not reliable
+  useEffect(() => {
+    if (!isIOS || typeof window === 'undefined') return;
+
+    // Wrap fetch to catch network errors on iOS
+    const originalFetch = window.fetch;
+    let lastHealthCheck = 0;
+    const HEALTH_CHECK_INTERVAL = 15000; // 15 seconds for passive checks
+
+    window.fetch = async (...args) => {
+      try {
+        const response = await originalFetch(...args);
+        return response;
+      } catch (error: any) {
+        // Check if it's a network error
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+          const now = Date.now();
+          // Only trigger offline state if enough time has passed (avoid spam)
+          if (now - lastHealthCheck > HEALTH_CHECK_INTERVAL) {
+            lastHealthCheck = now;
+            // Try health check to confirm server is down
+            try {
+              const healthResponse = await originalFetch('/api/health', {
+                cache: 'no-cache',
+                signal: AbortSignal.timeout(2000)
+              });
+              if (!healthResponse.ok) {
+                setIsOffline(true);
+                setIsServerDown(true);
+                onStatusChange?.(true);
+              }
+            } catch {
+              // Server is definitely down
+              setIsOffline(true);
+              setIsServerDown(true);
+              onStatusChange?.(true);
+            }
+          }
+        }
+        throw error; // Re-throw to maintain original behavior
+      }
+    };
+
+    return () => {
+      window.fetch = originalFetch; // Restore original fetch
+    };
+  }, [isIOS, onStatusChange]);
 
   // Expose offline state globally
   useEffect(() => {
