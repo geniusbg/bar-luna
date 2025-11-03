@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { SW_VERSION } from '@/lib/sw-version';
 
 export default function ServiceWorkerVersion() {
   const [version, setVersion] = useState<string | null>(null);
@@ -21,7 +20,7 @@ export default function ServiceWorkerVersion() {
         .catch((error) => {
           console.warn('⚠️ Service Worker not available:', error);
           setSwSupported(false);
-          setVersion(SW_VERSION);
+          setVersion('N/A');
         });
 
       // Listen for version response
@@ -35,11 +34,11 @@ export default function ServiceWorkerVersion() {
 
       navigator.serviceWorker.addEventListener('message', handleMessage);
 
-      // Fallback: If no version received after 3 seconds, use lib version
+      // Fallback: If no version received after 3 seconds, show N/A
       const fallbackTimer = setTimeout(() => {
         if (!version) {
           console.warn('⚠️ SW version not received, using fallback');
-          setVersion(SW_VERSION);
+          setVersion('N/A');
           setSwSupported(false);
         }
       }, 3000);
@@ -51,7 +50,7 @@ export default function ServiceWorkerVersion() {
     } else {
       // Service Worker not supported at all
       console.warn('⚠️ Service Worker not supported');
-      setVersion(SW_VERSION);
+      setVersion('N/A');
       setSwSupported(false);
     }
   }, [version]);
