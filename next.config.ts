@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: https: blob:",
               "connect-src *",
               "worker-src 'self' blob:",
-              "frame-src 'self' https://www.google.com https://maps.google.com",
+              "frame-src 'self' https://www.google.com https://maps.google.com https://*.google.com",
               "manifest-src 'self'"
             ].join('; ')
           }

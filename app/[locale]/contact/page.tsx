@@ -10,7 +10,9 @@ export default async function ContactPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Contact Info */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8">
-              <h2 className="text-2xl font-bold text-white mb-6">𝐋.𝐔.𝐍.𝐀 🌙</h2>
+              <div className="flex justify-center mb-6 -mt-8">
+                <img src="/bg/logo_luna2.svg" alt="LUNA" className="w-full max-w-md h-auto" />
+              </div>
               
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
@@ -62,11 +64,11 @@ export default async function ContactPage() {
             </div>
 
             {/* Map */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-2 overflow-hidden">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-2 overflow-hidden h-full">
               <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2889.8!2d25.95!3d43.85!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDPCsDUxJzAwLjAiTiAyNcKwNTcnMDAuMCJF!5e0!3m2!1sen!2sbg!4v1234567890"
                 width="100%"
-                height="400"
+                height="100%"
                 style={{ border: 0 }}
                 allowFullScreen
                 loading="lazy"
