@@ -32,11 +32,16 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(bytes);
 
     // Use external directory (protected from deploy)
-    // In production: /var/www/uploads/bar-luna
-    // In development: falls back to public/uploads
-    const uploadDir = process.env.NODE_ENV === 'production' 
-      ? '/var/www/uploads/bar-luna'
-      : join(process.cwd(), 'public', 'uploads');
+    // Try production path first, fallback to local
+    const productionUploadDir = '/var/www/uploads/bar-luna';
+    const localUploadDir = join(process.cwd(), 'public', 'uploads');
+    
+    // Check if production directory exists
+    const uploadDir = existsSync(productionUploadDir) 
+      ? productionUploadDir 
+      : localUploadDir;
+    
+    console.log('Using upload directory:', uploadDir);
     
     if (!existsSync(uploadDir)) {
       console.log('Creating uploads directory:', uploadDir);
