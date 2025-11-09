@@ -83,7 +83,9 @@ export default function AdminOrdersPage() {
     page: 1,
     limit: 50,
     totalCount: 0,
-    totalPages: 0
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
   });
   
   const [historyRevenue, setHistoryRevenue] = useState({
