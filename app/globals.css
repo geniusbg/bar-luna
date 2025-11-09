@@ -32,6 +32,15 @@ body {
   line-height: 1.6;
 }
 
+/* Ensure all buttons have pointer cursor by default */
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 /* Select and Option styling */
 select {
   color: white !important;

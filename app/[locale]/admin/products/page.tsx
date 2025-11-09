@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 import { displayPrice } from '@/lib/currency';
 import Toast from '@/components/Toast';
@@ -40,7 +41,7 @@ export default function AdminProductsPage() {
   };
 
   const handleDelete = async (productId: string, productName: string) => {
-    if (!confirm(`Сигурен ли си, че искаш да скриеш "${productName}"?`)) {
+    if (!confirm(`Сигурен ли си, че искаш да изтриеш "${productName}"?\n\nАко продуктът има поръчки, ще бъде само скрит. Ако няма поръчки, ще бъде изтрит перманентно.`)) {
       return;
     }
 
@@ -50,21 +51,36 @@ export default function AdminProductsPage() {
       });
 
       if (response.ok) {
+        const data = await response.json();
         // Reload products
         loadData();
-        setToast({ message: '✅ Продуктът е скрит успешно', type: 'success' });
+        setToast({ message: `✅ ${data.message}`, type: 'success' });
       } else {
         const data = await response.json();
-        setToast({ message: data.error || 'Грешка при скриване на продукта', type: 'error' });
+        setToast({ message: data.error || 'Грешка при изтриване на продукта', type: 'error' });
       }
     } catch (error) {
-      setToast({ message: 'Грешка при скриване на продукта', type: 'error' });
+      setToast({ message: 'Грешка при изтриване на продукта', type: 'error' });
     }
   };
 
   if (loading) {
     return (
-      <div className="text-white text-2xl">Зареждане...</div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
+            <Image 
+              src="/bg/luna-logo.svg"
+              alt="LUNA Logo" 
+              width={384}
+              height={384}
+              className="h-64 w-64 md:h-96 md:w-96"
+              priority
+            />
+          </div>
+          <p className="text-white text-3xl font-medium">Зареждане на продукти...</p>
+        </div>
+      </div>
     );
   }
 

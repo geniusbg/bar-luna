@@ -47,24 +47,42 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Instead of deleting, hide the product (soft delete)
-    // This preserves order history while removing it from the menu
-    
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        isHidden: true,
-        isAvailable: false
-      }
+    // Check if product has any orders
+    const orderCount = await prisma.orderItem.count({
+      where: { productId: id }
     });
 
-    return NextResponse.json({ 
-      success: true,
-      message: 'Продуктът е скрит успешно. Историята на поръчките е запазена.'
-    }, { status: 200 });
+    if (orderCount > 0) {
+      // Product has orders - do soft delete (hide)
+      await prisma.product.update({
+        where: { id },
+        data: {
+          isHidden: true,
+          isAvailable: false
+        }
+      });
+
+      return NextResponse.json({ 
+        success: true,
+        deleted: false,
+        orderCount,
+        message: `Продуктът е скрит успешно. Има ${orderCount} поръчки с този продукт - историята е запазена.`
+      }, { status: 200 });
+    } else {
+      // No orders - safe to permanently delete
+      await prisma.product.delete({
+        where: { id }
+      });
+
+      return NextResponse.json({ 
+        success: true,
+        deleted: true,
+        message: 'Продуктът е изтрит перманентно (нямаше поръчки с него).'
+      }, { status: 200 });
+    }
   } catch (error: any) {
     console.error('Delete product error:', error);
-    return NextResponse.json({ error: 'Грешка при скриване' }, { status: 500 });
+    return NextResponse.json({ error: 'Грешка при изтриване' }, { status: 500 });
   }
 }
 

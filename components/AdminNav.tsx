@@ -23,6 +23,7 @@ export default function AdminNav({ locale }: AdminNavProps) {
 
   const navLinks = [
     { href: `/${locale}/admin`, label: '📊 Dashboard' },
+    { href: `/${locale}/admin/orders`, label: '🧾 Поръчки' },
     { href: `/${locale}/admin/categories`, label: '📁 Категории' },
     { href: `/${locale}/admin/products`, label: '🍸 Продукти' },
     { href: `/${locale}/admin/events`, label: '🎉 Събития' },
