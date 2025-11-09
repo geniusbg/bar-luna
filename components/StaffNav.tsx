@@ -36,14 +36,15 @@ export default function StaffNav({ locale }: StaffNavProps) {
         <div className="flex items-center justify-between">
           {/* Logo/Title */}
           <Link href={`/${locale}/staff`} className="flex items-center gap-3">
-            <div className="h-16 overflow-hidden flex items-center">
+            <div className="h-16 flex items-center">
               <Image 
                 src="/bg/logo_luna2.svg" 
                 alt="L.U.N.A." 
-                width={192}
-                height={192}
-                className="w-auto h-full object-contain"
+                width={224}
+                height={64}
+                className="h-[64px]"
                 priority
+                style={{ width: 'auto', height: '64px', aspectRatio: '3.5/1' }}
               />
             </div>
             <span className="text-xl font-bold text-white hidden sm:inline">Staff Dashboard</span>

@@ -55,13 +55,15 @@ export default function Navigation() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href={`/${locale}`}>
-            <div className="h-20 overflow-hidden flex items-center">
+            <div className="h-20 flex items-center">
               <Image 
                 src={`/${locale}/logo_luna2.svg`} 
                 alt="L.U.N.A." 
-                width={240}
-                height={240}
-                className="w-auto h-full object-contain"
+                width={280}
+                height={80}
+                className="h-[80px]"
+                priority
+                style={{ width: 'auto', height: '80px', aspectRatio: '3.5/1' }}
               />
             </div>
           </Link>

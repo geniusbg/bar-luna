@@ -4,7 +4,8 @@ import { locales, defaultLocale } from './i18n';
 export default createMiddleware({
   locales: locales,
   defaultLocale: defaultLocale,
-  localePrefix: 'always'
+  localePrefix: 'always',
+  localeDetection: false // Винаги използвай defaultLocale (bg) вместо browser detection
 });
 
 export const config = {

@@ -54,15 +54,16 @@ export default function AdminNav({ locale }: AdminNavProps) {
       <div className="max-w-7xl mx-auto px-4 py-1">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href={`/${locale}/admin`} className="flex items-center">
-            <div className="h-20 overflow-hidden flex items-center">
+          <Link href={`/${locale}/admin`} className="flex items-center flex-shrink-0">
+            <div className="h-20 flex items-center">
               <Image 
                 src="/bg/logo_luna2.svg" 
                 alt="L.U.N.A." 
-                width={192}
-                height={192}
-                className="w-auto h-full object-contain"
+                width={280}
+                height={80}
+                className="h-[80px]"
                 priority
+                style={{ width: 'auto', height: '80px', aspectRatio: '3.5/1' }}
               />
             </div>
           </Link>

@@ -33,7 +33,9 @@ export default async function ContactPage() {
                   </svg>
                   <div>
                     <p className="text-white font-semibold">Телефон</p>
-                    <p className="text-gray-300">089 853 6542</p>
+                    <a href="tel:+359898536542" className="text-gray-300 hover:text-white transition-colors">
+                      089 853 6542
+                    </a>
                   </div>
                 </div>
 
