@@ -1,7 +1,7 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
 // ⚠️ SW VERSION - Single source of truth (no duplicates)
-const CACHE_VERSION = 'v3.3.91';
+const CACHE_VERSION = 'v3.3.9';
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
@@ -127,20 +127,30 @@ self.addEventListener('fetch', (event) => {
         // IMPORTANT: This check must be FIRST before any cache lookups
         if (url.pathname.startsWith('/api/')) {
           console.log('🔴 SW: API route failed, returning JSON error:', url.pathname);
-          // Notify clients that server is offline
-          self.clients.matchAll().then(clients => {
-            clients.forEach(client => {
-              client.postMessage({
-                type: 'SERVER_OFFLINE',
-                message: 'Сървърът е недостъпен'
+          
+          // Only notify clients once (not for every API call)
+          if (!url.pathname.includes('/auth/')) {
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                client.postMessage({
+                  type: 'SERVER_OFFLINE',
+                  message: 'Сървърът е недостъпен'
+                });
               });
             });
-          });
-          // Return JSON error for API routes
-          return new Response(JSON.stringify({ error: 'Server offline' }), {
+          }
+          
+          // Return JSON error for API routes (including NextAuth)
+          return new Response(JSON.stringify({ 
+            error: 'Server offline',
+            message: 'The server is temporarily unavailable'
+          }), {
             status: 503,
             statusText: 'Service Unavailable',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache'
+            }
           });
         }
         

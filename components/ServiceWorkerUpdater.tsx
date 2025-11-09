@@ -47,7 +47,13 @@ export default function ServiceWorkerUpdater() {
       });
       
       // Check for updates periodically (every 1 minute for PWA apps)
+      // Skip if server is offline to avoid 503 errors
       const updateInterval = setInterval(() => {
+        // Skip update check if offline
+        if (typeof window !== 'undefined' && (window as any).__isOffline) {
+          return;
+        }
+        
         navigator.serviceWorker.getRegistration().then(registration => {
           if (registration) {
             console.log('🔍 Checking for Service Worker updates...');
