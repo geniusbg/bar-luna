@@ -1,7 +1,7 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
 // ⚠️ SW VERSION - Single source of truth (no duplicates)
-const CACHE_VERSION = 'v3.3.10';
+const CACHE_VERSION = 'v3.3.11';
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
@@ -78,8 +78,12 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   const request = event.request;
   
+  // Debug: Log all fetch requests
+  console.log('🔍 SW Fetch:', request.method, url.pathname);
+  
   // Skip caching for external domains
   if (url.origin !== self.location.origin) {
+    console.log('⏭️ SW: Skipping external domain:', url.origin);
     event.respondWith(fetch(request));
     return;
   }
