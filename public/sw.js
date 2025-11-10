@@ -1,7 +1,7 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
 // ⚠️ SW VERSION - Single source of truth (no duplicates)
-const CACHE_VERSION = 'v3.3.11';
+const CACHE_VERSION = 'v3.3.12';
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
@@ -117,6 +117,37 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
+        // Check if response is an error AND is for API route
+        // Apache returns HTML 503, we need to convert to JSON for API routes
+        if (!response.ok && url.pathname.startsWith('/api/')) {
+          console.log('🔴 SW: API route returned error status:', response.status, url.pathname);
+          
+          // Only notify clients once (not for every API call)
+          if (!url.pathname.includes('/auth/')) {
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                client.postMessage({
+                  type: 'SERVER_OFFLINE',
+                  message: 'Сървърът е недостъпен'
+                });
+              });
+            });
+          }
+          
+          // Return JSON error instead of HTML error page
+          return new Response(JSON.stringify({ 
+            error: 'Server offline',
+            message: 'The server is temporarily unavailable'
+          }), {
+            status: response.status || 503,
+            statusText: 'Service Unavailable',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache'
+            }
+          });
+        }
+        
         // Only cache successful responses
         if (response.ok) {
           const clonedResponse = response.clone();
@@ -127,10 +158,9 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // For API routes, return JSON error instead of offline.html
-        // IMPORTANT: This check must be FIRST before any cache lookups
+        // Network error (not HTTP error) - for API routes, return JSON
         if (url.pathname.startsWith('/api/')) {
-          console.log('🔴 SW: API route failed, returning JSON error:', url.pathname);
+          console.log('🔴 SW: API route network error:', url.pathname);
           
           // Only notify clients once (not for every API call)
           if (!url.pathname.includes('/auth/')) {
