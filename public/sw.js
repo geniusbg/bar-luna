@@ -1,7 +1,7 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
 // ⚠️ SW VERSION - Single source of truth (no duplicates)
-const CACHE_VERSION = 'v3.3.12';
+const CACHE_VERSION = 'v3.3.13';
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
@@ -122,17 +122,16 @@ self.addEventListener('fetch', (event) => {
         if (!response.ok && url.pathname.startsWith('/api/')) {
           console.log('🔴 SW: API route returned error status:', response.status, url.pathname);
           
-          // Only notify clients once (not for every API call)
-          if (!url.pathname.includes('/auth/')) {
-            self.clients.matchAll().then(clients => {
-              clients.forEach(client => {
-                client.postMessage({
-                  type: 'SERVER_OFFLINE',
-                  message: 'Сървърът е недостъпен'
-                });
+          // Notify ALL clients immediately (including for auth routes)
+          // This sets window.__isOffline to prevent NextAuth redirect
+          self.clients.matchAll().then(clients => {
+            clients.forEach(client => {
+              client.postMessage({
+                type: 'SERVER_OFFLINE',
+                message: 'Сървърът е недостъпен'
               });
             });
-          }
+          });
           
           // Return JSON error instead of HTML error page
           return new Response(JSON.stringify({ 
@@ -162,17 +161,15 @@ self.addEventListener('fetch', (event) => {
         if (url.pathname.startsWith('/api/')) {
           console.log('🔴 SW: API route network error:', url.pathname);
           
-          // Only notify clients once (not for every API call)
-          if (!url.pathname.includes('/auth/')) {
-            self.clients.matchAll().then(clients => {
-              clients.forEach(client => {
-                client.postMessage({
-                  type: 'SERVER_OFFLINE',
-                  message: 'Сървърът е недостъпен'
-                });
+          // Notify ALL clients immediately (including for auth routes)
+          self.clients.matchAll().then(clients => {
+            clients.forEach(client => {
+              client.postMessage({
+                type: 'SERVER_OFFLINE',
+                message: 'Сървърът е недостъпен'
               });
             });
-          }
+          });
           
           // Return JSON error for API routes (including NextAuth)
           return new Response(JSON.stringify({ 
