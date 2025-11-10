@@ -1,7 +1,7 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
 // ⚠️ SW VERSION - Single source of truth (no duplicates)
-const CACHE_VERSION = 'v3.3.10';
+const CACHE_VERSION = 'v3.3.11';
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
@@ -198,7 +198,7 @@ self.addEventListener('fetch', (event) => {
               });
               
               // Return minimal HTML with modal that preserves the current URL (no redirect)
-            const offlineModalHTML = `<!DOCTYPE html>
+              const offlineModalHTML = `<!DOCTYPE html>
 <html lang="bg">
 <head>
   <meta charset="UTF-8">
@@ -308,11 +308,13 @@ self.addEventListener('fetch', (event) => {
 </body>
 </html>`;
             
-            return new Response(offlineModalHTML, {
-              status: 503,
-              headers: { 'Content-Type': 'text/html' }
-            });
+              return new Response(offlineModalHTML, {
+                status: 503,
+                headers: { 'Content-Type': 'text/html' }
+              });
+            }); // Close caches.match(basePage).then()
           }
+          
           // For non-navigation non-API requests, return error (don't serve offline.html)
           // This prevents HTML from being returned for API-like requests
           return new Response('Resource not available offline', {
