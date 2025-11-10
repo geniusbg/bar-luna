@@ -1,7 +1,7 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
 // ⚠️ SW VERSION - Single source of truth (no duplicates)
-const CACHE_VERSION = 'v3.3.9';
+const CACHE_VERSION = 'v3.3.10';
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
@@ -159,19 +159,45 @@ self.addEventListener('fetch', (event) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // If navigation request and no cache, try to serve main page first (so React app loads)
+          
+          // If navigation request and no cache, try to serve React app from cache
           if (request.mode === 'navigate') {
-            // Notify clients that server is offline
-            self.clients.matchAll().then(clients => {
-              clients.forEach(client => {
-                client.postMessage({
-                  type: 'SERVER_OFFLINE',
-                  message: 'Сървърът е недостъпен'
+            // Determine which base page to try based on URL
+            let basePage = '/bg';
+            if (url.pathname.includes('/admin')) {
+              basePage = '/bg/admin';
+            } else if (url.pathname.includes('/staff')) {
+              basePage = '/bg/staff';
+            }
+            
+            // Try to serve base React app page (has OfflineBanner)
+            return caches.match(basePage).then(basePageResponse => {
+              if (basePageResponse) {
+                console.log('✅ SW: Serving cached base page', basePage, 'for', url.pathname);
+                // Notify that server is offline (React app will show OfflineBanner)
+                self.clients.matchAll().then(clients => {
+                  clients.forEach(client => {
+                    client.postMessage({
+                      type: 'SERVER_OFFLINE',
+                      message: 'Сървърът е недостъпен'
+                    });
+                  });
+                });
+                return basePageResponse;
+              }
+              
+              // No React app in cache - show static offline modal
+              console.log('🔴 SW: No React app cached, showing static offline modal');
+              self.clients.matchAll().then(clients => {
+                clients.forEach(client => {
+                  client.postMessage({
+                    type: 'SERVER_OFFLINE',
+                    message: 'Сървърът е недостъпен'
+                  });
                 });
               });
-            });
-            
-            // Return minimal HTML with modal that preserves the current URL (no redirect)
+              
+              // Return minimal HTML with modal that preserves the current URL (no redirect)
             const offlineModalHTML = `<!DOCTYPE html>
 <html lang="bg">
 <head>
