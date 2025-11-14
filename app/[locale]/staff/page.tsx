@@ -404,7 +404,14 @@ export default function StaffDashboard() {
     }
     
     if (!initialLoading && !session) {
-      window.location.href = `/${locale}/staff/login`;
+      // Small delay to allow SW offline message to arrive
+      const timer = setTimeout(() => {
+        // Check again if still not offline (race condition with SW message)
+        if (typeof window !== 'undefined' && !(window as any).__isOffline) {
+          window.location.href = `/${locale}/staff/login`;
+        }
+      }, 100); // 100ms delay
+      return () => clearTimeout(timer);
     }
   }, [session, initialLoading, locale]);
 

@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
+export const revalidate = 0;
+
 export default async function EventDetailPage({
   params
 }: {

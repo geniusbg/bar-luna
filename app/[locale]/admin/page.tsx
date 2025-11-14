@@ -20,8 +20,14 @@ export default function AdminDashboard({
     }
     
     if (status === 'unauthenticated') {
-      window.location.href = `/${locale}/admin/login`;
-      return;
+      // Small delay to allow SW offline message to arrive
+      const timer = setTimeout(() => {
+        // Check again if still not offline (race condition with SW message)
+        if (typeof window !== 'undefined' && !(window as any).__isOffline) {
+          window.location.href = `/${locale}/admin/login`;
+        }
+      }, 100); // 100ms delay
+      return () => clearTimeout(timer);
     }
     
     if (status === 'authenticated' && session?.user) {
