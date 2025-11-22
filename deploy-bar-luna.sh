@@ -1,42 +1,48 @@
 #!/bin/bash
-# Bar Luna Deploy Script
-# Usage: sudo bash deploy-bar-luna.sh
+
+# Luna Bar v2.2 Deployment Script
+# This script handles deployment with Sharp fix and Prisma setup
 
 set -e  # Exit on error
 
-echo "🚀 Starting Bar Luna deployment..."
+echo "🚀 Starting deployment..."
 
-# Navigate to project
-cd /var/www/html/bar-luna || exit 1
+# Remove old directory
+rm -rf bar-luna
 
-# Pull latest code
-echo "📥 Pulling latest code from git..."
-git pull
+# Clone repository
+echo "📥 Cloning repository..."
+git clone -b luna-v2.2 https://github.com/geniusbg/bar-luna.git
 
-# Install dependencies (if package.json changed)
+# Copy environment file
+echo "📋 Copying environment file..."
+cp .env.bar-luna bar-luna/.env
+
+cd bar-luna
+
+# Install dependencies
 echo "📦 Installing dependencies..."
 npm install
 
-# Build Next.js
-echo "🔨 Building Next.js application..."
+# Fix Sharp for Linux (install platform-specific binaries)
+echo "🔧 Fixing Sharp for Linux..."
+npm uninstall sharp || true
+npm install --os=linux --cpu=x64 sharp || npm install --include=optional sharp
+
+# Regenerate Prisma Client
+echo "🔧 Generating Prisma Client..."
+npx prisma generate
+
+# Run Prisma migrations (if any)
+echo "🗄️ Running database migrations..."
+npx prisma migrate deploy || npx prisma db push || echo "⚠️ No migrations to run"
+
+# Build application
+echo "🏗️ Building application..."
 npm run build
 
-# Ensure uploads directory exists with correct permissions
-echo "📁 Checking uploads directory..."
-sudo mkdir -p /var/www/uploads/bar-luna
-sudo chown -R www-data:www-data /var/www/uploads/bar-luna
-sudo chmod -R 755 /var/www/uploads/bar-luna
-
 # Restart PM2
-echo "♻️  Restarting PM2 process..."
-pm2 restart bar-luna
+echo "🔄 Restarting PM2..."
+pm2 restart 6
 
-# Show status
 echo "✅ Deployment complete!"
-pm2 status bar-luna
-pm2 logs bar-luna --lines 10
-
-echo ""
-echo "🔍 To monitor logs: pm2 logs bar-luna"
-echo "📊 To check status: pm2 status"
-
