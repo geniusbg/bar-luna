@@ -244,4 +244,14 @@ model PushSubscription {
   @@map("push_subscriptions")
 }
 
+// QR Code Settings - Global settings for QR code generation
+model QRCodeSettings {
+  id        String   @id @default(uuid())
+  settings  Json     // JSON object with all QR code settings
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("qr_code_settings")
+}
+
 

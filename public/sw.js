@@ -1,14 +1,13 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
 // ⚠️ SW VERSION - Single source of truth (no duplicates)
-const CACHE_VERSION = 'v3.3.13';
+const CACHE_VERSION = 'v3.3.14';
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
   '/bg/admin',
   '/bg/menu',
-  '/bg',
-  '/offline.html'
+  '/bg'
 ];
 
 // Listen for messages from clients (e.g., version requests, skip waiting)
@@ -40,12 +39,8 @@ self.addEventListener('install', (event) => {
         return Promise.allSettled(
           urlsToCache.map(url => 
             cache.add(url).catch(err => {
-              // If offline.html can't be cached, create it inline
-              if (url === '/offline.html') {
-                return cache.put(url, new Response('<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Server Offline</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}.container{max-width:500px;width:100%;text-align:center;background:#1e293b;border-radius:16px;padding:40px;border:1px solid #334155}h1{font-size:24px;font-weight:700;margin-bottom:12px}p{color:#cbd5e1;line-height:1.6;margin-bottom:24px}</style></head><body><div class="container"><h1>Временен проблем със сървъра</h1><p>Сървърът е временно недостъпен. Приложението проверява автоматично на всеки 10 секунди дали сървърът е отново онлайн.</p></div></body></html>', {
-                  headers: { 'Content-Type': 'text/html' }
-                }));
-              }
+              console.warn('⚠️ Failed to cache:', url, err);
+              // Continue even if some URLs fail to cache
             })
           )
         );
@@ -113,6 +108,67 @@ self.addEventListener('fetch', (event) => {
   }
   
   
+  // Special handling for /api/auth/session - cache with short TTL (30 seconds)
+  if (url.pathname === '/api/auth/session' && request.method === 'GET') {
+    const SESSION_CACHE_TTL = 30 * 1000; // 30 seconds in milliseconds
+    const cacheKey = new Request(url.toString(), { method: 'GET' });
+    
+    event.respondWith(
+      caches.open(CACHE_NAME).then(cache => {
+        return cache.match(cacheKey).then(cachedResponse => {
+          // Check if cached response exists and is fresh (less than 30 seconds old)
+          if (cachedResponse) {
+            const cachedTime = cachedResponse.headers.get('sw-cached-time');
+            if (cachedTime) {
+              const age = Date.now() - parseInt(cachedTime);
+              if (age < SESSION_CACHE_TTL) {
+                console.log('✅ SW: Using cached session (age:', Math.round(age/1000), 's)');
+                return cachedResponse;
+              }
+            }
+          }
+          
+          // Cache is stale or doesn't exist - fetch fresh
+          console.log('🔄 SW: Fetching fresh session');
+          return fetch(request)
+            .then(response => {
+              // Only cache successful responses
+              if (response.ok) {
+                const clonedResponse = response.clone();
+                // Add timestamp header to track cache age
+                const headers = new Headers(clonedResponse.headers);
+                headers.set('sw-cached-time', Date.now().toString());
+                const modifiedResponse = new Response(clonedResponse.body, {
+                  status: clonedResponse.status,
+                  statusText: clonedResponse.statusText,
+                  headers: headers
+                });
+                cache.put(cacheKey, modifiedResponse);
+              }
+              return response;
+            })
+            .catch(() => {
+              // Network error - return cached response if available (even if stale)
+              if (cachedResponse) {
+                console.log('⚠️ SW: Network error, using stale cached session');
+                return cachedResponse;
+              }
+              // No cache - return error
+              return new Response(JSON.stringify({ 
+                error: 'Server offline',
+                message: 'The server is temporarily unavailable'
+              }), {
+                status: 503,
+                statusText: 'Service Unavailable',
+                headers: { 'Content-Type': 'application/json' }
+              });
+            });
+        });
+      })
+    );
+    return;
+  }
+  
   // For same-origin GET requests: Network first, fallback to cache
   event.respondWith(
     fetch(request)
@@ -147,8 +203,8 @@ self.addEventListener('fetch', (event) => {
           });
         }
         
-        // Only cache successful responses
-        if (response.ok) {
+        // Only cache successful responses (but not /api/auth/session - handled above)
+        if (response.ok && url.pathname !== '/api/auth/session') {
           const clonedResponse = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(request, clonedResponse);

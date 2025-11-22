@@ -23,7 +23,8 @@ export const metadata: Metadata = {
 export default async function AdminLayout({ children, params }: AdminLayoutProps) {
   const { locale } = await params;
   
-  // Note: Session check is handled in app/[locale]/admin/page.tsx to avoid redirect loops
+  // Note: Authentication check moved to individual pages to avoid redirect loops
+  // Login page has its own layout that doesn't check auth
 
   return (
     <>

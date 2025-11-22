@@ -1,3 +1,6 @@
+import { redirect } from 'next/navigation';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -24,6 +27,9 @@ export default async function StaffLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+
+  // Note: Authentication check moved to individual pages to avoid redirect loops
+  // Login page has its own layout that doesn't check auth
 
   return (
     <>
