@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import ProductForm from '@/components/ProductForm';
 
 export default function NewProductPage() {
@@ -58,7 +59,23 @@ export default function NewProductPage() {
   };
 
   if (categories.length === 0) {
-    return <div className="text-white">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
+            <Image 
+              src="/bg/luna-logo.svg"
+              alt="LUNA Logo" 
+              width={384}
+              height={384}
+              className="h-64 w-64 md:h-96 md:w-96"
+              priority
+            />
+          </div>
+          <p className="text-white text-3xl font-medium">Зареждане на категории...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

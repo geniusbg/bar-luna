@@ -112,7 +112,7 @@ export default function AdminLoginPage() {
         </div>
 
         <p className="text-center text-gray-500 text-sm mt-6">
-          Контакт: <span className="text-white">info@lunabar.bg</span>
+          Контакт: <span className="text-white">support@gsoft.bg</span>
         </p>
       </div>
     </div>

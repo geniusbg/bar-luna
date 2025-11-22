@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Luna Bar v2.2 Deployment Script
-# This script handles deployment with Sharp fix and Prisma setup
+# Luna Bar v2.2+ Deployment Script
+# Sharp removed - using pure SVG approach for QR codes
 
 set -e  # Exit on error
 
@@ -23,11 +23,6 @@ cd bar-luna
 # Install dependencies
 echo "📦 Installing dependencies..."
 npm install
-
-# Fix Sharp for Linux (install platform-specific binaries)
-echo "🔧 Fixing Sharp for Linux..."
-npm uninstall sharp || true
-npm install --os=linux --cpu=x64 sharp || npm install --include=optional sharp
 
 # Regenerate Prisma Client
 echo "🔧 Generating Prisma Client..."

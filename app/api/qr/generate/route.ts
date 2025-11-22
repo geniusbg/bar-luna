@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import QRCode from 'qrcode';
-import sharp from 'sharp';
 import { prisma } from '@/lib/prisma';
 
 interface QRCodeSettings {
@@ -12,7 +11,7 @@ interface QRCodeSettings {
 
 /**
  * Generate QR code with embedded table number text in the center
- * Uses composite approach: QR code as PNG + text overlay as SVG composite
+ * Uses pure SVG approach - no Sharp needed!
  */
 async function generateQRCodeWithTableNumber(
   qrUrl: string,
@@ -27,9 +26,14 @@ async function generateQRCodeWithTableNumber(
     qrCodeSize = width
   } = settings;
 
-  // Step 1: Generate QR code as PNG buffer directly
-  const qrCodeBuffer = await QRCode.toBuffer(qrUrl, {
-    type: 'png',
+  // Use qrCodeSize as the actual size for the entire SVG canvas
+  // This ensures the QR code takes exactly the space specified in settings
+  const svgWidth = qrCodeSize;
+  const svgHeight = qrCodeSize;
+
+  // Step 1: Generate QR code as SVG string
+  const qrCodeSvg = await QRCode.toString(qrUrl, {
+    type: 'svg',
     width: qrCodeSize,
     margin: 0, // No margin to avoid white border
     errorCorrectionLevel: 'H', // High error correction for embedded text
@@ -39,75 +43,119 @@ async function generateQRCodeWithTableNumber(
     }
   });
 
-  // Step 2: Calculate text overlay dimensions
-  const fontSize = Math.floor(qrCodeSize * 0.15); // ~15% of QR code width
-  const circleRadius = Math.floor(fontSize * 1.5); // Circle behind text
-  const text = tableNumber.toString();
-  const overlaySize = Math.round(circleRadius * 2.5); // Size of the text overlay (must be integer)
+  // Debug: Check if SVG was generated
+  if (!qrCodeSvg || qrCodeSvg.length === 0) {
+    throw new Error('Failed to generate QR code SVG');
+  }
 
-  // Step 3: Create SVG overlay with text and circle
-  const centerX = overlaySize / 2;
-  const centerY = overlaySize / 2;
+  // Parse viewBox from original SVG to understand coordinate system
+  const viewBoxMatch = qrCodeSvg.match(/viewBox=["']([^"']+)["']/i);
+  let viewBox = `0 0 ${qrCodeSize} ${qrCodeSize}`; // Default viewBox
+  if (viewBoxMatch) {
+    viewBox = viewBoxMatch[1];
+  }
   
-  const textOverlaySvg = `<svg width="${overlaySize}" height="${overlaySize}" xmlns="http://www.w3.org/2000/svg">
-    <!-- White circle background -->
-    <circle cx="${centerX}" cy="${centerY}" r="${circleRadius}" fill="${backgroundColor}" opacity="0.95"/>
-    <!-- Table number text -->
+  // Parse viewBox to get actual dimensions
+  const viewBoxParts = viewBox.split(/\s+/).map(Number);
+  const qrViewBoxX = viewBoxParts[0] || 0;
+  const qrViewBoxY = viewBoxParts[1] || 0;
+  const qrViewBoxWidth = viewBoxParts[2] || qrCodeSize;
+  const qrViewBoxHeight = viewBoxParts[3] || qrCodeSize;
+
+  // Extract the SVG content (paths, rects, etc.)
+  const svgContentMatch = qrCodeSvg.match(/<svg[^>]*>([\s\S]*)<\/svg>/i);
+  let qrSvgContent = '';
+  if (svgContentMatch && svgContentMatch[1]) {
+    qrSvgContent = svgContentMatch[1].trim();
+  } else {
+    // Fallback: try to extract without regex
+    qrSvgContent = qrCodeSvg
+      .replace(/^<\?xml[^>]*\?>\s*/i, '')
+      .replace(/^<svg[^>]*>/i, '')
+      .replace(/<\/svg>\s*$/i, '')
+      .trim();
+  }
+
+  // Apply custom colors
+  qrSvgContent = qrSvgContent
+    .replace(/fill="#000000"/g, `fill="${qrCodeColor}"`)
+    .replace(/fill="#ffffff"/g, `fill="${backgroundColor}"`)
+    .replace(/fill="black"/gi, `fill="${qrCodeColor}"`)
+    .replace(/fill="white"/gi, `fill="${backgroundColor}"`)
+    .replace(/fill="#000"/g, `fill="${qrCodeColor}"`)
+    .replace(/fill="#fff"/gi, `fill="${backgroundColor}"`)
+    .replace(/fill="none"/g, `fill="${backgroundColor}"`);
+
+  // Step 2: Calculate text overlay dimensions
+  // Use larger font size (18% of QR code width) for better visibility
+  const fontSize = Math.floor(qrCodeSize * 0.18); // ~18% of QR code width
+  // Circle should be just slightly larger than text (smaller circle for less darkening)
+  const circleRadius = Math.floor(fontSize * 1.05); // Smaller circle behind text
+  const text = tableNumber.toString();
+  
+  // Validate that we have QR code content
+  if (!qrSvgContent || qrSvgContent.length < 10) {
+    throw new Error(`Invalid QR code SVG content. Length: ${qrSvgContent?.length || 0}`);
+  }
+
+  // Step 3: Create combined SVG with background, QR code, and text overlay
+  // Scale QR code to fill the entire SVG canvas
+  // Calculate scale factor to map QR code's viewBox to our canvas size
+  const scaleX = svgWidth / qrViewBoxWidth;
+  const scaleY = svgHeight / qrViewBoxHeight;
+  
+  // Create combined SVG - scale QR code to fill entire canvas
+  // Text should be added after scaling to maintain correct size
+  const combinedSvg = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${svgWidth} ${svgHeight}">
+    <!-- Background -->
+    <rect width="${svgWidth}" height="${svgHeight}" fill="${backgroundColor}" x="0" y="0"/>
+    
+    <!-- QR Code scaled to fill entire canvas -->
+    <g transform="scale(${scaleX}, ${scaleY}) translate(${-qrViewBoxX}, ${-qrViewBoxY})">
+      ${qrSvgContent}
+    </g>
+    
+    <!-- Text overlay (positioned in canvas coordinates, not scaled) -->
+    <!-- Use lower opacity circle to avoid darkening the QR code too much -->
+    <circle cx="${svgWidth / 2}" cy="${svgHeight / 2}" r="${circleRadius}" fill="${backgroundColor}" opacity="0.85"/>
     <text 
-      x="${centerX}" 
-      y="${centerY}" 
+      x="${svgWidth / 2}" 
+      y="${svgHeight / 2}" 
       font-family="Arial, Helvetica, sans-serif" 
       font-size="${fontSize}px" 
       font-weight="bold" 
       fill="${textColor}" 
       text-anchor="middle" 
       dominant-baseline="central"
+      alignment-baseline="central"
+      style="pointer-events: none; user-select: none;"
     >${text}</text>
   </svg>`;
 
-  // Step 4: Convert text overlay SVG to PNG buffer
-  const textOverlayBuffer = await sharp(Buffer.from(textOverlaySvg))
-    .resize(overlaySize, overlaySize)
-    .png()
-    .toBuffer();
+  // Validate combined SVG
+  if (!combinedSvg || combinedSvg.length < 100) {
+    throw new Error(`Failed to create combined SVG. Length: ${combinedSvg?.length || 0}`);
+  }
 
-  // Step 5: Calculate positions for QR code and text overlay
-  // QR code is centered in the image
-  const qrX = Math.floor((width - qrCodeSize) / 2);
-  const qrY = Math.floor((width - qrCodeSize) / 2);
+  // Step 4: Convert SVG to data URL
+  // Try base64 encoding first (more reliable for complex SVGs)
+  // If that fails, fall back to URL encoding
+  let dataUrl: string;
   
-  // Text overlay is centered in the image (which centers it on the QR code)
-  const textX = Math.floor((width - overlaySize) / 2);
-  const textY = Math.floor((width - overlaySize) / 2);
+  try {
+    // Base64 encoding - works well for most browsers
+    const svgBase64 = Buffer.from(combinedSvg, 'utf-8').toString('base64');
+    dataUrl = `data:image/svg+xml;base64,${svgBase64}`;
+  } catch (error) {
+    // Fallback to URL encoding if base64 fails
+    const svgEncoded = encodeURIComponent(combinedSvg);
+    dataUrl = `data:image/svg+xml;charset=utf-8,${svgEncoded}`;
+  }
 
-  // Step 6: Create base image with background color and composite QR code and text overlay
-  const finalBuffer = await sharp({
-    create: {
-      width: width,
-      height: width,
-      channels: 4,
-      background: backgroundColor
-    }
-  })
-    .png()
-    .composite([
-      {
-        input: qrCodeBuffer,
-        top: qrY,
-        left: qrX
-      },
-      {
-        input: textOverlayBuffer,
-        top: textY,
-        left: textX,
-        blend: 'over' // Overlay blend mode
-      }
-    ])
-    .png()
-    .toBuffer();
-
-  // Step 8: Convert buffer to data URL
-  const dataUrl = `data:image/png;base64,${finalBuffer.toString('base64')}`;
+  // Validate data URL
+  if (!dataUrl || !dataUrl.startsWith('data:image/svg+xml')) {
+    throw new Error(`Invalid data URL format. Starts with: ${dataUrl?.substring(0, 50) || 'null'}`);
+  }
 
   return dataUrl;
 }
@@ -134,6 +182,7 @@ export async function POST(request: Request) {
 
     // Generate QR code with embedded table number in center
     const qrCodeSize = settings?.qrCodeSize || 400;
+    // Use fixed width for the SVG canvas (same as QR code size, no padding needed)
     const qrCodeDataUrl = await generateQRCodeWithTableNumber(qrUrl, tableNumber, qrCodeSize, settings);
 
     // Update table with QR code data and default redirect URL

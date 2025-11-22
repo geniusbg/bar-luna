@@ -1,71 +1,18 @@
 # Production Deployment Guide - Luna Bar v2.2
 
-## Sharp Library Issue on Linux Production Server
+## Sharp Library Removal
 
-### Problem
-```
-Error: Could not load the "sharp" module using the linux-x64 runtime
-Unsupported CPU: Prebuilt binaries for linux-x64 require v2 microarchitecture
-```
+### ✅ Sharp е премахнат (v2.2+)
 
-### Solution
+**Sharp вече НЕ се използва!** Кодът е преработен да използва чист SVG подход за генериране на QR кодове, което премахва нуждата от Sharp и native зависимости.
 
-На production сървъра изпълни следните команди:
+### Какво е променено?
 
-```bash
-cd /var/www/html/bar-luna
-
-# Премахни sharp и node_modules
-npm uninstall sharp
-rm -rf node_modules package-lock.json
-
-# Инсталирай sharp с опционалните зависимости за Linux
-npm install --include=optional sharp
-
-# Или използвай platform-specific инсталация
-npm install --os=linux --cpu=x64 sharp
-
-# Инсталирай всички зависимости отново
-npm install
-
-# Regenerate Prisma Client
-npx prisma generate
-
-# Rebuild приложението
-npm run build
-
-# Restart PM2
-pm2 restart bar-luna
-```
-
-### Alternative: Force Reinstall Sharp
-
-Ако горните команди не работят, опитай:
-
-```bash
-cd /var/www/html/bar-luna
-
-# Премахни sharp
-npm uninstall sharp
-rm -rf node_modules/.sharp
-
-# Инсталирай sharp с force
-npm install sharp --force
-
-# Rebuild
-npm run build
-pm2 restart bar-luna
-```
-
-### Verify Installation
-
-Провери дали sharp е правилно инсталиран:
-
-```bash
-node -e "console.log(require('sharp').versions)"
-```
-
-Трябва да видиш версиите на sharp и неговите зависимости.
+- ✅ QR кодовете се генерират като SVG (не PNG)
+- ✅ Композирането на текст и QR код е върху SVG ниво (не изображение)
+- ✅ Няма нужда от Sharp, `canvas`, или други native модули
+- ✅ По-лека и по-бърза инсталация
+- ✅ Работи на всички платформи без специални настройки
 
 ---
 
@@ -84,9 +31,8 @@ git checkout luna-v2.2
 git pull origin luna-v2.2
 ```
 
-### 3. Инсталирай dependencies (с Sharp fix)
+### 3. Инсталирай dependencies
 ```bash
-npm install --include=optional sharp
 npm install
 ```
 
@@ -135,13 +81,16 @@ pm2 logs bar-luna
 
 ## Troubleshooting
 
-### Sharp не работи след rebuild
+### Build Errors
 
-Ако проблемът с sharp продължава:
+Ако има проблеми при build:
 
 1. Провери Node.js версията: `node -v` (трябва да е >= 18)
-2. Провери архитектурата: `uname -m` (трябва да е x64)
-3. Използвай Docker или правилната Node.js версия
+2. Премахни `node_modules` и `package-lock.json` и инсталирай отново:
+   ```bash
+   rm -rf node_modules package-lock.json
+   npm install
+   ```
 
 ### Database Migration Issues
 
