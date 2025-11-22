@@ -864,6 +864,16 @@ export default function QRCodesPage() {
       {generated && (
         <>
           <style jsx global>{`
+            /* Mobile responsive styles - only for small screens */
+            @media (max-width: 640px) {
+              .qr-card {
+                max-width: calc(100vw - 2rem) !important;
+                width: auto !important;
+                height: auto !important;
+                aspect-ratio: ${settings.cardWidth} / ${settings.cardHeight} !important;
+              }
+            }
+            
             @media print {
               * {
                 -webkit-print-color-adjust: exact !important;
