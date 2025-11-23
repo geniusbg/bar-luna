@@ -166,11 +166,62 @@ export default function AdminOrdersPage() {
       }
     });
 
+    // Listen for auto-rejections
+    adminChannel.bind('auto-rejections', (data: any) => {
+      // Reload pending approvals and active orders when auto-rejections occur
+      if (activeTab === 'approvals') {
+        loadPendingApprovals();
+      }
+      loadActiveOrders();
+      if (activeTab === 'history') {
+        loadHistory();
+      }
+    });
+
     return () => {
       adminChannel.unbind_all();
       pusher.unsubscribe('admin-channel');
     };
   }, [activeTab]);
+
+  // Auto-reject expired approvals (30 minutes old)
+  useEffect(() => {
+    const checkAndAutoReject = async () => {
+      try {
+        const response = await fetch('/api/orders/auto-reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.rejectedCount > 0) {
+            // Reload pending approvals if we're on that tab
+            if (activeTab === 'approvals') {
+              loadPendingApprovals();
+            }
+            // Reload active orders
+            loadActiveOrders();
+            // Show notification
+            setToast({ 
+              message: `✅ Автоматично отхвърлени ${data.rejectedCount} поръчки (над 30 мин без одобрение)`, 
+              type: 'success' 
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Auto-reject check failed:', error);
+      }
+    };
+
+    // Check immediately on page load
+    checkAndAutoReject();
+
+    // Then check every 5 minutes
+    const interval = setInterval(checkAndAutoReject, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [activeTab, loadPendingApprovals, loadActiveOrders]);
   
   // Load history when applied filters or page changes
   useEffect(() => {
@@ -1458,6 +1509,14 @@ export default function AdminOrdersPage() {
                   <p className="text-gray-300 text-sm">
                     Статус: <span className="font-semibold text-white">{selectedOrder.status}</span>
                   </p>
+                  {selectedOrder.status === 'cancelled' && selectedOrder.cancellationReason && (
+                    <div className="mt-3 pt-3 border-t border-gray-700">
+                      <p className="text-gray-300 text-sm font-semibold mb-1">Причина за отказ:</p>
+                      <p className="text-red-300 text-sm bg-red-900/20 p-3 rounded-lg border border-red-800">
+                        {selectedOrder.cancellationReason}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Admin Actions */}

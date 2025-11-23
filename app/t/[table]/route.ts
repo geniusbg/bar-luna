@@ -9,8 +9,20 @@ export async function GET(
     const { table: tableParam } = await params;
     const tableNumber = parseInt(tableParam);
 
+    // Get base URL from environment or request
+    const getBaseUrl = () => {
+      const envUrl = process.env.NEXT_PUBLIC_APP_URL;
+      if (envUrl) return envUrl;
+      
+      const protocol = request.headers.get('x-forwarded-proto') === 'https' ? 'https://' : 'http://';
+      const host = request.headers.get('host') || request.url.split('/')[2];
+      return protocol + host;
+    };
+    
+    const baseUrl = getBaseUrl();
+
     if (isNaN(tableNumber)) {
-      return NextResponse.redirect(new URL('/bg/menu', request.url));
+      return NextResponse.redirect(new URL('/bg/menu', baseUrl));
     }
 
     // Find table and increment scan count
@@ -19,12 +31,12 @@ export async function GET(
     });
 
     if (!barTable) {
-      return NextResponse.redirect(new URL('/bg/menu', request.url));
+      return NextResponse.redirect(new URL('/bg/menu', baseUrl));
     }
 
     // Check if table is active
     if (!barTable.isActive) {
-      return NextResponse.redirect(new URL('/bg/menu', request.url));
+      return NextResponse.redirect(new URL('/bg/menu', baseUrl));
     }
 
     // Increment scan count and update last scanned timestamp
@@ -48,17 +60,27 @@ export async function GET(
     const separator = baseRedirectUrl.includes('?') ? '&' : '?';
     const redirectUrl = `${baseRedirectUrl}${separator}session=${encodeURIComponent(sessionToken)}`;
     
-    // If it's a relative URL, use current domain
+    // Build absolute URL using baseUrl
     if (redirectUrl.startsWith('/')) {
-      return NextResponse.redirect(new URL(redirectUrl, request.url));
+      // Relative URL - use baseUrl from environment
+      const absoluteUrl = new URL(redirectUrl, baseUrl);
+      return NextResponse.redirect(absoluteUrl);
     }
     
-    // If it's an absolute URL, redirect directly
+    // If it's already an absolute URL, redirect directly
     return NextResponse.redirect(redirectUrl);
 
   } catch (error) {
     console.error('QR redirect error:', error);
-    return NextResponse.redirect(new URL('/bg/menu', request.url));
+    const getBaseUrl = () => {
+      const envUrl = process.env.NEXT_PUBLIC_APP_URL;
+      if (envUrl) return envUrl;
+      
+      const protocol = request.headers.get('x-forwarded-proto') === 'https' ? 'https://' : 'http://';
+      const host = request.headers.get('host') || request.url.split('/')[2];
+      return protocol + host;
+    };
+    return NextResponse.redirect(new URL('/bg/menu', getBaseUrl()));
   }
 }
 

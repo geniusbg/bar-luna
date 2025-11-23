@@ -57,3 +57,10 @@ seed-products.js
 # pm2 logs
 /logs/*
 !logs/.gitkeep
+
+# Apache configuration files (may contain server IPs and paths)
+*.conf
+!*.conf.example
+
+# Documentation files that may contain sensitive info
+IMPLEMENTATION_SUMMARY.md

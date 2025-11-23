@@ -1,8 +1,8 @@
 <IfModule mod_ssl.c>
 
-<VirtualHost 66.29.142.10:443>
-    ServerName bar-luna.com
-    ServerAlias www.bar-luna.com
+<VirtualHost *:443>
+    ServerName your-domain.com
+    ServerAlias www.your-domain.com
 
     ProxyPreserveHost On
     ProxyRequests Off
@@ -10,8 +10,8 @@
     # ============================================
     # UPLOADS: Serve от external директория (защитени от deploy)
     # ============================================
-    Alias /uploads /var/www/uploads/bar-luna
-    <Directory /var/www/uploads/bar-luna>
+    Alias /uploads /var/www/uploads/your-app-name
+    <Directory /var/www/uploads/your-app-name>
         Require all granted
         Options -Indexes +FollowSymLinks
         AllowOverride None
@@ -25,7 +25,7 @@
     # ============================================
     # Service Worker: Serve директно от файлова система (работи дори когато Next.js е спрян)
     # ============================================
-    Alias /sw.js /var/www/html/bar-luna/public/sw.js
+    Alias /sw.js /var/www/html/your-app-name/public/sw.js
     <Files "sw.js">
         Require all granted
         Header set Cache-Control "no-cache, no-store, must-revalidate"
@@ -83,7 +83,7 @@
         Header always set Referrer-Policy "strict-origin-when-cross-origin"
         
         # CORS за Next.js RSC (React Server Components) - КРИТИЧНО!
-        Header always set Access-Control-Allow-Origin "https://bar-luna.com"
+        Header always set Access-Control-Allow-Origin "https://your-domain.com"
         Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
         Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Accept, Origin, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url"
         Header always set Access-Control-Allow-Credentials "true"
@@ -94,7 +94,7 @@
 
     # Handle OPTIONS (preflight) requests
     <If "%{REQUEST_METHOD} == 'OPTIONS'">
-        Header always set Access-Control-Allow-Origin "https://bar-luna.com"
+        Header always set Access-Control-Allow-Origin "https://your-domain.com"
         Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
         Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Accept, Origin, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url"
         Header always set Access-Control-Max-Age "86400"
@@ -113,13 +113,13 @@
     </Location>
 
     # Logs
-    ErrorLog  ${APACHE_LOG_DIR}/bar-luna-ssl-error.log
-    CustomLog ${APACHE_LOG_DIR}/bar-luna-ssl-access.log combined
+    ErrorLog  ${APACHE_LOG_DIR}/your-app-name-ssl-error.log
+    CustomLog ${APACHE_LOG_DIR}/your-app-name-ssl-access.log combined
 
     # SSL (Let's Encrypt)
     SSLEngine on
-    SSLCertificateFile /etc/letsencrypt/live/bar-luna.com/fullchain.pem
-    SSLCertificateKeyFile /etc/letsencrypt/live/bar-luna.com/privkey.pem
+    SSLCertificateFile /etc/letsencrypt/live/your-domain.com/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/your-domain.com/privkey.pem
     Include /etc/letsencrypt/options-ssl-apache.conf
 
     # SSL protocols for PWA
