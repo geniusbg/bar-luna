@@ -205,16 +205,37 @@ function LogoSection({ settings, setSettings }: { settings: QRCodeSettings; setS
   );
 }
 
+interface QRTable {
+  id: string;
+  tableNumber: number;
+  tableName: string | null;
+  isActive: boolean;
+  redirectUrl: string | null;
+  scanCount: number;
+  lastScannedAt: string | null;
+  qrCodeUrl: string | null;
+}
+
 export default function QRCodesPage() {
   const [tables, setTables] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [generated, setGenerated] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showRedirectsModal, setShowRedirectsModal] = useState(false);
   const [settings, setSettings] = useState<QRCodeSettings>(DEFAULT_SETTINGS);
   const [savedSettings, setSavedSettings] = useState<QRCodeSettings>(DEFAULT_SETTINGS);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  
+  // QR Redirects modal state
+  const [redirectTables, setRedirectTables] = useState<QRTable[]>([]);
+  const [redirectsLoading, setRedirectsLoading] = useState(false);
+  const [editingTable, setEditingTable] = useState<number | null>(null);
+  const [editUrl, setEditUrl] = useState('');
+  const [editTableName, setEditTableName] = useState('');
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [redirectsToast, setRedirectsToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Load settings from API on mount
   useEffect(() => {
@@ -358,6 +379,71 @@ export default function QRCodesPage() {
     window.print();
   };
 
+  // QR Redirects functions
+  const loadRedirectTables = async () => {
+    setRedirectsLoading(true);
+    try {
+      const response = await fetch('/api/qr/redirects');
+      const data = await response.json();
+      setRedirectTables(data.tables || []);
+    } catch (error) {
+      setRedirectsToast({ message: 'Грешка при зареждане', type: 'error' });
+    } finally {
+      setRedirectsLoading(false);
+    }
+  };
+
+  const startEditingRedirect = (table: QRTable) => {
+    setEditingTable(table.tableNumber);
+    setEditUrl(table.redirectUrl || `/order?table=${table.tableNumber}`);
+    setEditTableName(table.tableName || '');
+    setEditIsActive(table.isActive);
+  };
+
+  const cancelEditingRedirect = () => {
+    setEditingTable(null);
+    setEditUrl('');
+    setEditTableName('');
+    setEditIsActive(true);
+  };
+
+  const saveRedirect = async (tableNumber: number) => {
+    try {
+      const response = await fetch('/api/qr/redirects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tableNumber,
+          redirectUrl: editUrl,
+          tableName: editTableName || null,
+          isActive: editIsActive
+        })
+      });
+
+      if (response.ok) {
+        setRedirectsToast({ message: '✅ Успешно запазено', type: 'success' });
+        await loadRedirectTables();
+        cancelEditingRedirect();
+      } else {
+        setRedirectsToast({ message: 'Грешка при запазване', type: 'error' });
+      }
+    } catch (error) {
+      setRedirectsToast({ message: 'Грешка при запазване', type: 'error' });
+    }
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Никога';
+    const date = new Date(dateString);
+    return date.toLocaleString('bg-BG', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const downloadAllQRCodes = async () => {
     try {
       const { default: html2canvas } = await import('html2canvas');
@@ -467,12 +553,15 @@ export default function QRCodesPage() {
           )}
         </div>
         <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
-          <a
-            href="/bg/admin/qr/redirects"
-            className="px-4 md:px-6 py-2 md:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all text-center text-sm md:text-base"
+          <button
+            onClick={() => {
+              setShowRedirectsModal(true);
+              loadRedirectTables();
+            }}
+            className="px-4 md:px-6 py-2 md:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all text-sm md:text-base"
           >
-            🔗 Redirects
-          </a>
+            🔗 QR Пренасочвания
+          </button>
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="px-4 md:px-6 py-2 md:py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all text-sm md:text-base"
@@ -1236,6 +1325,208 @@ export default function QRCodesPage() {
             ))}
           </div>
         </>
+      )}
+
+      {/* QR Redirects Modal */}
+      {showRedirectsModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-700 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-white">🔗 QR Пренасочвания</h2>
+                <p className="text-gray-400 text-sm mt-1">
+                  Управление на URL адресите на QR кодовете. Промените се прилагат веднага без да принтирате нови кодове.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRedirectsModal(false);
+                  cancelEditingRedirect();
+                }}
+                className="text-white text-3xl hover:text-gray-300 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Toast Notification */}
+            {redirectsToast && (
+              <div className={`px-6 py-3 ${redirectsToast.type === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                {redirectsToast.message}
+              </div>
+            )}
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {redirectsLoading ? (
+                <div className="text-center py-12">
+                  <p className="text-white">Зареждане...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Stats Summary */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+                      <div className="text-gray-400 text-sm mb-1">Всички маси</div>
+                      <div className="text-3xl font-bold text-white">{redirectTables.length}</div>
+                    </div>
+                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+                      <div className="text-gray-400 text-sm mb-1">Активни</div>
+                      <div className="text-3xl font-bold text-green-500">
+                        {redirectTables.filter(t => t.isActive).length}
+                      </div>
+                    </div>
+                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+                      <div className="text-gray-400 text-sm mb-1">Деактивирани</div>
+                      <div className="text-3xl font-bold text-red-500">
+                        {redirectTables.filter(t => !t.isActive).length}
+                      </div>
+                    </div>
+                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+                      <div className="text-gray-400 text-sm mb-1">Общо сканирания</div>
+                      <div className="text-3xl font-bold text-blue-500">
+                        {redirectTables.reduce((sum, t) => sum + t.scanCount, 0)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tables List */}
+                  <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-950 border-b border-gray-800">
+                          <tr>
+                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Маса</th>
+                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Статус</th>
+                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">QR Link</th>
+                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Redirect URL</th>
+                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Сканирания</th>
+                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Последно</th>
+                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Действия</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800">
+                          {redirectTables.map((table) => (
+                            <tr key={table.id} className={!table.isActive ? 'opacity-50' : ''}>
+                              <td className="px-4 py-3">
+                                {editingTable === table.tableNumber ? (
+                                  <input
+                                    type="text"
+                                    value={editTableName}
+                                    onChange={(e) => setEditTableName(e.target.value)}
+                                    placeholder={`Маса ${table.tableNumber}`}
+                                    className="w-full px-3 py-1 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:border-white focus:outline-none"
+                                  />
+                                ) : (
+                                  <>
+                                    <div className="font-semibold text-white">
+                                      Маса {table.tableNumber}
+                                    </div>
+                                    {table.tableName && (
+                                      <div className="text-sm text-gray-400">{table.tableName}</div>
+                                    )}
+                                  </>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {editingTable === table.tableNumber ? (
+                                  <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={editIsActive}
+                                      onChange={(e) => setEditIsActive(e.target.checked)}
+                                      className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-green-600"
+                                    />
+                                    <span className="text-white text-sm">
+                                      {editIsActive ? 'Активна' : 'Спряна'}
+                                    </span>
+                                  </label>
+                                ) : (
+                                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                    table.isActive
+                                      ? 'bg-green-500/20 text-green-400'
+                                      : 'bg-red-500/20 text-red-400'
+                                  }`}>
+                                    {table.isActive ? '✓ Активна' : '✗ Спряна'}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                <code className="text-sm text-blue-400 bg-blue-500/10 px-2 py-1 rounded">
+                                  /t/{table.tableNumber}
+                                </code>
+                              </td>
+                              <td className="px-4 py-3">
+                                {editingTable === table.tableNumber ? (
+                                  <input
+                                    type="text"
+                                    value={editUrl}
+                                    onChange={(e) => setEditUrl(e.target.value)}
+                                    className="w-full px-3 py-1 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:border-white focus:outline-none"
+                                    placeholder="/order?table=1"
+                                  />
+                                ) : (
+                                  <code className="text-sm text-gray-300">
+                                    {table.redirectUrl || `/order?table=${table.tableNumber}`}
+                                  </code>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-white font-semibold">{table.scanCount}</span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-400">
+                                {formatDate(table.lastScannedAt)}
+                              </td>
+                              <td className="px-4 py-3">
+                                {editingTable === table.tableNumber ? (
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => saveRedirect(table.tableNumber)}
+                                      className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors"
+                                    >
+                                      ✓ Запази
+                                    </button>
+                                    <button
+                                      onClick={cancelEditingRedirect}
+                                      className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors"
+                                    >
+                                      ✗ Откажи
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => startEditingRedirect(table)}
+                                    className="px-3 py-1 bg-white hover:bg-gray-200 text-black text-sm rounded transition-colors"
+                                  >
+                                    ✎ Редактирай
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Info Box */}
+                  <div className="mt-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-6">
+                    <h3 className="text-blue-400 font-semibold mb-2">💡 Как работят динамичните QR кодове?</h3>
+                    <ul className="text-gray-300 space-y-2 text-sm">
+                      <li>• QR кодът винаги води към <code className="bg-blue-500/20 px-1 rounded">/t/[номер]</code> (кратък линк)</li>
+                      <li>• Кратият линк redirect-ва към URL-а който сте настроили тук</li>
+                      <li>• Можете да сменяте URL-а по всяко време без да принтирате нови кодове</li>
+                      <li>• Можете да спрете временно маса като я деактивирате</li>
+                      <li>• Статистиките показват колко пъти е сканиран всеки код</li>
+                      <li>• <strong>Важно:</strong> Ако сменяте QR Link (redirect URL), не е нужно да регенерирате QR кода - той винаги води към /t/[номер]</li>
+                    </ul>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

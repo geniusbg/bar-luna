@@ -1,4 +1,26 @@
+import { prisma } from '@/lib/prisma';
+
 export default async function ContactPage() {
+  // Fetch working hours
+  const workingHours = await prisma.workingHours.findMany({
+    orderBy: { dayOfWeek: 'asc' }
+  });
+
+  // Ensure we have all 7 days
+  const daysMap = new Map(workingHours.map(wh => [wh.dayOfWeek, wh]));
+  const allDays = Array.from({ length: 7 }, (_, i) => {
+    const existing = daysMap.get(i);
+    return existing || {
+      dayOfWeek: i,
+      isOpen: true,
+      openTime: '10:00',
+      closeTime: '00:00'
+    };
+  });
+
+  // Day names in Bulgarian
+  const dayNames = ['Нед', 'Пон', 'Вт', 'Ср', 'Чет', 'Пет', 'Съб'];
+  
   return (
     <main className="min-h-screen bg-black py-20">
       <div className="container mx-auto px-4">
@@ -83,10 +105,14 @@ export default async function ContactPage() {
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 mt-8">
             <h3 className="text-2xl font-bold text-white mb-4">Работно време</h3>
             <div className="grid grid-cols-2 md:grid-cols-7 gap-4 text-center">
-              {['Пон', 'Вт', 'Ср', 'Чет', 'Пет', 'Съб', 'Нед'].map((day) => (
-                <div key={day} className="bg-white/5 rounded-lg p-3">
-                  <p className="text-gray-300 text-sm mb-1">{day}</p>
-                  <p className="text-white font-semibold">10:00 - 00:00</p>
+              {allDays.map((day) => (
+                <div key={day.dayOfWeek} className="bg-white/5 rounded-lg p-3">
+                  <p className="text-gray-300 text-sm mb-1">{dayNames[day.dayOfWeek]}</p>
+                  {day.isOpen && day.openTime && day.closeTime ? (
+                    <p className="text-white font-semibold">{day.openTime} - {day.closeTime}</p>
+                  ) : (
+                    <p className="text-gray-500 font-semibold">Затворено</p>
+                  )}
                 </div>
               ))}
             </div>

@@ -28,18 +28,26 @@ export async function GET() {
 // Update QR redirect configuration
 export async function PUT(request: Request) {
   try {
-    const { tableNumber, redirectUrl, isActive } = await request.json();
+    const { tableNumber, redirectUrl, isActive, tableName } = await request.json();
 
     if (!tableNumber) {
       return NextResponse.json({ error: 'Table number required' }, { status: 400 });
     }
 
+    const updateData: any = {};
+    if (redirectUrl !== undefined) {
+      updateData.redirectUrl = redirectUrl || null;
+    }
+    if (isActive !== undefined) {
+      updateData.isActive = isActive;
+    }
+    if (tableName !== undefined) {
+      updateData.tableName = tableName || null;
+    }
+
     const table = await prisma.barTable.update({
       where: { tableNumber: parseInt(tableNumber) },
-      data: {
-        redirectUrl: redirectUrl || null,
-        isActive: isActive !== undefined ? isActive : undefined
-      }
+      data: updateData
     });
 
     return NextResponse.json({ 
@@ -47,7 +55,8 @@ export async function PUT(request: Request) {
       table: {
         tableNumber: table.tableNumber,
         redirectUrl: table.redirectUrl,
-        isActive: table.isActive
+        isActive: table.isActive,
+        tableName: table.tableName
       }
     });
   } catch (error) {

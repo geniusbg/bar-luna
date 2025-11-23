@@ -128,7 +128,7 @@ export default function AdminProductsPage() {
                 : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
             }`}
           >
-            Всички ({filteredProducts.length})
+            Всички ({products.length})
           </button>
           {categories.map((category: any) => {
             const count = products.filter(p => p.categoryId === category.id && 

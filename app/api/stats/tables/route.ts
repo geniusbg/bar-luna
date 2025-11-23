@@ -5,11 +5,20 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || 'today'; // today, week, month
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
     
     const now = new Date();
     let dateFilter: any = {};
     
-    if (period === 'today') {
+    // Custom date range takes priority
+    if (dateFrom && dateTo) {
+      const startDate = new Date(dateFrom);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      dateFilter = { gte: startDate, lte: endDate };
+    } else if (period === 'today') {
       const todayStart = new Date(now);
       todayStart.setHours(0, 0, 0, 0);
       dateFilter = { gte: todayStart };

@@ -22,6 +22,8 @@ Modern QR-based ordering system for Luna Bar in Ruse, Bulgaria.
 - 🍸 **Product Management** - Add/edit menu items in 3 languages
 - 🎉 **Event Management** - Luna events + partner promotions
 - 📱 **QR Generation** - Generate & print QR codes for all tables
+- 🔗 **QR Redirects** - Manage dynamic redirect URLs for QR codes (no need to reprint when changing URLs)
+- 🕐 **Working Hours** - Set working hours for each day of the week
 - 📊 **Analytics Dashboard** - View statistics
 
 ## 🏗️ Tech Stack

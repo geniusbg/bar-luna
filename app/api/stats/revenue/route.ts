@@ -3,7 +3,24 @@ import prisma from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
+    
     const now = new Date();
+    
+    // Custom date range or default to today
+    let customDateStart: Date | null = null;
+    let customDateEnd: Date | null = null;
+    
+    if (dateFrom) {
+      customDateStart = new Date(dateFrom);
+      customDateStart.setHours(0, 0, 0, 0);
+    }
+    if (dateTo) {
+      customDateEnd = new Date(dateTo);
+      customDateEnd.setHours(23, 59, 59, 999);
+    }
     
     // Today (00:00:00 to 23:59:59)
     const todayStart = new Date(now);
@@ -20,13 +37,15 @@ export async function GET(request: Request) {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     monthStart.setHours(0, 0, 0, 0);
     
-    // Today's revenue
+    // Use custom date range if provided, otherwise use today/week/month
+    const dateFilter = customDateStart && customDateEnd 
+      ? { gte: customDateStart, lte: customDateEnd }
+      : { gte: todayStart, lte: todayEnd };
+    
+    // Today's revenue (or custom range)
     const todayRevenue = await prisma.order.aggregate({
       where: {
-        createdAt: {
-          gte: todayStart,
-          lte: todayEnd
-        },
+        createdAt: dateFilter,
         status: 'completed'
       },
       _sum: {
@@ -66,39 +85,69 @@ export async function GET(request: Request) {
       _count: true
     });
     
-    // Daily revenue for the last 7 days (for chart)
-    const last7Days = [];
+    // Daily revenue for the last 7 days or custom date range (for chart)
+    // OPTIMIZED: Single query instead of multiple queries per day
+    let dateRangeStart: Date;
+    let dateRangeEnd: Date;
     
-    for (let i = 6; i >= 0; i--) {
-      const dayStart = new Date(now);
-      dayStart.setDate(now.getDate() - i);
+    if (customDateStart && customDateEnd) {
+      dateRangeStart = customDateStart;
+      dateRangeEnd = customDateEnd;
+    } else {
+      // Default: last 7 days
+      dateRangeStart = new Date(now);
+      dateRangeStart.setDate(now.getDate() - 6);
+      dateRangeStart.setHours(0, 0, 0, 0);
+      dateRangeEnd = new Date(now);
+      dateRangeEnd.setHours(23, 59, 59, 999);
+    }
+    
+    // Single optimized query: Group by date using raw SQL for better performance
+    const dailyStats = await prisma.$queryRaw<Array<{
+      date: Date;
+      revenue: number;
+      orders: bigint;
+    }>>`
+      SELECT 
+        DATE(created_at) as date,
+        COALESCE(SUM(total_bgn), 0)::numeric as revenue,
+        COUNT(*) as orders
+      FROM orders
+      WHERE created_at >= ${dateRangeStart}
+        AND created_at <= ${dateRangeEnd}
+        AND status = 'completed'
+      GROUP BY DATE(created_at)
+      ORDER BY DATE(created_at) ASC
+    `;
+    
+    // Create a map for quick lookup
+    const statsMap = new Map<string, { revenue: number; orders: number }>();
+    dailyStats.forEach(stat => {
+      const dateStr = stat.date.toISOString().split('T')[0];
+      statsMap.set(dateStr, {
+        revenue: Number(stat.revenue),
+        orders: Number(stat.orders)
+      });
+    });
+    
+    // Fill in all days in range (including days with 0 revenue)
+    const last7Days = [];
+    const daysDiff = Math.ceil((dateRangeEnd.getTime() - dateRangeStart.getTime()) / (1000 * 60 * 60 * 24));
+    
+    for (let i = 0; i <= daysDiff; i++) {
+      const dayStart = new Date(dateRangeStart);
+      dayStart.setDate(dateRangeStart.getDate() + i);
       dayStart.setHours(0, 0, 0, 0);
       
-      const dayEnd = new Date(dayStart);
-      dayEnd.setHours(23, 59, 59, 999);
-      
-      const dayRevenue = await prisma.order.aggregate({
-        where: {
-          createdAt: {
-            gte: dayStart,
-            lte: dayEnd
-          },
-          status: 'completed'
-        },
-        _sum: {
-          totalBgn: true
-        },
-        _count: true
-      });
+      if (dayStart > dateRangeEnd) break;
       
       const dateStr = dayStart.toISOString().split('T')[0];
-      const revenue = Number(dayRevenue._sum.totalBgn || 0);
-      const orders = dayRevenue._count;
+      const stats = statsMap.get(dateStr) || { revenue: 0, orders: 0 };
       
       last7Days.push({
         date: dateStr,
-        revenue: revenue,
-        orders: orders
+        revenue: stats.revenue,
+        orders: stats.orders
       });
     }
     

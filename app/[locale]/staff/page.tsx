@@ -737,10 +737,15 @@ export default function StaffDashboard() {
         </div>
         
         {callsTab === 'active' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {waiterCalls
-              .filter(call => call.status !== 'completed')
-              .map(call => (
+          waiterCalls.filter(call => call.status !== 'completed').length === 0 ? (
+            <div className="text-center py-20 bg-gray-800 rounded-xl">
+              <p className="text-gray-200 text-xl">Няма активни повиквания</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {waiterCalls
+                .filter(call => call.status !== 'completed')
+                .map(call => (
               <div
                 key={call.id}
                 className={`rounded-xl p-4 md:p-6 border-2 ${
@@ -822,7 +827,8 @@ export default function StaffDashboard() {
                 )}
               </div>
             ))}
-          </div>
+            </div>
+          )
         )}
         
         {/* Completed Calls */}

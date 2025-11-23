@@ -34,6 +34,7 @@ function OrderPageContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [isOffline, setIsOffline] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Health check function
   const checkServerHealth = async (): Promise<boolean> => {
@@ -122,6 +123,11 @@ function OrderPageContent() {
 
   const submitOrder = async () => {
     if (cart.length === 0) return;
+    
+    // Prevent duplicate submissions
+    if (submitting) return;
+    
+    setSubmitting(true);
 
     // Health check before submitting
     const isHealthy = await checkServerHealth();
@@ -141,6 +147,7 @@ function OrderPageContent() {
         message: 'Сървърът е недостъпен. Моля, опитайте отново след няколко секунди.', 
         type: 'error' 
       });
+      setSubmitting(false);
       return;
     }
 
@@ -180,6 +187,8 @@ function OrderPageContent() {
                       locale === 'en' ? '❌ Error sending order' : 
                       '❌ Fehler beim Senden der Bestellung';
       setToast({ message: errorMsg, type: 'error' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -467,9 +476,19 @@ function OrderPageContent() {
 
                   <button
                     onClick={submitOrder}
-                    className="w-full px-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-lg transition-all"
+                    disabled={submitting || cart.length === 0}
+                    className="w-full px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2"
                   >
-                    ✅ {locale === 'bg' ? 'Изпрати поръчка' : locale === 'en' ? 'Send Order' : 'Bestellung senden'}
+                    {submitting ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>{locale === 'bg' ? 'Изпращане...' : locale === 'en' ? 'Sending...' : 'Wird gesendet...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        ✅ {locale === 'bg' ? 'Изпрати поръчка' : locale === 'en' ? 'Send Order' : 'Bestellung senden'}
+                      </>
+                    )}
                   </button>
 
                   <p className="text-gray-300 text-sm text-center mt-4">

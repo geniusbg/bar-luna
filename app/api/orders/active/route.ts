@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
+    // Get ALL active orders (pending, preparing, ready) - no date filter
+    // This allows admin to see and manage orders from previous days that are still active
     const orders = await prisma.order.findMany({
       where: {
         status: { in: ['pending', 'preparing', 'ready'] }

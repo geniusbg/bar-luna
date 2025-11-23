@@ -52,14 +52,13 @@ export default async function middleware(request: NextRequest) {
       }
       
       if (isStaffRoute && userRole !== 'STAFF') {
-        // Redirect ADMIN/SUPER_ADMIN to admin panel
-        if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
+        // Allow ADMIN/SUPER_ADMIN to access staff routes (for management purposes)
+        // Only redirect non-authenticated users or users without proper roles
+        if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
           const locale = pathname.split('/')[1] || 'bg';
-          return NextResponse.redirect(new URL(`/${locale}/admin`, request.url));
+          return NextResponse.redirect(new URL(`/${locale}/staff/login`, request.url));
         }
-        // Redirect others to staff login
-        const locale = pathname.split('/')[1] || 'bg';
-        return NextResponse.redirect(new URL(`/${locale}/staff/login`, request.url));
+        // ADMIN/SUPER_ADMIN can access staff routes - don't redirect
       }
     }
   }

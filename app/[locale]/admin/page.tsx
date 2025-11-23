@@ -94,13 +94,16 @@ export default function AdminDashboard({
     <div className="max-w-7xl mx-auto">
       {/* Welcome Header */}
       <div className="mb-10">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">Admin Dashboard</h1>
+        <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">Админ Панел</h1>
         <p className="text-gray-400 text-lg">Управление на LUNA Bar</p>
       </div>
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300">
+        <a
+          href="/bg/admin/categories"
+          className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 cursor-pointer"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm uppercase tracking-wide mb-3">Категории</p>
@@ -108,9 +111,12 @@ export default function AdminDashboard({
             </div>
             <div className="text-6xl group-hover:scale-110 transition-transform duration-300">📁</div>
           </div>
-        </div>
+        </a>
 
-        <div className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300">
+        <a
+          href="/bg/admin/products"
+          className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 cursor-pointer"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm uppercase tracking-wide mb-3">Продукти</p>
@@ -118,9 +124,12 @@ export default function AdminDashboard({
             </div>
             <div className="text-6xl group-hover:scale-110 transition-transform duration-300">🍸</div>
           </div>
-        </div>
+        </a>
 
-        <div className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 sm:col-span-2 lg:col-span-1">
+        <a
+          href="/bg/admin/events"
+          className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 sm:col-span-2 lg:col-span-1 cursor-pointer"
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm uppercase tracking-wide mb-3">Събития</p>
@@ -128,7 +137,7 @@ export default function AdminDashboard({
             </div>
             <div className="text-6xl group-hover:scale-110 transition-transform duration-300">🎉</div>
           </div>
-        </div>
+        </a>
       </div>
 
       {/* Quick Actions */}
@@ -162,6 +171,13 @@ export default function AdminDashboard({
           >
             <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">📱</div>
             <h3 className="text-white font-bold text-lg">QR Кодове</h3>
+          </a>
+          <a
+            href="/bg/admin/working-hours"
+            className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-6 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 text-center"
+          >
+            <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">🕐</div>
+            <h3 className="text-white font-bold text-lg">Работно време</h3>
           </a>
         </div>
       </div>

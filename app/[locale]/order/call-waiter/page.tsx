@@ -18,6 +18,9 @@ function CallWaiterContent() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const callWaiter = async (callType: string) => {
+    // Prevent duplicate calls
+    if (calling) return;
+    
     setCalling(true);
 
     try {
@@ -120,57 +123,90 @@ function CallWaiterContent() {
             <button
               onClick={() => callWaiter('payment_cash')}
               disabled={calling}
-              className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 hover:bg-white/20 transition-all text-center disabled:opacity-50"
+              className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 hover:bg-white/20 transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="text-6xl mb-4">💵</div>
-              <h2 className="text-2xl font-bold text-white mb-2">
-                {locale === 'bg' ? 'Плащане с брой' : 
-                 locale === 'en' ? 'Payment with Cash' : 
-                 'Zahlung mit Bargeld'}
-              </h2>
-              <p className="text-gray-200">
-                {locale === 'bg' ? 'Сервитьорът ще дойде с бележката' : 
-                 locale === 'en' ? 'Waiter will come with the bill' : 
-                 'Kellner kommt mit der Rechnung'}
-              </p>
+              {calling ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="text-gray-200">
+                    {locale === 'bg' ? 'Изпращане...' : locale === 'en' ? 'Sending...' : 'Wird gesendet...'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="text-6xl mb-4">💵</div>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    {locale === 'bg' ? 'Плащане с брой' : 
+                     locale === 'en' ? 'Payment with Cash' : 
+                     'Zahlung mit Bargeld'}
+                  </h2>
+                  <p className="text-gray-200">
+                    {locale === 'bg' ? 'Сервитьорът ще дойде с бележката' : 
+                     locale === 'en' ? 'Waiter will come with the bill' : 
+                     'Kellner kommt mit der Rechnung'}
+                  </p>
+                </>
+              )}
             </button>
 
             {/* Payment Card */}
             <button
               onClick={() => callWaiter('payment_card')}
               disabled={calling}
-              className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 hover:bg-white/20 transition-all text-center disabled:opacity-50"
+              className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 hover:bg-white/20 transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="text-6xl mb-4">💳</div>
-              <h2 className="text-2xl font-bold text-white mb-2">
-                {locale === 'bg' ? 'Плащане с карта' : 
-                 locale === 'en' ? 'Payment with Card' : 
-                 'Zahlung mit Karte'}
-              </h2>
-              <p className="text-gray-200">
-                {locale === 'bg' ? 'Сервитьорът ще донесе POS терминал' : 
-                 locale === 'en' ? 'Waiter will bring POS terminal' : 
-                 'Kellner bringt POS-Terminal'}
-              </p>
+              {calling ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="text-gray-200">
+                    {locale === 'bg' ? 'Изпращане...' : locale === 'en' ? 'Sending...' : 'Wird gesendet...'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="text-6xl mb-4">💳</div>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    {locale === 'bg' ? 'Плащане с карта' : 
+                     locale === 'en' ? 'Payment with Card' : 
+                     'Zahlung mit Karte'}
+                  </h2>
+                  <p className="text-gray-200">
+                    {locale === 'bg' ? 'Сервитьорът ще донесе POS терминал' : 
+                     locale === 'en' ? 'Waiter will bring POS terminal' : 
+                     'Kellner bringt POS-Terminal'}
+                  </p>
+                </>
+              )}
             </button>
 
             {/* General Help */}
             <button
               onClick={() => callWaiter('help')}
               disabled={calling}
-              className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 hover:bg-white/20 transition-all text-center disabled:opacity-50 md:col-span-2"
+              className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 hover:bg-white/20 transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed md:col-span-2"
             >
-              <div className="text-6xl mb-4">🙋</div>
-              <h2 className="text-2xl font-bold text-white mb-2">
-                {locale === 'bg' ? 'Нужна ми е помощ' : 
-                 locale === 'en' ? 'I Need Help' : 
-                 'Ich brauche Hilfe'}
-              </h2>
-              <p className="text-gray-200">
-                {locale === 'bg' ? 'Сервитьорът ще дойде веднага' : 
-                 locale === 'en' ? 'Waiter will come immediately' : 
-                 'Kellner kommt sofort'}
-              </p>
+              {calling ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="text-gray-200">
+                    {locale === 'bg' ? 'Изпращане...' : locale === 'en' ? 'Sending...' : 'Wird gesendet...'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="text-6xl mb-4">🙋</div>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    {locale === 'bg' ? 'Нужна ми е помощ' : 
+                     locale === 'en' ? 'I Need Help' : 
+                     'Ich brauche Hilfe'}
+                  </h2>
+                  <p className="text-gray-200">
+                    {locale === 'bg' ? 'Сервитьорът ще дойде веднага' : 
+                     locale === 'en' ? 'Waiter will come immediately' : 
+                     'Kellner kommt sofort'}
+                  </p>
+                </>
+              )}
             </button>
           </div>
 

@@ -254,4 +254,17 @@ model QRCodeSettings {
   @@map("qr_code_settings")
 }
 
+// Working Hours - Store working hours for each day of the week
+model WorkingHours {
+  id        String   @id @default(uuid())
+  dayOfWeek Int      @unique @map("day_of_week") // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  isOpen    Boolean  @default(true) @map("is_open")
+  openTime  String?  @map("open_time") // Format: "HH:mm" (e.g., "10:00")
+  closeTime String?  @map("close_time") // Format: "HH:mm" (e.g., "00:00")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("working_hours")
+}
+
 

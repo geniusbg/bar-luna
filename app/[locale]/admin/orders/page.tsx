@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Price from '@/components/Price';
 import Toast from '@/components/Toast';
 import { getPusherClient } from '@/lib/pusher-client';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 type OrderTab = 'active' | 'history' | 'stats';
 
@@ -19,6 +20,9 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
   
   // CSV Export functions
   const generateCSVExport = () => {
@@ -100,6 +104,18 @@ export default function AdminOrdersPage() {
   const [tableStats, setTableStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   
+  // Stats filters - temporary (before applying)
+  const [tempStatsFilters, setTempStatsFilters] = useState({
+    dateFrom: new Date().toISOString().split('T')[0], // Today
+    dateTo: new Date().toISOString().split('T')[0]
+  });
+  
+  // Applied stats filters (used for API calls)
+  const [statsFilters, setStatsFilters] = useState({
+    dateFrom: new Date().toISOString().split('T')[0], // Today
+    dateTo: new Date().toISOString().split('T')[0]
+  });
+  
   // Selected order for modal
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -137,16 +153,17 @@ export default function AdminOrdersPage() {
     }
   }, [activeTab, appliedFilters, pagination.page]);
   
-  // Load stats when tab changes
+  // Load stats when tab changes or filters change
   useEffect(() => {
     if (activeTab === 'stats') {
       loadStats();
     }
-  }, [activeTab]);
+  }, [activeTab, statsFilters]);
 
   async function loadActiveOrders() {
     try {
-      const response = await fetch('/api/orders/all');
+      // Use /api/orders/active to get ALL active orders (not just today's)
+      const response = await fetch('/api/orders/active');
       const data = await response.json();
       setOrders(data.orders || []);
       setLoading(false);
@@ -188,10 +205,14 @@ export default function AdminOrdersPage() {
   async function loadStats() {
     setStatsLoading(true);
     try {
+      const params = new URLSearchParams();
+      if (statsFilters.dateFrom) params.append('dateFrom', statsFilters.dateFrom);
+      if (statsFilters.dateTo) params.append('dateTo', statsFilters.dateTo);
+      
       const [revenueRes, productsRes, tablesRes] = await Promise.all([
-        fetch('/api/stats/revenue'),
-        fetch('/api/stats/products?period=today'),
-        fetch('/api/stats/tables?period=today')
+        fetch(`/api/stats/revenue?${params.toString()}`),
+        fetch(`/api/stats/products?${params.toString()}`),
+        fetch(`/api/stats/tables?${params.toString()}`)
       ]);
       
       const [revenueData, productsData, tablesData] = await Promise.all([
@@ -220,6 +241,27 @@ export default function AdminOrdersPage() {
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1
   };
 
+  // Helper function to format date period
+  const formatDatePeriod = () => {
+    if (statsFilters.dateFrom && statsFilters.dateTo) {
+      // Parse dates correctly to avoid timezone issues
+      const fromParts = statsFilters.dateFrom.split('-');
+      const toParts = statsFilters.dateTo.split('-');
+      
+      const fromDate = new Date(parseInt(fromParts[0]), parseInt(fromParts[1]) - 1, parseInt(fromParts[2]));
+      const toDate = new Date(parseInt(toParts[0]), parseInt(toParts[1]) - 1, parseInt(toParts[2]));
+      
+      const fromStr = fromDate.toLocaleDateString('bg-BG', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const toStr = toDate.toLocaleDateString('bg-BG', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      
+      if (fromStr === toStr) {
+        return fromStr;
+      }
+      return `${fromStr} - ${toStr}`;
+    }
+    return 'днес';
+  };
+
   const handleDeleteOrder = async (orderId: string) => {
     if (!confirm('Сигурен ли си, че искаш да изтриеш тази поръчка?\n\nТова действие е необратимо!')) {
       return;
@@ -244,6 +286,103 @@ export default function AdminOrdersPage() {
       }
     } catch (error) {
       setToast({ message: 'Грешка при връзка', type: 'error' });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedOrderIds.size === 0) {
+      setToast({ message: 'Моля, изберете поне една поръчка', type: 'error' });
+      return;
+    }
+
+    if (!confirm(`Сигурен ли си, че искаш да изтриеш ${selectedOrderIds.size} поръчки?\n\nТова действие е необратимо!`)) {
+      return;
+    }
+
+    setBulkDeleting(true);
+    try {
+      const response = await fetch('/api/orders/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderIds: Array.from(selectedOrderIds) })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setToast({ message: `✅ ${data.message}`, type: 'success' });
+        setSelectedOrderIds(new Set());
+        loadHistory();
+      } else {
+        const data = await response.json();
+        setToast({ message: data.error || 'Грешка при масово изтриване', type: 'error' });
+      }
+    } catch (error) {
+      setToast({ message: 'Грешка при връзка', type: 'error' });
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const handleToggleSelectOrder = (orderId: string) => {
+    setSelectedOrderIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedOrderIds.size === historyOrders.length) {
+      setSelectedOrderIds(new Set());
+    } else {
+      setSelectedOrderIds(new Set(historyOrders.map((o: any) => o.id)));
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    setUpdatingStatus(prev => ({ ...prev, [orderId]: true }));
+    
+    try {
+      const response = await fetch(`/api/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+
+      if (response.ok) {
+        setOrders(prev =>
+          prev.map(order =>
+            order.id === orderId 
+              ? { 
+                  ...order, 
+                  status,
+                  completedAt: status === 'completed' ? new Date().toISOString() : order.completedAt
+                } 
+              : order
+          )
+        );
+        
+        const statusMessages: Record<string, string> = {
+          'preparing': 'Поръчка започната',
+          'ready': 'Поръчка готова',
+          'completed': 'Поръчка завършена'
+        };
+        
+        setToast({ 
+          message: statusMessages[status] || 'Статус обновен', 
+          type: 'success' 
+        });
+      } else {
+        setToast({ message: 'Грешка при обновяване', type: 'error' });
+      }
+    } catch (error) {
+      setToast({ message: 'Грешка при връзка', type: 'error' });
+    } finally {
+      setUpdatingStatus(prev => ({ ...prev, [orderId]: false }));
     }
   };
 
@@ -386,11 +525,54 @@ export default function AdminOrdersPage() {
                     )}
                   </div>
 
-                  <div className="border-t border-gray-700 pt-3">
+                  <div className="border-t border-gray-700 pt-3 mb-3">
                     <div className="flex justify-between text-xl font-bold text-white">
                       <span>Общо:</span>
                       <Price priceBgn={Number(order.totalBgn)} className="text-xl font-bold text-white" />
                     </div>
+                  </div>
+
+                  {/* Status Buttons */}
+                  <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
+                    {order.status === 'pending' && (
+                      <button
+                        onClick={() => handleUpdateOrderStatus(order.id, 'preparing')}
+                        disabled={updatingStatus[order.id]}
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                      >
+                        {updatingStatus[order.id] ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <span>Приготвяме</span>
+                        )}
+                      </button>
+                    )}
+                    {order.status === 'preparing' && (
+                      <button
+                        onClick={() => handleUpdateOrderStatus(order.id, 'ready')}
+                        disabled={updatingStatus[order.id]}
+                        className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                      >
+                        {updatingStatus[order.id] ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <span>Готова</span>
+                        )}
+                      </button>
+                    )}
+                    {order.status === 'ready' && (
+                      <button
+                        onClick={() => handleUpdateOrderStatus(order.id, 'completed')}
+                        disabled={updatingStatus[order.id]}
+                        className="col-span-2 px-3 py-2 bg-white text-black hover:bg-gray-200 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                      >
+                        {updatingStatus[order.id] ? (
+                          <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          '✓ Завърши'
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -570,60 +752,132 @@ export default function AdminOrdersPage() {
                 <p className="text-gray-300 text-xl">Няма поръчки за избрания период</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-700">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">#</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Маса</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Дата/Час</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Продукти</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Статус</th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold text-gray-200">Сума</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-700">
-                    {historyOrders.map((order: any) => (
-                    <tr
-                      key={order.id}
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setShowOrderModal(true);
-                      }}
-                      className="hover:bg-gray-700/50 cursor-pointer transition-colors"
+              <div>
+                {/* Bulk Actions Bar */}
+                {selectedOrderIds.size > 0 && (
+                  <div className="mb-4 p-4 bg-gray-700 rounded-lg flex items-center justify-between">
+                    <span className="text-white font-semibold">
+                      Избрани: {selectedOrderIds.size} поръчки
+                    </span>
+                    <button
+                      onClick={handleBulkDelete}
+                      disabled={bulkDeleting}
+                      className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <td className="px-6 py-4 text-white font-medium">#{order.orderNumber}</td>
-                      <td className="px-6 py-4 text-gray-200">{order.tableNumber}</td>
-                      <td className="px-6 py-4 text-gray-200 text-sm">
-                        {new Date(order.createdAt).toLocaleString('bg-BG', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </td>
-                      <td className="px-6 py-4 text-gray-200">
-                        {order.items?.length || 0} бр.
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          order.status === 'completed' ? 'bg-green-500/20 text-green-300' :
-                          order.status === 'cancelled' ? 'bg-red-500/20 text-red-300' :
-                          'bg-gray-500/20 text-gray-300'
-                        }`}>
-                          {order.status === 'completed' ? '✓ Завършена' :
-                           order.status === 'cancelled' ? '✗ Отменена' :
-                           order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <Price priceBgn={Number(order.totalBgn)} className="text-white font-semibold" />
-                      </td>
+                      {bulkDeleting ? 'Изтриване...' : `🗑️ Изтрий избраните (${selectedOrderIds.size})`}
+                    </button>
+                  </div>
+                )}
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-700">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">
+                          <input
+                            type="checkbox"
+                            checked={selectedOrderIds.size === historyOrders.length && historyOrders.length > 0}
+                            onChange={handleSelectAll}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-green-600 focus:ring-green-500"
+                          />
+                        </th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">#</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Маса</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Дата/Час</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Продукти</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Статус</th>
+                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-200">Сума</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                      {historyOrders.map((order: any, index: number) => (
+                      <tr
+                        key={order.id}
+                        className="hover:bg-gray-700/50 transition-colors"
+                      >
+                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedOrderIds.has(order.id)}
+                            onChange={() => handleToggleSelectOrder(order.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-green-600 focus:ring-green-500"
+                          />
+                        </td>
+                        <td 
+                          className="px-6 py-4 text-white font-medium cursor-pointer"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setShowOrderModal(true);
+                          }}
+                        >
+                          {(pagination.page - 1) * pagination.limit + index + 1}
+                        </td>
+                        <td 
+                          className="px-6 py-4 text-gray-200 cursor-pointer"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setShowOrderModal(true);
+                          }}
+                        >
+                          {order.tableNumber}
+                        </td>
+                        <td 
+                          className="px-6 py-4 text-gray-200 text-sm cursor-pointer"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setShowOrderModal(true);
+                          }}
+                        >
+                          {new Date(order.createdAt).toLocaleString('bg-BG', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </td>
+                        <td 
+                          className="px-6 py-4 text-gray-200 cursor-pointer"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setShowOrderModal(true);
+                          }}
+                        >
+                          {order.items?.length || 0} бр.
+                        </td>
+                        <td 
+                          className="px-6 py-4 cursor-pointer"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setShowOrderModal(true);
+                          }}
+                        >
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            order.status === 'completed' ? 'bg-green-500/20 text-green-300' :
+                            order.status === 'cancelled' ? 'bg-red-500/20 text-red-300' :
+                            'bg-gray-500/20 text-gray-300'
+                          }`}>
+                            {order.status === 'completed' ? '✓ Завършена' :
+                             order.status === 'cancelled' ? '✗ Отменена' :
+                             order.status}
+                          </span>
+                        </td>
+                        <td 
+                          className="px-6 py-4 text-right cursor-pointer"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setShowOrderModal(true);
+                          }}
+                        >
+                          <Price priceBgn={Number(order.totalBgn)} className="text-white font-semibold" />
+                        </td>
                     </tr>
                     ))}
                 </tbody>
               </table>
+              </div>
               
               {/* Pagination */}
               {pagination.totalPages > 1 && (
@@ -649,15 +903,48 @@ export default function AdminOrdersPage() {
                   </div>
                 </div>
               )}
-            </div>
+              </div>
             )}
-          </div>  {/* Close bg-gray-800 rounded-xl */}
+          </div>
         </div>
       )}
 
       {/* Stats Tab */}
       {activeTab === 'stats' && (
         <div>
+          {/* Stats Filters */}
+          <div className="bg-gray-800 rounded-xl p-6 mb-6">
+            <h3 className="text-xl font-bold text-white mb-4">Филтър за период</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">От дата</label>
+                <input
+                  type="date"
+                  value={tempStatsFilters.dateFrom}
+                  onChange={(e) => setTempStatsFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
+                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">До дата</label>
+                <input
+                  type="date"
+                  value={tempStatsFilters.dateTo}
+                  onChange={(e) => setTempStatsFilters(prev => ({ ...prev, dateTo: e.target.value }))}
+                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white focus:outline-none"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  onClick={() => setStatsFilters(tempStatsFilters)}
+                  className="w-full px-6 py-2 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all"
+                >
+                  Приложи
+                </button>
+              </div>
+            </div>
+          </div>
+          
           {statsLoading ? (
             <div className="min-h-[60vh] flex items-center justify-center">
               <div className="text-center">
@@ -681,7 +968,7 @@ export default function AdminOrdersPage() {
                 <h2 className="text-2xl font-bold text-white mb-4">💰 Приходи</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 border border-green-500/30 rounded-xl p-6">
-                    <p className="text-green-300 text-sm mb-2">Днес</p>
+                    <p className="text-green-300 text-sm mb-2">{formatDatePeriod()}</p>
                     <p className="text-3xl font-bold text-white mb-1">
                       {Number(revenueStats.today.revenue || 0).toFixed(2)} лв
                     </p>
@@ -712,79 +999,77 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
 
-              {/* Last 7 Days Chart - Simple and Clean */}
+              {/* Sales by Days Chart */}
               <div>
-                <h2 className="text-2xl font-bold text-white mb-4">📈 Последните 7 дни</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">📈 Продажби по дни - {formatDatePeriod()}</h2>
+                <style jsx global>{`
+                  .recharts-bar-rectangle:hover {
+                    opacity: 0.8 !important;
+                    filter: brightness(1.2) !important;
+                  }
+                `}</style>
                 <div className="bg-gray-800 rounded-xl p-6">
                   {revenueStats.last7Days && revenueStats.last7Days.length > 0 ? (
-                    <div>
-                      {/* Chart Area */}
-                      <div className="relative h-64 mb-4">
-                        {/* Grid lines */}
-                        <div className="absolute inset-0 flex flex-col justify-between">
-                          <div className="border-b border-dashed border-gray-700"></div>
-                          <div className="border-b border-dashed border-gray-700"></div>
-                          <div className="border-b border-dashed border-gray-700"></div>
-                          <div className="border-b border-dashed border-gray-700"></div>
-                        </div>
-                        
-                        {/* Bars with hover */}
-                        <div className="absolute inset-0 flex items-end justify-between gap-2 px-2">
-                          {revenueStats.last7Days.map((day: any, idx: number) => {
-                            const maxRevenue = Math.max(...revenueStats.last7Days.map((d: any) => Number(d.revenue || 0)), 1);
-                            const dayRevenue = Number(day.revenue || 0);
-                            const heightPercent = (dayRevenue / maxRevenue) * 100;
-                            
-                            return (
-                              <div key={idx} className="flex-1 relative group">
-                                {/* Bar */}
-                                <div 
-                                  className="w-full bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg transition-all hover:from-green-500 hover:to-green-300 relative"
-                                  style={{ 
-                                    height: `${heightPercent}%`,
-                                    minHeight: dayRevenue > 0 ? '8px' : '2px'
-                                  }}
-                                >
-                                  {/* Tooltip */}
-                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-xl border border-gray-700 z-20 pointer-events-none">
-                                    <div className="font-bold mb-1">
-                                      {new Date(day.date).toLocaleDateString('bg-BG', { 
-                                        day: '2-digit', 
-                                        month: 'short',
-                                        weekday: 'short'
-                                      })}
-                                    </div>
-                                    <div className="text-green-400 font-semibold">
-                                      {dayRevenue.toFixed(2)} лв
-                                    </div>
-                                    <div className="text-gray-400">
-                                      {day.orders} поръчки
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      
-                      {/* Date labels */}
-                      <div className="flex justify-between px-2">
-                        {revenueStats.last7Days.map((day: any, idx: number) => (
-                          <div key={idx} className="flex-1 text-center">
-                            <p className="text-gray-400 text-xs">
-                              {new Date(day.date).toLocaleDateString('bg-BG', { 
-                                day: '2-digit', 
-                                month: '2-digit' 
-                              })}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <BarChart
+                        data={revenueStats.last7Days.map((day: any) => ({
+                          date: new Date(day.date).toLocaleDateString('bg-BG', { 
+                            day: '2-digit', 
+                            month: '2-digit' 
+                          }),
+                          revenue: Number(day.revenue || 0),
+                          orders: day.orders
+                        }))}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis 
+                          dataKey="date" 
+                          stroke="#9CA3AF"
+                          tick={{ fill: '#9CA3AF' }}
+                        />
+                        <YAxis 
+                          stroke="#9CA3AF"
+                          tick={{ fill: '#9CA3AF' }}
+                          label={{ value: 'Приход (лв)', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#1F2937',
+                            border: '1px solid #374151',
+                            borderRadius: '8px',
+                            color: '#F9FAFB'
+                          }}
+                          cursor={{ fill: 'transparent' }}
+                          formatter={(value: any) => {
+                            return [`${Number(value).toFixed(2)} лв`, 'Приход'];
+                          }}
+                          labelFormatter={(label, payload) => {
+                            if (payload && payload[0]) {
+                              const orders = payload[0].payload.orders;
+                              return `Дата: ${label} | Поръчки: ${orders}`;
+                            }
+                            return `Дата: ${label}`;
+                          }}
+                        />
+                        <Bar 
+                          dataKey="revenue" 
+                          fill="#22C55E" 
+                          radius={[8, 8, 0, 0]}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {revenueStats.last7Days.map((day: any, index: number) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={Number(day.revenue || 0) > 0 ? '#22C55E' : '#374151'}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
                   ) : (
                     <div className="text-center py-20">
-                      <p className="text-gray-300">Няма данни за последните 7 дни</p>
+                      <p className="text-gray-300">Няма данни за избрания период</p>
                     </div>
                   )}
                 </div>
@@ -793,7 +1078,7 @@ export default function AdminOrdersPage() {
               {/* Top Products */}
               {productStats && productStats.topProducts && productStats.topProducts.length > 0 && (
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-4">🏆 Топ продукти (днес)</h2>
+                  <h2 className="text-2xl font-bold text-white mb-4">🏆 Топ продукти ({formatDatePeriod()})</h2>
                   <div className="bg-gray-800 rounded-xl overflow-hidden">
                     <table className="w-full">
                       <thead className="bg-gray-700">
@@ -828,7 +1113,7 @@ export default function AdminOrdersPage() {
               {/* Table Performance */}
               {tableStats && tableStats.tables && tableStats.tables.length > 0 && (
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-4">🪑 Маси (днес)</h2>
+                  <h2 className="text-2xl font-bold text-white mb-4">🪑 Маси ({formatDatePeriod()})</h2>
                   <div className="bg-gray-800 rounded-xl p-6 mb-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="bg-gray-700/50 rounded-lg p-4">
@@ -838,7 +1123,7 @@ export default function AdminOrdersPage() {
                         </p>
                       </div>
                       <div className="bg-gray-700/50 rounded-lg p-4">
-                        <p className="text-gray-300 text-sm mb-1">Активни днес</p>
+                        <p className="text-gray-300 text-sm mb-1">Активни</p>
                         <p className="text-2xl font-bold text-white">
                           {tableStats.summary.activeTables}
                         </p>
