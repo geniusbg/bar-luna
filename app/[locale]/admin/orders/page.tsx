@@ -8,7 +8,7 @@ import Toast from '@/components/Toast';
 import { getPusherClient } from '@/lib/pusher-client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-type OrderTab = 'active' | 'history' | 'stats';
+type OrderTab = 'active' | 'history' | 'stats' | 'approvals';
 
 export default function AdminOrdersPage() {
   const pathname = usePathname();
@@ -23,6 +23,14 @@ export default function AdminOrdersPage() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
+  const [approvalsLoading, setApprovalsLoading] = useState(false);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
+  const [processingApproval, setProcessingApproval] = useState(false);
   
   // CSV Export functions
   const generateCSVExport = () => {
@@ -145,6 +153,24 @@ export default function AdminOrdersPage() {
       pusher.unsubscribe('staff-channel');
     };
   }, []);
+
+  // Listen for approval notifications (admin channel)
+  useEffect(() => {
+    const pusher = getPusherClient();
+    const adminChannel = pusher.subscribe('admin-channel');
+
+    adminChannel.bind('order-approval-needed', (data: any) => {
+      // Reload pending approvals when new one arrives
+      if (activeTab === 'approvals') {
+        loadPendingApprovals();
+      }
+    });
+
+    return () => {
+      adminChannel.unbind_all();
+      pusher.unsubscribe('admin-channel');
+    };
+  }, [activeTab]);
   
   // Load history when applied filters or page changes
   useEffect(() => {
@@ -231,6 +257,76 @@ export default function AdminOrdersPage() {
       setStatsLoading(false);
     }
   }
+
+  async function loadPendingApprovals() {
+    setApprovalsLoading(true);
+    try {
+      const response = await fetch('/api/orders/pending-approval');
+      if (response.ok) {
+        const data = await response.json();
+        setPendingApprovals(data.approvals || []);
+      } else {
+        setToast({ message: 'Грешка при зареждане на одобренията', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Load pending approvals error:', error);
+      setToast({ message: 'Грешка при зареждане на одобренията', type: 'error' });
+    } finally {
+      setApprovalsLoading(false);
+    }
+  }
+
+  const handleApproveOrder = async (orderId: string) => {
+    setProcessingApproval(true);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/approve`, {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        setToast({ message: '✅ Поръчката е одобрена успешно', type: 'success' });
+        setShowApprovalModal(false);
+        setSelectedApproval(null);
+        loadPendingApprovals();
+        // Also reload active orders to show the newly approved order
+        if (activeTab === 'active') {
+          loadActiveOrders();
+        }
+      } else {
+        const data = await response.json();
+        setToast({ message: data.error || 'Грешка при одобрение', type: 'error' });
+      }
+    } catch (error) {
+      setToast({ message: 'Грешка при връзка', type: 'error' });
+    } finally {
+      setProcessingApproval(false);
+    }
+  };
+
+  const handleRejectOrder = async (orderId: string, reason?: string) => {
+    setProcessingApproval(true);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+
+      if (response.ok) {
+        setToast({ message: '❌ Поръчката е отхвърлена', type: 'success' });
+        setShowApprovalModal(false);
+        setSelectedApproval(null);
+        loadPendingApprovals();
+      } else {
+        const data = await response.json();
+        setToast({ message: data.error || 'Грешка при отхвърляне', type: 'error' });
+      }
+    } catch (error) {
+      setToast({ message: 'Грешка при връзка', type: 'error' });
+    } finally {
+      setProcessingApproval(false);
+    }
+  };
 
   const handleFilterChange = (key: string, value: string) => {
     setTempFilters(prev => ({ ...prev, [key]: value }));
@@ -343,14 +439,14 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+  const handleUpdateOrderStatus = async (orderId: string, status: string, cancellationReason?: string) => {
     setUpdatingStatus(prev => ({ ...prev, [orderId]: true }));
     
     try {
       const response = await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status, cancellationReason })
       });
 
       if (response.ok) {
@@ -360,6 +456,7 @@ export default function AdminOrdersPage() {
               ? { 
                   ...order, 
                   status,
+                  cancellationReason: cancellationReason || null,
                   completedAt: status === 'completed' ? new Date().toISOString() : order.completedAt
                 } 
               : order
@@ -369,7 +466,8 @@ export default function AdminOrdersPage() {
         const statusMessages: Record<string, string> = {
           'preparing': 'Поръчка започната',
           'ready': 'Поръчка готова',
-          'completed': 'Поръчка завършена'
+          'completed': 'Поръчка завършена',
+          'cancelled': 'Поръчка отказана'
         };
         
         setToast({ 
@@ -383,6 +481,21 @@ export default function AdminOrdersPage() {
       setToast({ message: 'Грешка при връзка', type: 'error' });
     } finally {
       setUpdatingStatus(prev => ({ ...prev, [orderId]: false }));
+    }
+  };
+
+  const handleCancelOrder = (orderId: string) => {
+    setCancelOrderId(orderId);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelOrder = () => {
+    if (cancelOrderId) {
+      handleUpdateOrderStatus(cancelOrderId, 'cancelled', cancelReason);
+      setShowCancelModal(false);
+      setCancelOrderId(null);
+      setCancelReason('');
     }
   };
 
@@ -417,6 +530,50 @@ export default function AdminOrdersPage() {
           type={toast.type}
           onClose={() => setToast(null)}
         />
+      )}
+
+      {/* Cancel Order Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-2xl w-full max-w-md">
+            <div className="p-6 border-b border-slate-700">
+              <h2 className="text-2xl font-bold text-white">Откажи поръчка</h2>
+              <p className="text-gray-400 text-sm mt-1">Моля, посочете причина за отказ</p>
+            </div>
+            
+            <div className="p-6">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Причина за отказ
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Например: Клиентът отмени поръчката, няма наличност, и т.н."
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-white focus:outline-none resize-none"
+                rows={4}
+              />
+            </div>
+
+            <div className="p-6 border-t border-slate-700 flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelOrderId(null);
+                  setCancelReason('');
+                }}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all"
+              >
+                Откажи
+              </button>
+              <button
+                onClick={confirmCancelOrder}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all"
+              >
+                Потвърди отказ
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       
       {/* Header with Tabs */}
@@ -453,6 +610,21 @@ export default function AdminOrdersPage() {
             }`}
           >
             📊 Статистики
+          </button>
+          <button
+            onClick={() => setActiveTab('approvals')}
+            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all relative ${
+              activeTab === 'approvals'
+                ? 'bg-white text-black'
+                : 'text-gray-300 hover:bg-gray-700'
+            }`}
+          >
+            ⚠️ Одобрения
+            {pendingApprovals.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                {pendingApprovals.length}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -535,43 +707,70 @@ export default function AdminOrdersPage() {
                   {/* Status Buttons */}
                   <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
                     {order.status === 'pending' && (
-                      <button
-                        onClick={() => handleUpdateOrderStatus(order.id, 'preparing')}
-                        disabled={updatingStatus[order.id]}
-                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
-                      >
-                        {updatingStatus[order.id] ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <span>Приготвяме</span>
-                        )}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleUpdateOrderStatus(order.id, 'preparing')}
+                          disabled={updatingStatus[order.id]}
+                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                        >
+                          {updatingStatus[order.id] ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <span>Приготвяме</span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleCancelOrder(order.id)}
+                          disabled={updatingStatus[order.id]}
+                          className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                        >
+                          ✗ Откажи
+                        </button>
+                      </>
                     )}
                     {order.status === 'preparing' && (
-                      <button
-                        onClick={() => handleUpdateOrderStatus(order.id, 'ready')}
-                        disabled={updatingStatus[order.id]}
-                        className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
-                      >
-                        {updatingStatus[order.id] ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <span>Готова</span>
-                        )}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleUpdateOrderStatus(order.id, 'ready')}
+                          disabled={updatingStatus[order.id]}
+                          className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                        >
+                          {updatingStatus[order.id] ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <span>Готова</span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleCancelOrder(order.id)}
+                          disabled={updatingStatus[order.id]}
+                          className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                        >
+                          ✗ Откажи
+                        </button>
+                      </>
                     )}
                     {order.status === 'ready' && (
-                      <button
-                        onClick={() => handleUpdateOrderStatus(order.id, 'completed')}
-                        disabled={updatingStatus[order.id]}
-                        className="col-span-2 px-3 py-2 bg-white text-black hover:bg-gray-200 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
-                      >
-                        {updatingStatus[order.id] ? (
-                          <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          '✓ Завърши'
-                        )}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleUpdateOrderStatus(order.id, 'completed')}
+                          disabled={updatingStatus[order.id]}
+                          className="px-3 py-2 bg-white text-black hover:bg-gray-200 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                        >
+                          {updatingStatus[order.id] ? (
+                            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            '✓ Завърши'
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleCancelOrder(order.id)}
+                          disabled={updatingStatus[order.id]}
+                          className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                        >
+                          ✗ Откажи
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -1276,6 +1475,174 @@ export default function AdminOrdersPage() {
                     Затвори
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approvals Tab */}
+      {activeTab === 'approvals' && (
+        <div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Поръчки изискващи одобрение ({pendingApprovals.length})
+            </h2>
+          </div>
+
+          {approvalsLoading ? (
+            <div className="text-center py-20 bg-gray-800 rounded-xl">
+              <p className="text-gray-200 text-xl">Зареждане...</p>
+            </div>
+          ) : pendingApprovals.length === 0 ? (
+            <div className="text-center py-20 bg-gray-800 rounded-xl">
+              <p className="text-gray-200 text-xl">Няма поръчки изискващи одобрение</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendingApprovals.map((approval: any) => (
+                <div
+                  key={approval.id}
+                  className="bg-yellow-900/30 border-2 border-yellow-500 rounded-xl p-6 hover:bg-yellow-900/40 transition-colors cursor-pointer"
+                  onClick={() => {
+                    setSelectedApproval(approval);
+                    setShowApprovalModal(true);
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-white mb-2">
+                        Поръчка #{approval.order.orderNumber} - Маса {approval.tableNumber}
+                      </h3>
+                      <p className="text-yellow-200 text-sm">
+                        {approval.orderCount} поръчки за последните 5 минути
+                      </p>
+                      <p className="text-gray-300 text-sm mt-1">
+                        Заявена: {new Date(approval.requestedAt).toLocaleString('bg-BG')}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-white">
+                        {approval.order.totalBgn.toFixed(2)} лв.
+                      </p>
+                      <p className="text-gray-300 text-sm">
+                        {approval.order.items.length} артикула
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApproveOrder(approval.orderId);
+                      }}
+                      className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                    >
+                      ✅ Одобри
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedApproval(approval);
+                        setShowApprovalModal(true);
+                      }}
+                      className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors"
+                    >
+                      ❌ Откажи
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Approval Modal */}
+      {showApprovalModal && selectedApproval && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-700">
+              <h2 className="text-2xl font-bold text-white mb-2">
+                ⚠️ Поръчка изисква одобрение
+              </h2>
+              <p className="text-gray-300">
+                Маса {selectedApproval.tableNumber} - {selectedApproval.orderCount} поръчки за 5 минути
+              </p>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Поръчка #{selectedApproval.order.orderNumber}
+                </h3>
+                <div className="bg-gray-700/50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-300">Маса:</span>
+                    <span className="text-white font-semibold">{selectedApproval.order.tableNumber}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-300">Дата/Час:</span>
+                    <span className="text-white font-semibold">
+                      {new Date(selectedApproval.order.createdAt).toLocaleString('bg-BG')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-300">Общо:</span>
+                    <span className="text-white font-semibold text-lg">
+                      {selectedApproval.order.totalBgn.toFixed(2)} лв.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <h4 className="text-md font-semibold text-white mb-3">Артикули:</h4>
+                <div className="space-y-2">
+                  {selectedApproval.order.items.map((item: any) => (
+                    <div key={item.id} className="bg-gray-700/50 rounded-lg p-3 flex justify-between">
+                      <span className="text-white">{item.productName} x {item.quantity}</span>
+                      <span className="text-white font-semibold">
+                        {(item.priceBgn * item.quantity).toFixed(2)} лв.
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-yellow-900/30 border border-yellow-500 rounded-lg p-4 mb-6">
+                <p className="text-yellow-200 text-sm">
+                  <strong>Причина:</strong> Направени са {selectedApproval.orderCount} поръчки за последните 5 минути. 
+                  Заради съображения за сигурност и превантивно действие при потенциално неправомерни действия 
+                  и хакерски атаки, тази поръчка изисква одобрение.
+                </p>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => handleApproveOrder(selectedApproval.orderId)}
+                  disabled={processingApproval}
+                  className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                >
+                  {processingApproval ? 'Обработване...' : '✅ Одобри'}
+                </button>
+                <button
+                  onClick={() => handleRejectOrder(selectedApproval.orderId)}
+                  disabled={processingApproval}
+                  className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                >
+                  {processingApproval ? 'Обработване...' : '❌ Откажи'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowApprovalModal(false);
+                    setSelectedApproval(null);
+                  }}
+                  disabled={processingApproval}
+                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                >
+                  Затвори
+                </button>
               </div>
             </div>
           </div>

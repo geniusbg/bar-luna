@@ -560,7 +560,7 @@ export default function QRCodesPage() {
             }}
             className="px-4 md:px-6 py-2 md:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all text-sm md:text-base"
           >
-            🔗 QR Пренасочвания
+            🔗 Пренасочвания
           </button>
           <button
             onClick={() => setShowSettings(!showSettings)}
@@ -1334,7 +1334,7 @@ export default function QRCodesPage() {
             {/* Modal Header */}
             <div className="p-6 border-b border-slate-700 flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-white">🔗 QR Пренасочвания</h2>
+                <h2 className="text-2xl font-bold text-white">🔗 Пренасочвания</h2>
                 <p className="text-gray-400 text-sm mt-1">
                   Управление на URL адресите на QR кодовете. Промените се прилагат веднага без да принтирате нови кодове.
                 </p>
@@ -1519,7 +1519,9 @@ export default function QRCodesPage() {
                       <li>• Можете да сменяте URL-а по всяко време без да принтирате нови кодове</li>
                       <li>• Можете да спрете временно маса като я деактивирате</li>
                       <li>• Статистиките показват колко пъти е сканиран всеки код</li>
-                      <li>• <strong>Важно:</strong> Ако сменяте QR Link (redirect URL), не е нужно да регенерирате QR кода - той винаги води към /t/[номер]</li>
+                      <li>• <strong>Важно:</strong> Ако сменяте Redirect URL, не е нужно да регенерирате QR кода - той винаги води към /t/[номер]</li>
+                      <li>• <strong>QR Link (/t/[номер]):</strong> Това е статичен URL който е вграден в QR кода. Ако искате да го промените, трябва да регенерирате QR кода.</li>
+                      <li>• <strong>Redirect URL:</strong> Това е динамичен URL към който /t/[номер] пренасочва. Можете да го променяте по всяко време без да регенерирате QR кода.</li>
                     </ul>
                   </div>
                 </>

@@ -216,14 +216,18 @@ export default function StaffDashboard() {
     };
   }, []); // Empty deps - setup once, use refs for state access
 
-  const updateOrderStatus = async (orderId: string, status: string) => {
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+
+  const updateOrderStatus = async (orderId: string, status: string, cancellationReason?: string) => {
     setLoadingActions(prev => ({ ...prev, [orderId]: true }));
     
     try {
       const response = await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status, cancellationReason })
       });
 
       if (response.ok) {
@@ -233,6 +237,7 @@ export default function StaffDashboard() {
               ? { 
                   ...order, 
                   status,
+                  cancellationReason: cancellationReason || null,
                   completedAt: status === 'completed' ? new Date().toISOString() : order.completedAt
                 } 
               : order
@@ -242,7 +247,8 @@ export default function StaffDashboard() {
         const statusMessages: Record<string, string> = {
           'preparing': 'Поръчка започната',
           'ready': 'Поръчка готова',
-          'completed': 'Поръчка завършена'
+          'completed': 'Поръчка завършена',
+          'cancelled': 'Поръчка отказана'
         };
         
         setToast({ 
@@ -256,6 +262,21 @@ export default function StaffDashboard() {
       setToast({ message: 'Грешка при връзка', type: 'error' });
     } finally {
       setLoadingActions(prev => ({ ...prev, [orderId]: false }));
+    }
+  };
+
+  const handleCancelOrder = (orderId: string) => {
+    setCancelOrderId(orderId);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelOrder = () => {
+    if (cancelOrderId) {
+      updateOrderStatus(cancelOrderId, 'cancelled', cancelReason || undefined);
+      setShowCancelModal(false);
+      setCancelOrderId(null);
+      setCancelReason('');
     }
   };
 
@@ -448,6 +469,50 @@ export default function StaffDashboard() {
           type={toast.type}
           onClose={() => setToast(null)}
         />
+      )}
+
+      {/* Cancel Order Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-2xl w-full max-w-md">
+            <div className="p-6 border-b border-slate-700">
+              <h2 className="text-2xl font-bold text-white">Откажи поръчка</h2>
+              <p className="text-gray-400 text-sm mt-1">Можете да посочите причина (незадължително)</p>
+            </div>
+            
+            <div className="p-6">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Причина за отказ (незадължително)
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Например: Клиентът отмени поръчката, няма наличност, и т.н."
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-white focus:outline-none resize-none"
+                rows={4}
+              />
+            </div>
+
+            <div className="p-6 border-t border-slate-700 flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelOrderId(null);
+                  setCancelReason('');
+                }}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all"
+              >
+                Откажи
+              </button>
+              <button
+                onClick={confirmCancelOrder}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all"
+              >
+                Потвърди отказ
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Notification Popups - Stacked on Mobile, Grid on Desktop */}
@@ -980,43 +1045,70 @@ export default function StaffDashboard() {
                   {/* Status Buttons */}
                   <div className="grid grid-cols-2 gap-2">
                     {order.status === 'pending' && (
-                      <button
-                        onClick={() => updateOrderStatus(order.id, 'preparing')}
-                        disabled={loadingActions[order.id]}
-                        className="px-3 md:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
-                      >
-                        {loadingActions[order.id] ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <span>Приготвяме</span>
-                        )}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => updateOrderStatus(order.id, 'preparing')}
+                          disabled={loadingActions[order.id]}
+                          className="px-3 md:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
+                        >
+                          {loadingActions[order.id] ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <span>Приготвяме</span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleCancelOrder(order.id)}
+                          disabled={loadingActions[order.id]}
+                          className="px-3 md:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
+                        >
+                          ✗ Откажи
+                        </button>
+                      </>
                     )}
                     {order.status === 'preparing' && (
-                      <button
-                        onClick={() => updateOrderStatus(order.id, 'ready')}
-                        disabled={loadingActions[order.id]}
-                        className="px-3 md:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
-                      >
-                        {loadingActions[order.id] ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <span>Готова</span>
-                        )}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => updateOrderStatus(order.id, 'ready')}
+                          disabled={loadingActions[order.id]}
+                          className="px-3 md:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
+                        >
+                          {loadingActions[order.id] ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <span>Готова</span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleCancelOrder(order.id)}
+                          disabled={loadingActions[order.id]}
+                          className="px-3 md:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
+                        >
+                          ✗ Откажи
+                        </button>
+                      </>
                     )}
                     {order.status === 'ready' && (
-                      <button
-                        onClick={() => updateOrderStatus(order.id, 'completed')}
-                        disabled={loadingActions[order.id]}
-                        className="col-span-2 px-3 md:px-4 py-2 bg-white text-black hover:bg-gray-200 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
-                      >
-                        {loadingActions[order.id] ? (
-                          <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          '✓ Завърши'
-                        )}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => updateOrderStatus(order.id, 'completed')}
+                          disabled={loadingActions[order.id]}
+                          className="px-3 md:px-4 py-2 bg-white text-black hover:bg-gray-200 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
+                        >
+                          {loadingActions[order.id] ? (
+                            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            '✓ Завърши'
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleCancelOrder(order.id)}
+                          disabled={loadingActions[order.id]}
+                          className="px-3 md:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
+                        >
+                          ✗ Откажи
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>

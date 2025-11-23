@@ -36,8 +36,17 @@ export async function GET(
       }
     });
 
+    // Generate session token (valid for 3 hours)
+    const now = Date.now();
+    const expiresAt = now + (3 * 60 * 60 * 1000); // 3 hours
+    const sessionToken = `table_session_${tableNumber}_${now}_${expiresAt}`;
+
     // Get redirect URL (default to order page with BG locale)
-    const redirectUrl = barTable.redirectUrl || `/bg/order?table=${tableNumber}`;
+    const baseRedirectUrl = barTable.redirectUrl || `/bg/order?table=${tableNumber}`;
+    
+    // Add session token to redirect URL
+    const separator = baseRedirectUrl.includes('?') ? '&' : '?';
+    const redirectUrl = `${baseRedirectUrl}${separator}session=${encodeURIComponent(sessionToken)}`;
     
     // If it's a relative URL, use current domain
     if (redirectUrl.startsWith('/')) {

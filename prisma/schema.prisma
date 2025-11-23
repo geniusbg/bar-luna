@@ -115,14 +115,16 @@ model Order {
   table         BarTable?   @relation(fields: [tableId], references: [id])
   tableNumber   Int         @map("table_number")
   orderNumber   Int         @map("order_number") // Daily sequential number
-  status        String      @default("pending") @map("status") // pending, preparing, ready, completed, cancelled
+  status        String      @default("pending") @map("status") // pending, pending_approval, preparing, ready, completed, cancelled
   paymentMethod String?     @map("payment_method") // cash, card, null
   totalBgn      Decimal     @map("total_bgn") @db.Decimal(10, 2)
   totalEur      Decimal     @map("total_eur") @db.Decimal(10, 2)
   notes         String?
   customerName  String?     @map("customer_name")
   isPaid        Boolean     @default(false) @map("is_paid")
+  cancellationReason String? @map("cancellation_reason") // Reason for cancellation
   items         OrderItem[]
+  approval      PendingOrderApproval?
   createdAt     DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
   completedAt   DateTime?   @map("completed_at")
@@ -131,6 +133,24 @@ model Order {
   @@index([createdAt(sort: Desc)])
   @@index([tableNumber])
   @@map("orders")
+}
+
+model PendingOrderApproval {
+  id            String   @id @default(uuid())
+  orderId       String   @unique @map("order_id")
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  tableNumber   Int      @map("table_number")
+  orderCount    Int      @map("order_count") // Number of orders in last 5 minutes
+  reason        String   @default("rate_limit_exceeded") // "rate_limit_exceeded"
+  status        String   @default("pending") // "pending", "approved", "rejected"
+  requestedAt   DateTime @default(now()) @map("requested_at")
+  reviewedAt    DateTime? @map("reviewed_at")
+  reviewedBy    String?   @map("reviewed_by") // Admin user ID
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([status, requestedAt])
+  @@map("pending_order_approvals")
 }
 
 model OrderItem {

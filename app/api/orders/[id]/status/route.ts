@@ -7,14 +7,22 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { status } = await request.json();
+    const { status, cancellationReason } = await request.json();
+
+    const updateData: any = {
+      status,
+      completedAt: status === 'completed' ? new Date() : null
+    };
+
+    if (status === 'cancelled' && cancellationReason) {
+      updateData.cancellationReason = cancellationReason;
+    } else if (status !== 'cancelled') {
+      updateData.cancellationReason = null;
+    }
 
     const order = await prisma.order.update({
       where: { id },
-      data: {
-        status,
-        completedAt: status === 'completed' ? new Date() : null
-      },
+      data: updateData,
       include: { items: true }
     });
 
