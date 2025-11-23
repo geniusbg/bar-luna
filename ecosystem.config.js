@@ -1,7 +1,9 @@
+require('dotenv').config();
+
 module.exports = {
   apps: [
     {
-      name: 'bar-luna',
+      name: process.env.APP_NAME || 'bar-luna',
       script: 'npm',
       args: 'start',
       cwd: './',
@@ -12,7 +14,8 @@ module.exports = {
       env_file: '.env',
       env: {
         NODE_ENV: 'production',
-        PORT: 4000
+        PORT: process.env.PORT || 4000,
+        APP_NAME: process.env.APP_NAME || 'bar-luna'
       },
       error_file: './logs/pm2-error.log',
       out_file: './logs/pm2-out.log',

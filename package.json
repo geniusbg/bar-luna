@@ -1,11 +1,11 @@
 {
-  "name": "luna-bar",
+  "name": "bar-luna",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "start": "next start -p 4000",
+    "start": "next start",
     "lint": "next lint",
     "setup": "node setup-database.js",
     "db:generate": "prisma generate",
