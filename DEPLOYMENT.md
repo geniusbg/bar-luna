@@ -33,6 +33,8 @@ npx prisma db push
 npm run db:seed  # Optional: add sample data
 ```
 
+**Note:** After `npx prisma db push`, the `security_settings` table will be created automatically with default values. You can configure these settings in the Admin Dashboard under "Security Settings" panel.
+
 4. **Build and start:**
 ```bash
 npm run build

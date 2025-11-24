@@ -33,7 +33,7 @@ function OrderPageContent() {
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; persistent?: boolean } | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);

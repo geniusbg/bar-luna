@@ -11,8 +11,9 @@ Modern QR-based ordering system for Luna Bar in Ruse, Bulgaria.
 - 💰 **Dual Currency** - BGN & EUR with real-time toggle
 - 🛒 **Shopping Cart** - Add items, adjust quantities
 - 🔔 **Call Waiter** - Request payment (cash/card) or assistance
-- 📢 **Real-time Updates** - Receive instant notifications when order status changes
+- 📢 **Real-time Updates** - Receive instant notifications when order status changes (via Pusher, no polling)
 - ⚠️ **Approval System** - Orders requiring approval show clear status with items list
+- ✅ **Waiter Call Feedback** - Receive notifications when waiter acknowledges or completes your call
 
 ### For Staff
 - ⚡ **Real-time Dashboard** - Orders appear instantly (no refresh!)
@@ -30,7 +31,7 @@ Modern QR-based ordering system for Luna Bar in Ruse, Bulgaria.
 - 🔗 **QR Redirects** - Manage dynamic redirect URLs for QR codes (no need to reprint when changing URLs)
 - 🕐 **Working Hours** - Set working hours for each day of the week
 - 📊 **Analytics Dashboard** - View statistics
-- ⚠️ **Order Approval System** - Monitor and approve suspicious orders (>5 orders per table in 5 minutes)
+- ⚠️ **Order Approval System** - Monitor and approve suspicious orders (configurable threshold, default: 5 orders per 5 minutes)
 - 🔒 **Security Features** - Rate limiting, session validation, auto-reject expired approvals
 - 🛡️ **Security Settings Panel** - Configure threshold, time window, session duration, auto-reject timer
 
@@ -199,9 +200,13 @@ luna/
    - 🔊 Louder sound
    - 🔴 Shows in priority section
    ↓
-4. Waiter clicks "Отивам"
+4. Waiter clicks "Отивам" (acknowledges)
    ↓
-5. Goes to table
+5. Customer receives notification: "✅ Сервитьорът е уведомен и ще дойде скоро"
+   ↓
+6. Waiter completes call
+   ↓
+7. Customer receives notification: "✅ [Тип повикване] - завършено"
 ```
 
 ---
@@ -210,7 +215,7 @@ luna/
 
 ### Database Schema
 
-10 tables created:
+11 tables created:
 - `categories` - Menu categories (8 pre-loaded)
 - `products` - Menu items (17 test products)
 - `events` - Bar events
@@ -220,6 +225,7 @@ luna/
 - `waiter_calls` - Waiter notifications
 - `users` - Admin and staff accounts
 - `pending_order_approvals` - Orders requiring admin approval
+- `security_settings` - Configurable security settings (threshold, time windows, session duration)
 - `push_subscriptions` - Web push notification subscriptions
 - `hype_sync_log` - Future Hype POS integration
 
@@ -239,10 +245,11 @@ Prices stored in BGN, auto-converted to EUR.
 **Events:**
 - `new-order` - New customer order
 - `waiter-call` - Waiter called from table
+- `waiter-call-status` - Waiter call acknowledged/completed (client notification)
 - `order-status-change` - Order status updated (staff)
 - `order-status-update` - Order status updated (client)
 - `order-approval-needed` - Order requires approval
-- `order-approval-status` - Approval status changed
+- `order-approval-status` - Approval status changed (admin/staff/client)
 - `auto-rejections` - Auto-rejected expired approvals
 
 ---

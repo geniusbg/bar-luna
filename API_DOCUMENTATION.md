@@ -279,11 +279,54 @@ All endpoints return standard HTTP status codes:
 }
 ```
 
+## Security Settings (Admin)
+
+### Get Security Settings
+
+```http
+GET /api/security-settings
+```
+
+**Response:**
+```json
+{
+  "settings": {
+    "approvalOrderThreshold": 5,
+    "approvalTimeWindowMinutes": 5,
+    "sessionDurationHours": 3,
+    "autoRejectMinutes": 30
+  }
+}
+```
+
+### Update Security Settings
+
+```http
+POST /api/security-settings
+```
+
+**Request Body:**
+```json
+{
+  "approvalOrderThreshold": 6,
+  "approvalTimeWindowMinutes": 5,
+  "sessionDurationHours": 3,
+  "autoRejectMinutes": 30
+}
+```
+
+**Description:**
+- `approvalOrderThreshold` - Number of orders per table that triggers approval requirement (default: 5)
+- `approvalTimeWindowMinutes` - Time window in minutes for counting orders (default: 5)
+- `sessionDurationHours` - Session token validity duration in hours (default: 3)
+- `autoRejectMinutes` - Minutes before pending approvals are auto-rejected (default: 30)
+
 ## Rate Limiting
 
 - **Public endpoints:** 100 requests/minute
 - **Authenticated endpoints:** 1000 requests/minute
 - **POS sync endpoints:** 10000 requests/minute
+- **Order approval:** Configurable per table (default: 5 orders per 5 minutes)
 
 ## Currency Conversion
 
