@@ -86,7 +86,7 @@ export default function StaffDashboard() {
         const [allOrdersRes, callsRes, approvalsRes] = await Promise.all([
           fetch('/api/orders/all'),
           fetch('/api/waiter-call/all'),
-          fetch('/api/orders/pending-approval').catch(() => ({ ok: false })) // Don't fail if endpoint doesn't exist
+          fetch('/api/orders/pending-approval').catch(() => ({ ok: false } as Response)) // Don't fail if endpoint doesn't exist
         ]);
 
         const ordersData = await allOrdersRes.json();
@@ -96,7 +96,7 @@ export default function StaffDashboard() {
         setWaiterCalls(callsData.calls || []);
 
         // Load pending approvals if endpoint exists
-        if (approvalsRes.ok) {
+        if (approvalsRes && approvalsRes.ok && approvalsRes instanceof Response) {
           const approvalsData = await approvalsRes.json();
           setPendingApprovals(approvalsData.approvals || []);
         }
@@ -218,7 +218,7 @@ export default function StaffDashboard() {
           const [ordersRes, callsRes, approvalsRes] = await Promise.all([
             fetch('/api/orders/all'),
             fetch('/api/waiter-call/all'),
-            fetch('/api/orders/pending-approval').catch(() => ({ ok: false }))
+            fetch('/api/orders/pending-approval').catch(() => ({ ok: false } as Response))
           ]);
 
           const ordersData = await ordersRes.json();
@@ -229,7 +229,7 @@ export default function StaffDashboard() {
           setWaiterCalls(callsData.calls || []);
 
           // Update pending approvals if endpoint exists
-          if (approvalsRes.ok) {
+          if (approvalsRes && approvalsRes.ok && approvalsRes instanceof Response) {
             const approvalsData = await approvalsRes.json();
             setPendingApprovals(approvalsData.approvals || []);
           }
