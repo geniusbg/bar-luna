@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import AdminNav from '@/components/AdminNav';
 import ServiceWorkerUpdater from '@/components/ServiceWorkerUpdater';
+import GlobalApprovalsBanner from '@/components/GlobalApprovalsBanner';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { Metadata } from 'next';
 
@@ -32,9 +33,13 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
       <div className="min-h-screen bg-black">
         <ServiceWorkerUpdater />
         <AdminNav locale={locale} />
+        <GlobalApprovalsBanner locale={locale} />
         
         <main className="pt-28 px-4 pb-8 md:px-8">
-          {children}
+          {/* Add padding-top for sticky approval banner */}
+          <div className="pt-24">
+            {children}
+          </div>
         </main>
       </div>
     </>

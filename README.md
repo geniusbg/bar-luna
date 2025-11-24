@@ -6,10 +6,13 @@ Modern QR-based ordering system for Luna Bar in Ruse, Bulgaria.
 
 ### For Customers
 - 📱 **QR Code Ordering** - Scan table QR, browse menu, order
+- 🔐 **Session Security** - 3-hour session tokens for secure ordering
 - 🌍 **3 Languages** - Bulgarian, English, German
 - 💰 **Dual Currency** - BGN & EUR with real-time toggle
 - 🛒 **Shopping Cart** - Add items, adjust quantities
 - 🔔 **Call Waiter** - Request payment (cash/card) or assistance
+- 📢 **Real-time Updates** - Receive instant notifications when order status changes
+- ⚠️ **Approval System** - Orders requiring approval show clear status with items list
 
 ### For Staff
 - ⚡ **Real-time Dashboard** - Orders appear instantly (no refresh!)
@@ -17,6 +20,8 @@ Modern QR-based ordering system for Luna Bar in Ruse, Bulgaria.
 - 📊 **Order Management** - Track status (Pending → Preparing → Ready → Complete)
 - 🚨 **Urgent Notifications** - Priority alerts for payment requests
 - 📱 **Multi-device** - Works on desktop + mobile simultaneously
+- ✅ **Order Approvals** - Approve or reject orders requiring admin approval
+- ⚠️ **Approval Banner** - Always-visible sticky banner for pending approvals
 
 ### For Admins
 - 🍸 **Product Management** - Add/edit menu items in 3 languages
@@ -25,6 +30,8 @@ Modern QR-based ordering system for Luna Bar in Ruse, Bulgaria.
 - 🔗 **QR Redirects** - Manage dynamic redirect URLs for QR codes (no need to reprint when changing URLs)
 - 🕐 **Working Hours** - Set working hours for each day of the week
 - 📊 **Analytics Dashboard** - View statistics
+- ⚠️ **Order Approval System** - Monitor and approve suspicious orders (>5 orders per table in 5 minutes)
+- 🔒 **Security Features** - Rate limiting, session validation, auto-reject expired approvals
 
 ## 🏗️ Tech Stack
 
@@ -78,7 +85,11 @@ NEXT_PUBLIC_PUSHER_KEY=your_key
 PUSHER_SECRET=your_secret
 NEXT_PUBLIC_PUSHER_CLUSTER=eu
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-AUTH_SECRET=random_secret_string
+NEXTAUTH_SECRET=random_secret_string
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_vapid_public_key
+VAPID_PRIVATE_KEY=your_vapid_private_key
+APP_NAME=bar-luna
+PORT=4000
 ```
 
 ### 3. Setup Database
@@ -198,7 +209,7 @@ luna/
 
 ### Database Schema
 
-9 tables created:
+10 tables created:
 - `categories` - Menu categories (8 pre-loaded)
 - `products` - Menu items (17 test products)
 - `events` - Bar events
@@ -206,7 +217,9 @@ luna/
 - `orders` - Customer orders
 - `order_items` - Products in orders
 - `waiter_calls` - Waiter notifications
-- `staff` - Staff accounts
+- `users` - Admin and staff accounts
+- `pending_order_approvals` - Orders requiring admin approval
+- `push_subscriptions` - Web push notification subscriptions
 - `hype_sync_log` - Future Hype POS integration
 
 ### Currency System
@@ -217,12 +230,19 @@ Prices stored in BGN, auto-converted to EUR.
 
 ### Real-time Channels
 
-**Pusher channel:** `staff-channel`
+**Pusher channels:**
+- `staff-channel` - Staff notifications
+- `admin-channel` - Admin notifications
+- `table-{N}` - Table-specific client notifications
 
 **Events:**
 - `new-order` - New customer order
 - `waiter-call` - Waiter called from table
-- `order-status-change` - Order status updated
+- `order-status-change` - Order status updated (staff)
+- `order-status-update` - Order status updated (client)
+- `order-approval-needed` - Order requires approval
+- `order-approval-status` - Approval status changed
+- `auto-rejections` - Auto-rejected expired approvals
 
 ---
 
@@ -326,11 +346,15 @@ See `DEPLOYMENT.md` for production deployment guide.
 ## 🎯 Key Achievements
 
 ✅ **QR-based ordering** - Contactless, modern  
+✅ **Session security** - 3-hour tokens, table validation  
+✅ **Rate limiting** - Prevents spam orders (5 orders per table per 5 minutes)  
+✅ **Approval system** - Admin/staff can approve/reject suspicious orders  
 ✅ **Real-time notifications** - Instant, no refresh  
 ✅ **Multi-language** - BG/EN/DE support  
 ✅ **Dual currency** - BGN/EUR toggle  
 ✅ **Staff dashboard** - Live order management  
 ✅ **Waiter calls** - Urgent payment requests  
+✅ **Web push notifications** - Works even when app is closed  
 ✅ **30 Tables** - Pre-configured with QR codes  
 ✅ **Responsive** - Works on all devices  
 ✅ **Hype-ready** - Easy POS integration  

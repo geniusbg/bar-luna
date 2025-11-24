@@ -21,17 +21,27 @@ export async function GET(request: Request) {
     }
 
     // Get all pending approvals with order details
-    const approvals = await prisma.pendingOrderApproval.findMany({
-      where: { status: 'pending' },
-      include: {
-        order: {
-          include: {
-            items: true
+    let approvals;
+    try {
+      approvals = await prisma.pendingOrderApproval.findMany({
+        where: { status: 'pending' },
+        include: {
+          order: {
+            include: {
+              items: true
+            }
           }
-        }
-      },
-      orderBy: { requestedAt: 'asc' }
-    });
+        },
+        orderBy: { requestedAt: 'asc' }
+      });
+    } catch (dbError: any) {
+      // If table doesn't exist (P2021), return empty array
+      if (dbError.code === 'P2021') {
+        console.log('PendingOrderApproval table does not exist yet');
+        return NextResponse.json({ approvals: [] });
+      }
+      throw dbError;
+    }
 
     // Convert Decimal to Number for JSON serialization
     const formattedApprovals = approvals.map(approval => ({

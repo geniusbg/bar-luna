@@ -27,16 +27,26 @@ export async function POST(
     const { reason } = await request.json().catch(() => ({}));
     
     // Find approval record
-    const approval = await prisma.pendingOrderApproval.findUnique({
-      where: { orderId: id }
-    });
+    let approval;
+    try {
+      approval = await prisma.pendingOrderApproval.findUnique({
+        where: { orderId: id }
+      });
+    } catch (dbError: any) {
+      // If table doesn't exist (P2021), return error
+      if (dbError.code === 'P2021') {
+        console.log('PendingOrderApproval table does not exist yet');
+        return NextResponse.json({ error: 'Approval system not available' }, { status: 503 });
+      }
+      throw dbError;
+    }
 
     if (!approval) {
       return NextResponse.json({ error: 'Approval not found' }, { status: 404 });
     }
 
     if (approval.status !== 'pending') {
-      return NextResponse.json({ error: 'Approval already processed' }, { status: 400 });
+      return NextResponse.json({ error: 'Одобрението вече е обработено' }, { status: 400 });
     }
 
     // Update approval status

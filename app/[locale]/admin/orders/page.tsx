@@ -1,20 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Price from '@/components/Price';
 import Toast from '@/components/Toast';
 import { getPusherClient } from '@/lib/pusher-client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import PendingApprovalsBanner from '@/components/PendingApprovalsBanner';
 
 type OrderTab = 'active' | 'history' | 'stats' | 'approvals';
 
 export default function AdminOrdersPage() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const locale = pathname.split('/')[1] || 'bg';
   
-  const [activeTab, setActiveTab] = useState<OrderTab>('active');
+  // Check URL params for tab and approval ID
+  const urlTab = searchParams?.get('tab') as OrderTab | null;
+  const approvalId = searchParams?.get('approval');
+  
+  const [activeTab, setActiveTab] = useState<OrderTab>(urlTab && ['active', 'history', 'stats', 'approvals'].includes(urlTab) ? urlTab : 'active');
   const [orders, setOrders] = useState<any[]>([]);
   const [historyOrders, setHistoryOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,9 +134,10 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
 
-  // Load active orders
+  // Load active orders and pending approvals on mount
   useEffect(() => {
     loadActiveOrders();
+    loadPendingApprovals(); // Load pending approvals to show banner
     
     // Setup Pusher for real-time updates
     const pusher = getPusherClient();
@@ -160,22 +167,24 @@ export default function AdminOrdersPage() {
     const adminChannel = pusher.subscribe('admin-channel');
 
     adminChannel.bind('order-approval-needed', (data: any) => {
-      // Reload pending approvals when new one arrives
-      if (activeTab === 'approvals') {
-        loadPendingApprovals();
-      }
+      // Reload pending approvals when new one arrives (always, to update banner)
+      loadPendingApprovals();
     });
 
     // Listen for auto-rejections
     adminChannel.bind('auto-rejections', (data: any) => {
-      // Reload pending approvals and active orders when auto-rejections occur
-      if (activeTab === 'approvals') {
-        loadPendingApprovals();
-      }
+      // Reload pending approvals and active orders when auto-rejections occur (always, to update banner)
+      loadPendingApprovals();
       loadActiveOrders();
       if (activeTab === 'history') {
         loadHistory();
       }
+    });
+
+    // Listen for approval status changes
+    adminChannel.bind('order-approval-status', (data: any) => {
+      // Reload pending approvals when status changes (always, to update banner)
+      loadPendingApprovals();
     });
 
     return () => {
@@ -236,6 +245,33 @@ export default function AdminOrdersPage() {
       loadStats();
     }
   }, [activeTab, statsFilters]);
+
+  // Load pending approvals when approvals tab is opened
+  useEffect(() => {
+    if (activeTab === 'approvals') {
+      loadPendingApprovals();
+    }
+  }, [activeTab]);
+
+  // Handle URL params - open approvals tab if specified
+  useEffect(() => {
+    if (urlTab === 'approvals') {
+      setActiveTab('approvals');
+      loadPendingApprovals();
+    }
+  }, [urlTab]);
+
+  // Auto-open approval modal if approval ID is in URL
+  useEffect(() => {
+    if (approvalId && pendingApprovals.length > 0) {
+      const approval = pendingApprovals.find((a: any) => a.orderId === approvalId);
+      if (approval) {
+        setSelectedApproval(approval);
+        setShowApprovalModal(true);
+        setActiveTab('approvals');
+      }
+    }
+  }, [approvalId, pendingApprovals]);
 
   async function loadActiveOrders() {
     try {
@@ -335,7 +371,15 @@ export default function AdminOrdersPage() {
       });
 
       if (response.ok) {
-        setToast({ message: '✅ Поръчката е одобрена успешно', type: 'success' });
+        // Build message with items
+        let message = '✅ Поръчката е одобрена успешно';
+        if (selectedApproval?.order?.items && selectedApproval.order.items.length > 0) {
+          const itemsList = selectedApproval.order.items.map((item: any) => 
+            `${item.quantity}x ${item.productName}`
+          ).join('\n');
+          message = `✅ Поръчката е одобрена успешно!\n\n${itemsList}`;
+        }
+        setToast({ message, type: 'success' });
         setShowApprovalModal(false);
         setSelectedApproval(null);
         loadPendingApprovals();
@@ -627,6 +671,17 @@ export default function AdminOrdersPage() {
         </div>
       )}
       
+      {/* Global Pending Approvals Banner - Always visible (sticky) */}
+      <PendingApprovalsBanner 
+        locale={locale}
+        onApprovalClick={(approval) => {
+          setSelectedApproval(approval);
+          setShowApprovalModal(true);
+          setActiveTab('approvals');
+        }}
+        showButtons={true}
+      />
+
       {/* Header with Tabs */}
       <div className="mb-8">
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">Поръчки & Статистики</h1>

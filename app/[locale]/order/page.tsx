@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Price from '@/components/Price';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import Toast from '@/components/Toast';
+import { getPusherClient } from '@/lib/pusher-client';
 
 interface CartItem {
   productId: string;
@@ -73,6 +74,79 @@ function OrderPageContent() {
       }
     }
   }, [searchParams, tableNumber]);
+
+  // Listen for order status updates via Pusher
+  useEffect(() => {
+    if (!tableNumber) return;
+
+    const pusher = getPusherClient();
+    const tableChannel = pusher.subscribe(`table-${tableNumber}`);
+
+    tableChannel.bind('order-status-update', (data: any) => {
+      console.log('📢 Order status update received:', data);
+      
+      // Build items list for all statuses
+      let itemsList = '';
+      if (data.items && data.items.length > 0) {
+        const itemsFormatted = data.items.map((item: any) => 
+          `${item.quantity}x ${item.productName}`
+        ).join('\n');
+        itemsList = `\n\n${itemsFormatted}`;
+      }
+      
+      // Show toast notification based on status
+      let message = '';
+      let type: 'success' | 'error' = 'success';
+      
+      switch (data.status) {
+        case 'pending':
+          message = locale === 'bg' 
+            ? `🔄 Поръчка #${data.orderNumber} е приета и се подготвя${itemsList}`
+            : locale === 'en'
+            ? `🔄 Order #${data.orderNumber} accepted and being prepared${itemsList}`
+            : `🔄 Bestellung #${data.orderNumber} akzeptiert und wird vorbereitet${itemsList}`;
+          break;
+        case 'preparing':
+          message = locale === 'bg'
+            ? `👨‍🍳 Поръчка #${data.orderNumber} се приготвя${itemsList}`
+            : locale === 'en'
+            ? `👨‍🍳 Order #${data.orderNumber} is being prepared${itemsList}`
+            : `👨‍🍳 Bestellung #${data.orderNumber} wird vorbereitet${itemsList}`;
+          break;
+        case 'ready':
+          message = locale === 'bg'
+            ? `✅ Поръчка #${data.orderNumber} е готова!${itemsList}`
+            : locale === 'en'
+            ? `✅ Order #${data.orderNumber} is ready!${itemsList}`
+            : `✅ Bestellung #${data.orderNumber} ist fertig!${itemsList}`;
+          break;
+        case 'completed':
+          message = locale === 'bg'
+            ? `✅ Поръчка #${data.orderNumber} е завършена${itemsList}`
+            : locale === 'en'
+            ? `✅ Order #${data.orderNumber} completed${itemsList}`
+            : `✅ Bestellung #${data.orderNumber} abgeschlossen${itemsList}`;
+          break;
+        case 'cancelled':
+          message = locale === 'bg'
+            ? `❌ Поръчка #${data.orderNumber} е отменена${data.cancellationReason ? ': ' + data.cancellationReason : ''}${itemsList}`
+            : locale === 'en'
+            ? `❌ Order #${data.orderNumber} cancelled${data.cancellationReason ? ': ' + data.cancellationReason : ''}${itemsList}`
+            : `❌ Bestellung #${data.orderNumber} storniert${data.cancellationReason ? ': ' + data.cancellationReason : ''}${itemsList}`;
+          type = 'error';
+          break;
+        default:
+          return; // Unknown status, don't show notification
+      }
+
+      setToast({ message, type });
+    });
+
+    return () => {
+      tableChannel.unbind_all();
+      pusher.unsubscribe(`table-${tableNumber}`);
+    };
+  }, [tableNumber, locale]);
 
   useEffect(() => {
     async function loadMenu() {
@@ -151,10 +225,18 @@ function OrderPageContent() {
             clearInterval(interval);
             
             if (data.status === 'approved') {
+              // Build message with items
+              let message = locale === 'bg' ? '✅ Поръчката е одобрена!' : 
+                           locale === 'en' ? '✅ Order approved!' : 
+                           '✅ Bestellung genehmigt!';
+              if (data.items && data.items.length > 0) {
+                const itemsList = data.items.map((item: any) => 
+                  `${item.quantity}x ${item.productName}`
+                ).join('\n');
+                message = `${message}\n\n${itemsList}`;
+              }
               setToast({ 
-                message: locale === 'bg' ? '✅ Поръчката е одобрена!' : 
-                         locale === 'en' ? '✅ Order approved!' : 
-                         '✅ Bestellung genehmigt!', 
+                message,
                 type: 'success' 
               });
               setCart([]);
@@ -254,54 +336,91 @@ function OrderPageContent() {
         })
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        // Handle 409 Conflict - pending approval exists
+        if (response.status === 409) {
+          setToast({ 
+            message: responseData.error || 'Има изчакваща поръчка за одобрение',
+            type: 'error' 
+          });
+          setSubmitting(false);
+          return;
+        }
         
-        // Check if order requires approval
-        if (data.requiresApproval) {
-          setRequiresApproval(true);
-          setApprovalStatus('pending');
-          setOrderId(data.orderId);
-          
-          // Start polling for approval status
-          pollApprovalStatus(data.orderId);
-          
-          const approvalMsg = locale === 'bg' 
+        // Handle 401 Unauthorized - session expired
+        if (response.status === 401) {
+          setToast({ 
+            message: responseData.error || 'Сесията е изтекла. Моля, сканирайте QR кода отново.',
+            type: 'error' 
+          });
+          setSubmitting(false);
+          return;
+        }
+        
+        // Handle 429 Rate Limit - too many orders
+        if (response.status === 429) {
+          let errorMsg = responseData.error || 'Твърде много поръчки';
+          if (responseData.details) {
+            errorMsg += `\n${responseData.details}`;
+          }
+          setToast({ 
+            message: errorMsg,
+            type: 'error' 
+          });
+          setSubmitting(false);
+          return;
+        }
+        
+        // Handle other errors
+        setToast({ 
+          message: responseData.error || responseData.details || 'Грешка при създаване на поръчка',
+          type: 'error' 
+        });
+        setSubmitting(false);
+        return;
+      }
+
+      // Success - check if approval is required
+      if (responseData.requiresApproval) {
+        setRequiresApproval(true);
+        setApprovalStatus('pending');
+        setOrderId(responseData.orderId);
+        pollApprovalStatus(responseData.orderId);
+        
+        setToast({ 
+          message: locale === 'bg' 
             ? '⚠️ Поръчката изисква одобрение от администратор'
             : locale === 'en'
             ? '⚠️ Order requires admin approval'
-            : '⚠️ Bestellung erfordert Admin-Genehmigung';
-          setToast({ message: approvalMsg, type: 'success' });
-        } else {
-          const successMsg = locale === 'bg' ? '✅ Поръчката е изпратена успешно!' : 
-                            locale === 'en' ? '✅ Order sent successfully!' : 
-                            '✅ Bestellung erfolgreich gesendet!';
-          setToast({ message: successMsg, type: 'success' });
-          setCart([]);
-          setShowCart(false);
-        }
+            : '⚠️ Bestellung erfordert Admin-Genehmigung',
+          type: 'error' 
+        });
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        let errorMsg = locale === 'bg' ? '❌ Грешка при изпращане на поръчка' : 
-                      locale === 'en' ? '❌ Error sending order' : 
-                      '❌ Fehler beim Senden der Bestellung';
-        
-        // Handle rate limiting error
-        if (response.status === 429 && errorData.error) {
-          errorMsg = errorData.error;
-          if (errorData.details) {
-            errorMsg += `\n${errorData.details}`;
-          }
-        }
-        
-        setToast({ message: errorMsg, type: 'error' });
+        setToast({ 
+          message: locale === 'bg' 
+            ? `✅ Поръчка #${responseData.orderNumber} е създадена успешно!`
+            : locale === 'en'
+            ? `✅ Order #${responseData.orderNumber} created successfully!`
+            : `✅ Bestellung #${responseData.orderNumber} erfolgreich erstellt!`,
+          type: 'success' 
+        });
+        setCart([]);
+        setShowCart(false);
       }
-    } catch (error) {
-      const errorMsg = locale === 'bg' ? '❌ Грешка при изпращане на поръчка' : 
-                      locale === 'en' ? '❌ Error sending order' : 
-                      '❌ Fehler beim Senden der Bestellung';
-      setToast({ message: errorMsg, type: 'error' });
-    } finally {
+      
+      setSubmitting(false);
+    } catch (error: any) {
+      console.error('Submit order error:', error);
+      setToast({ 
+        message: locale === 'bg' 
+          ? 'Грешка при създаване на поръчка. Моля, опитайте отново.'
+          : locale === 'en'
+          ? 'Error creating order. Please try again.'
+          : 'Fehler beim Erstellen der Bestellung. Bitte versuchen Sie es erneut.',
+        type: 'error' 
+      });
       setSubmitting(false);
     }
   };
@@ -334,6 +453,8 @@ function OrderPageContent() {
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
+          persistent={true}
+          locale={locale}
         />
       )}
 
@@ -591,6 +712,56 @@ function OrderPageContent() {
                 </p>
               ) : (
                 <>
+                  {/* Approval Banner in Cart Modal */}
+                  {requiresApproval && (
+                    <div className="bg-yellow-900/50 border-2 border-yellow-500 rounded-xl p-4 mb-6">
+                      <div className="flex items-start gap-3">
+                        <div className="text-2xl">⚠️</div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-lg mb-2 text-yellow-200">
+                            {locale === 'bg' ? 'Поръчката изисква одобрение' : 
+                             locale === 'en' ? 'Order requires approval' : 
+                             'Bestellung erfordert Genehmigung'}
+                          </p>
+                          <p className="text-sm mb-2 text-yellow-100">
+                            {locale === 'bg' 
+                              ? 'Направени са 5 поръчки за последните 5 минути. Заради съображения за сигурност и превантивно действие при потенциално неправомерни действия и хакерски атаки, тази поръчка изисква одобрение.'
+                              : locale === 'en'
+                              ? '5 orders have been placed in the last 5 minutes. Due to security concerns and preventive action against potentially unauthorized actions and hacking attacks, this order requires approval.'
+                              : '5 Bestellungen wurden in den letzten 5 Minuten aufgegeben. Aufgrund von Sicherheitsbedenken und präventiven Maßnahmen gegen möglicherweise unbefugte Aktionen und Hacking-Angriffe erfordert diese Bestellung eine Genehmigung.'}
+                          </p>
+                          {approvalStatus === 'pending' && (
+                            <p className="text-sm font-medium text-yellow-200">
+                              {locale === 'bg' 
+                                ? '⏳ Очакване на одобрение от администратор...'
+                                : locale === 'en'
+                                ? '⏳ Waiting for admin approval...'
+                                : '⏳ Warten auf Admin-Genehmigung...'}
+                            </p>
+                          )}
+                          {approvalStatus === 'approved' && (
+                            <p className="text-sm font-medium text-green-300">
+                              {locale === 'bg' 
+                                ? '✅ Поръчката е одобрена!'
+                                : locale === 'en'
+                                ? '✅ Order approved!'
+                                : '✅ Bestellung genehmigt!'}
+                            </p>
+                          )}
+                          {approvalStatus === 'rejected' && (
+                            <p className="text-sm font-medium text-red-300">
+                              {locale === 'bg' 
+                                ? '❌ Поръчката е отхвърлена'
+                                : locale === 'en'
+                                ? '❌ Order rejected'
+                                : '❌ Bestellung abgelehnt'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-4 mb-6">
                     {cart.map(item => {
                       const itemName = locale === 'bg' ? item.nameBg : locale === 'en' ? item.nameEn : item.nameDe;

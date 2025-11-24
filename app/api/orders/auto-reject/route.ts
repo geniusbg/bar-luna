@@ -11,6 +11,7 @@ export async function POST() {
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
 
     // Find all pending approvals older than 30 minutes
+    // If table doesn't exist, fail - table should exist
     const expiredApprovals = await prisma.pendingOrderApproval.findMany({
       where: {
         status: 'pending',
@@ -107,6 +108,7 @@ export async function GET() {
   try {
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
 
+    // If table doesn't exist, fail - table should exist
     const expiredCount = await prisma.pendingOrderApproval.count({
       where: {
         status: 'pending',

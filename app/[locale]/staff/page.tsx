@@ -9,6 +9,7 @@ import { playSound } from '@/lib/sound';
 import Toast from '@/components/Toast';
 import Price from '@/components/Price';
 import ServiceWorkerUpdater from '@/components/ServiceWorkerUpdater';
+import PendingApprovalsBanner from '@/components/PendingApprovalsBanner';
 import { 
   isPushSupported, 
   isSubscribed, 
@@ -25,6 +26,10 @@ export default function StaffDashboard() {
   const [callsTab, setCallsTab] = useState<'active' | 'completed'>('active');
   const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
+  const [processingApproval, setProcessingApproval] = useState(false);
   
   // Loading state
   const [initialLoading, setInitialLoading] = useState(true);
@@ -78,9 +83,10 @@ export default function StaffDashboard() {
     // Load initial data
     async function loadData() {
       try {
-        const [allOrdersRes, callsRes] = await Promise.all([
+        const [allOrdersRes, callsRes, approvalsRes] = await Promise.all([
           fetch('/api/orders/all'),
-          fetch('/api/waiter-call/all')
+          fetch('/api/waiter-call/all'),
+          fetch('/api/orders/pending-approval').catch(() => ({ ok: false })) // Don't fail if endpoint doesn't exist
         ]);
 
         const ordersData = await allOrdersRes.json();
@@ -88,6 +94,12 @@ export default function StaffDashboard() {
 
         setOrders(ordersData.orders || []);
         setWaiterCalls(callsData.calls || []);
+
+        // Load pending approvals if endpoint exists
+        if (approvalsRes.ok) {
+          const approvalsData = await approvalsRes.json();
+          setPendingApprovals(approvalsData.approvals || []);
+        }
         
         // Show loading for 2 seconds
         setTimeout(() => {
@@ -177,15 +189,36 @@ export default function StaffDashboard() {
       ));
     });
 
+    // Order approval needed notification (listen to admin channel for approvals)
+    const adminChannel = pusher.subscribe('admin-channel');
+    adminChannel.bind('order-approval-needed', (data: any) => {
+      console.log('⚠️ Order approval needed:', data);
+      // Reload pending approvals
+      fetch('/api/orders/pending-approval')
+        .then(res => res.ok ? res.json() : { approvals: [] })
+        .then(data => setPendingApprovals(data.approvals || []))
+        .catch(() => {});
+    });
+
+    // Order approval status change
+    adminChannel.bind('order-approval-status', (data: any) => {
+      // Reload pending approvals when status changes
+      fetch('/api/orders/pending-approval')
+        .then(res => res.ok ? res.json() : { approvals: [] })
+        .then(data => setPendingApprovals(data.approvals || []))
+        .catch(() => {});
+    });
+
     // Smart refresh on visibility change (for iOS when returning from background)
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible' && !isRefreshingRef.current) {
         isRefreshingRef.current = true;
         
         try {
-          const [ordersRes, callsRes] = await Promise.all([
+          const [ordersRes, callsRes, approvalsRes] = await Promise.all([
             fetch('/api/orders/all'),
-            fetch('/api/waiter-call/all')
+            fetch('/api/waiter-call/all'),
+            fetch('/api/orders/pending-approval').catch(() => ({ ok: false }))
           ]);
 
           const ordersData = await ordersRes.json();
@@ -194,6 +227,12 @@ export default function StaffDashboard() {
           // Just update data, let Pusher handle new notifications
           setOrders(ordersData.orders || []);
           setWaiterCalls(callsData.calls || []);
+
+          // Update pending approvals if endpoint exists
+          if (approvalsRes.ok) {
+            const approvalsData = await approvalsRes.json();
+            setPendingApprovals(approvalsData.approvals || []);
+          }
           
           console.log('✅ Data refreshed');
         } catch (error) {
@@ -211,7 +250,9 @@ export default function StaffDashboard() {
 
     return () => {
       channel.unbind_all();
+      adminChannel.unbind_all();
       pusher.unsubscribe('staff-channel');
+      pusher.unsubscribe('admin-channel');
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []); // Empty deps - setup once, use refs for state access
@@ -277,6 +318,78 @@ export default function StaffDashboard() {
       setShowCancelModal(false);
       setCancelOrderId(null);
       setCancelReason('');
+    }
+  };
+
+  const handleApproveOrder = async (orderId: string) => {
+    setProcessingApproval(true);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/approve`, {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        // Build message with items
+        let message = '✅ Поръчката е одобрена успешно';
+        if (selectedApproval?.order?.items && selectedApproval.order.items.length > 0) {
+          const itemsList = selectedApproval.order.items.map((item: any) => 
+            `${item.quantity}x ${item.productName}`
+          ).join('\n');
+          message = `✅ Поръчката е одобрена успешно!\n\n${itemsList}`;
+        }
+        setToast({ message, type: 'success' });
+        setShowApprovalModal(false);
+        setSelectedApproval(null);
+        // Reload pending approvals
+        const approvalsRes = await fetch('/api/orders/pending-approval');
+        if (approvalsRes.ok) {
+          const approvalsData = await approvalsRes.json();
+          setPendingApprovals(approvalsData.approvals || []);
+        }
+        // Reload orders
+        const ordersRes = await fetch('/api/orders/all');
+        if (ordersRes.ok) {
+          const ordersData = await ordersRes.json();
+          setOrders(ordersData.orders || []);
+        }
+      } else {
+        const data = await response.json();
+        setToast({ message: data.error || 'Грешка при одобрение', type: 'error' });
+      }
+    } catch (error) {
+      setToast({ message: 'Грешка при връзка', type: 'error' });
+    } finally {
+      setProcessingApproval(false);
+    }
+  };
+
+  const handleRejectOrder = async (orderId: string, reason?: string) => {
+    setProcessingApproval(true);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+
+      if (response.ok) {
+        setToast({ message: '❌ Поръчката е отхвърлена', type: 'success' });
+        setShowApprovalModal(false);
+        setSelectedApproval(null);
+        // Reload pending approvals
+        const approvalsRes = await fetch('/api/orders/pending-approval');
+        if (approvalsRes.ok) {
+          const approvalsData = await approvalsRes.json();
+          setPendingApprovals(approvalsData.approvals || []);
+        }
+      } else {
+        const data = await response.json();
+        setToast({ message: data.error || 'Грешка при отхвърляне', type: 'error' });
+      }
+    } catch (error) {
+      setToast({ message: 'Грешка при връзка', type: 'error' });
+    } finally {
+      setProcessingApproval(false);
     }
   };
 
@@ -461,7 +574,8 @@ export default function StaffDashboard() {
     <div className="min-h-screen bg-gray-900">
       <ServiceWorkerUpdater />
       
-      <div className="pt-4 md:pt-8 px-8 pb-8">
+      {/* Add padding-top for sticky approval banner */}
+      <div className="pt-24 px-8 pb-8">
       {/* Toast Notification */}
       {toast && (
         <Toast
@@ -470,6 +584,16 @@ export default function StaffDashboard() {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Global Pending Approvals Banner */}
+      <PendingApprovalsBanner 
+        locale={locale}
+        onApprovalClick={(approval) => {
+          setSelectedApproval(approval);
+          setShowApprovalModal(true);
+        }}
+        showButtons={true}
+      />
 
       {/* Cancel Order Modal */}
       {showCancelModal && (
@@ -992,7 +1116,7 @@ export default function StaffDashboard() {
                 .filter((order: any) => order.status !== 'completed')
                 .map((order: any) => (
                 <div
-                  key={order.id}
+                  key={`active-${order.id}`}
                   className="bg-gray-800 rounded-xl p-4 md:p-6 border-2 border-gray-700"
                 >
                   <div className="flex justify-between items-start mb-3 md:mb-4">
@@ -1016,10 +1140,12 @@ export default function StaffDashboard() {
                     </div>
                     <div className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-semibold whitespace-nowrap ${
                       order.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
+                      order.status === 'pending_approval' ? 'bg-orange-500/20 text-orange-300' :
                       order.status === 'preparing' ? 'bg-blue-500/20 text-blue-300' :
                       order.status === 'ready' ? 'bg-green-500/20 text-green-300' : ''
                     }`}>
                       {order.status === 'pending' ? 'Нова' :
+                       order.status === 'pending_approval' ? 'Изчаква одобрение' :
                        order.status === 'preparing' ? 'В процес' :
                        order.status === 'ready' ? 'Готова' : order.status}
                     </div>
@@ -1027,8 +1153,8 @@ export default function StaffDashboard() {
 
                   {/* Order Items */}
                   <div className="mb-3 md:mb-4 space-y-1 md:space-y-2">
-                    {order.items && order.items.map((item: any) => (
-                      <div key={item.id} className="flex justify-between text-gray-200 text-sm md:text-base">
+                    {order.items && order.items.map((item: any, itemIdx: number) => (
+                      <div key={`${order.id}-item-${item.id || itemIdx}`} className="flex justify-between text-gray-200 text-sm md:text-base">
                         <span className="truncate mr-2">{item.quantity}x {item.productName}</span>
                         <Price priceBgn={Number(item.priceBgn)} className="text-gray-200 whitespace-nowrap" />
                       </div>
@@ -1129,7 +1255,7 @@ export default function StaffDashboard() {
                 .filter((order: any) => order.status === 'completed')
                 .map((order: any) => (
                 <div
-                  key={order.id}
+                  key={`completed-${order.id}`}
                   className="bg-gray-800 rounded-xl p-6 border-2 border-green-500/50 opacity-75"
                 >
                   <div className="flex justify-between items-start mb-4">
@@ -1148,8 +1274,8 @@ export default function StaffDashboard() {
 
                   {/* Order Items */}
                   <div className="mb-4 space-y-2">
-                    {order.items && order.items.map((item: any) => (
-                      <div key={item.id} className="flex justify-between text-gray-200">
+                    {order.items && order.items.map((item: any, itemIdx: number) => (
+                      <div key={`${order.id}-item-${item.id || itemIdx}`} className="flex justify-between text-gray-200">
                         <span>{item.quantity}x {item.productName}</span>
                         <Price priceBgn={Number(item.priceBgn)} className="text-gray-200" />
                       </div>
@@ -1174,6 +1300,101 @@ export default function StaffDashboard() {
         )}
       </div>
       </div>
+
+      {/* Approval Modal */}
+      {showApprovalModal && selectedApproval && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-2xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold text-white mb-6">
+              Поръчка изисква одобрение
+            </h2>
+
+            <div className="space-y-4 mb-6">
+              <div className="bg-gray-700/50 rounded-lg p-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-300">Поръчка #:</span>
+                  <span className="text-white font-semibold">
+                    {selectedApproval.order?.orderNumber || 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-300">Маса:</span>
+                  <span className="text-white font-semibold">
+                    {selectedApproval.tableNumber}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-300">Дата/Час:</span>
+                  <span className="text-white font-semibold">
+                    {selectedApproval.order?.createdAt 
+                      ? new Date(selectedApproval.order.createdAt).toLocaleString('bg-BG')
+                      : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm mt-2">
+                  <span className="text-gray-300">Общо:</span>
+                  <span className="text-white font-semibold text-lg">
+                    {selectedApproval.order?.totalBgn 
+                      ? Number(selectedApproval.order.totalBgn).toFixed(2) + ' лв.'
+                      : 'N/A'}
+                  </span>
+                </div>
+              </div>
+
+              {selectedApproval.order?.items && (
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-white mb-3">Артикули:</h4>
+                  <div className="space-y-2">
+                    {selectedApproval.order.items.map((item: any, idx: number) => (
+                      <div key={`${selectedApproval.orderId}-item-${item.id || idx}`} className="bg-gray-700/50 rounded-lg p-3 flex justify-between">
+                        <span className="text-white">{item.productName} x {item.quantity}</span>
+                        <span className="text-white font-semibold">
+                          {(Number(item.priceBgn) * item.quantity).toFixed(2)} лв.
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-yellow-900/30 border border-yellow-500 rounded-lg p-4 mb-6">
+                <p className="text-yellow-200 text-sm">
+                  <strong>Причина:</strong> Направени са {selectedApproval.orderCount} поръчки за последните 5 минути. 
+                  Заради съображения за сигурност и превантивно действие при потенциално неправомерни действия 
+                  и хакерски атаки, тази поръчка изисква одобрение.
+                </p>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => handleApproveOrder(selectedApproval.orderId)}
+                  disabled={processingApproval}
+                  className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                >
+                  {processingApproval ? 'Обработване...' : '✅ Одобри'}
+                </button>
+                <button
+                  onClick={() => handleRejectOrder(selectedApproval.orderId)}
+                  disabled={processingApproval}
+                  className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                >
+                  {processingApproval ? 'Обработване...' : '❌ Откажи'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowApprovalModal(false);
+                    setSelectedApproval(null);
+                  }}
+                  disabled={processingApproval}
+                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                >
+                  Затвори
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

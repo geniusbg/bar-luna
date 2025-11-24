@@ -39,6 +39,33 @@ export async function PATCH(
       console.log('Pusher notification skipped:', pusherError);
     }
 
+    // Notify client (table-specific channel) of status change
+    try {
+      const { pusherServer } = await import('@/lib/pusher-server');
+      const tableChannel = `table-${order.tableNumber}`;
+      
+      // Format items for notification (all items)
+      const itemsSummary = order.items.map((item: any) => ({
+        productName: item.productName,
+        quantity: item.quantity,
+        priceBgn: Number(item.priceBgn)
+      }));
+      
+      await pusherServer.trigger(tableChannel, 'order-status-update', {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        tableNumber: order.tableNumber,
+        status: order.status,
+        cancellationReason: order.cancellationReason || null,
+        items: itemsSummary,
+        itemsCount: order.items.length,
+        timestamp: new Date().toISOString()
+      });
+      console.log(`✅ Status update sent to table ${order.tableNumber} channel`);
+    } catch (pusherError) {
+      console.log('Pusher client notification skipped:', pusherError);
+    }
+
     return NextResponse.json({ order });
   } catch (error) {
     console.error('Update order status error:', error);

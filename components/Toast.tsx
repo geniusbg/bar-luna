@@ -7,13 +7,17 @@ interface ToastProps {
   type?: 'success' | 'error' | 'info';
   onClose: () => void;
   duration?: number;
+  persistent?: boolean; // If true, toast won't auto-close
+  locale?: string; // For close button text
 }
 
-export default function Toast({ message, type = 'success', onClose, duration = 4000 }: ToastProps) {
+export default function Toast({ message, type = 'success', onClose, duration = 4000, persistent = false, locale = 'bg' }: ToastProps) {
   useEffect(() => {
-    const timer = setTimeout(onClose, duration);
-    return () => clearTimeout(timer);
-  }, [onClose, duration]);
+    if (!persistent) {
+      const timer = setTimeout(onClose, duration);
+      return () => clearTimeout(timer);
+    }
+  }, [onClose, duration, persistent]);
 
   const colors = {
     success: 'bg-green-500 border-green-400',
@@ -35,23 +39,31 @@ export default function Toast({ message, type = 'success', onClose, duration = 4
             {icons[type]}
           </div>
           <div className="flex-1">
-            <p className="text-xl font-semibold text-white">{message}</p>
+            <p className="text-xl font-semibold text-white whitespace-pre-line leading-relaxed">{message}</p>
           </div>
           <button
             onClick={onClose}
-            className="text-white hover:text-white/70 text-2xl font-bold"
+            className={`text-white hover:text-white/70 font-bold transition-colors ${
+              persistent 
+                ? 'px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-base' 
+                : 'text-2xl'
+            }`}
           >
-            ×
+            {persistent 
+              ? (locale === 'bg' ? 'Затвори' : locale === 'en' ? 'Close' : 'Schließen')
+              : '×'}
           </button>
         </div>
         
-        {/* Progress bar */}
-        <div className="mt-3 h-1 bg-white/20 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-white animate-progress"
-            style={{ animationDuration: `${duration}ms` }}
-          />
-        </div>
+        {/* Progress bar - only show if not persistent */}
+        {!persistent && (
+          <div className="mt-3 h-1 bg-white/20 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-white animate-progress"
+              style={{ animationDuration: `${duration}ms` }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

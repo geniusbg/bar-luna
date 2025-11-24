@@ -4,17 +4,45 @@ import { webpush } from '@/lib/web-push';
 
 export async function POST(request: Request) {
   try {
-    const { title, body, url, staffId } = await request.json();
+    const { title, body, url, staffId, role } = await request.json();
 
-    // Get active subscriptions
+    // Build where clause
+    const whereClause: any = {
+      isActive: true
+    };
+
+    // Filter by staffId if provided
+    if (staffId) {
+      whereClause.staffId = staffId;
+    }
+
+    // Get active subscriptions with user relation
     const subscriptions = await prisma.pushSubscription.findMany({
-      where: {
-        isActive: true,
-        ...(staffId && { staffId }) // Filter by staff if provided
+      where: whereClause,
+      include: {
+        user: true // Include user to filter by role
       }
     });
 
-    if (subscriptions.length === 0) {
+    // Filter by role if provided (ADMIN, STAFF, SUPER_ADMIN)
+    let filteredSubscriptions = subscriptions;
+    if (role && !staffId) {
+      filteredSubscriptions = subscriptions.filter(sub => {
+        if (!sub.user) return false;
+        // Check if user role matches
+        if (role === 'ADMIN') {
+          return sub.user.role === 'ADMIN' || sub.user.role === 'SUPER_ADMIN';
+        } else if (role === 'STAFF') {
+          // Staff should also receive admin notifications
+          return sub.user.role === 'STAFF' || sub.user.role === 'ADMIN' || sub.user.role === 'SUPER_ADMIN';
+        } else if (role === 'SUPER_ADMIN') {
+          return sub.user.role === 'SUPER_ADMIN';
+        }
+        return sub.user.role === role;
+      });
+    }
+
+    if (filteredSubscriptions.length === 0) {
       return NextResponse.json({ 
         success: true, 
         message: 'No active subscriptions',
@@ -22,11 +50,11 @@ export async function POST(request: Request) {
       });
     }
 
-    console.log(`📤 Sending push to ${subscriptions.length} devices...`);
+    console.log(`📤 Sending push to ${filteredSubscriptions.length} devices...`);
 
     // Send push notifications
     const results = await Promise.allSettled(
-      subscriptions.map(async (sub) => {
+      filteredSubscriptions.map(async (sub) => {
         try {
           // Reconstruct subscription object for web-push
           const pushSubscription = {
@@ -90,7 +118,7 @@ export async function POST(request: Request) {
       success: true,
       sent: successful,
       failed: failed,
-      total: subscriptions.length
+      total: filteredSubscriptions.length
     });
 
   } catch (error) {
