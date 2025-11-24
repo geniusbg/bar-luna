@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Price from '@/components/Price';
@@ -11,7 +11,7 @@ import PendingApprovalsBanner from '@/components/PendingApprovalsBanner';
 
 type OrderTab = 'active' | 'history' | 'stats' | 'approvals';
 
-export default function AdminOrdersPage() {
+function AdminOrdersPageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const locale = pathname.split('/')[1] || 'bg';
@@ -1763,6 +1763,20 @@ export default function AdminOrdersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminOrdersPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <p className="text-white text-2xl">Зареждане...</p>
+        </div>
+      }
+    >
+      <AdminOrdersPageContent />
+    </Suspense>
   );
 }
 
