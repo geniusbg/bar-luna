@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { bgnToEur } from '@/lib/currency';
+import { getSecuritySettings } from '@/lib/security-settings';
 
 // In-memory rate limiting storage (per table)
 const orderRateLimits = new Map<string, { count: number; resetTime: number }>();
@@ -60,6 +61,7 @@ function validateSessionToken(token: string | undefined, tableNumber: number): {
 export async function POST(request: NextRequest) {
   try {
     const { tableNumber, items, sessionToken } = await request.json();
+    const securitySettings = await getSecuritySettings();
     
     if (!tableNumber || !items || items.length === 0) {
       return NextResponse.json({ error: 'Invalid order data' }, { status: 400 });
@@ -112,21 +114,23 @@ export async function POST(request: NextRequest) {
     const tableKey = `table:${tableNumber}`;
     
     // Check table-based rate limit (5 orders per 5 minutes per table)
-    const tableLimit = checkRateLimit(tableKey, 5, 5 * 60 * 1000);
+    const approvalWindowMs = (securitySettings.approvalTimeWindowMinutes || 5) * 60 * 1000;
+    const approvalThreshold = securitySettings.approvalOrderThreshold || 5;
+
+    const tableLimit = checkRateLimit(tableKey, approvalThreshold, approvalWindowMs);
     
     // Count orders in last 5 minutes for approval check
     // Note: This counts existing orders BEFORE creating the current one
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const windowStart = new Date(Date.now() - approvalWindowMs);
     const recentOrderCount = await prisma.order.count({
       where: {
         tableNumber,
-        createdAt: { gte: fiveMinutesAgo }
+        createdAt: { gte: windowStart }
       }
     });
 
-    // If >=5 existing orders in last 5 minutes, the current one will be the 6th, so require approval
-    // This means: 5 existing + 1 current = 6 total, which triggers approval
-    const requiresApproval = recentOrderCount >= 5;
+    // If >= threshold existing orders in last window, the current one will require approval
+    const requiresApproval = recentOrderCount >= approvalThreshold;
     
     // If rate limit exceeded (but not approval threshold), return error
     if (!tableLimit.allowed && !requiresApproval) {
@@ -208,7 +212,7 @@ export async function POST(request: NextRequest) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               title: '⚠️ Поръчка изисква одобрение',
-              body: `Маса ${tableNumber} - ${recentOrderCount + 1} поръчки за 5 минути`,
+              body: `Маса ${tableNumber} - ${recentOrderCount + 1} поръчки за ${securitySettings.approvalTimeWindowMinutes || 5} минути`,
               url: `/bg/admin/orders?tab=approvals&approval=${order.id}`,
               role: 'ADMIN' // Send only to admins
             })
@@ -229,7 +233,7 @@ export async function POST(request: NextRequest) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               title: '⚠️ Поръчка изисква одобрение',
-              body: `Маса ${tableNumber} - ${recentOrderCount + 1} поръчки за 5 минути`,
+              body: `Маса ${tableNumber} - ${recentOrderCount + 1} поръчки за ${securitySettings.approvalTimeWindowMinutes || 5} минути`,
               url: `/bg/admin/orders?tab=approvals&approval=${order.id}`,
               role: 'STAFF' // Send to staff for information
             })
@@ -331,7 +335,12 @@ export async function POST(request: NextRequest) {
       order: fullOrder,
       orderNumber: order.orderNumber,
       requiresApproval: requiresApproval || false,
-      orderId: order.id
+      orderId: order.id,
+      approvalConfig: {
+        threshold: approvalThreshold,
+        windowMinutes: securitySettings.approvalTimeWindowMinutes || 5,
+        autoRejectMinutes: securitySettings.autoRejectMinutes || 30
+      }
     }, { status: 201 });
 
   } catch (error: any) {

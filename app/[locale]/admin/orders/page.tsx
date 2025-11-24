@@ -37,6 +37,13 @@ function AdminOrdersPageContent() {
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
   const [processingApproval, setProcessingApproval] = useState(false);
+  const [securitySettings, setSecuritySettings] = useState({
+    approvalOrderThreshold: 5,
+    approvalTimeWindowMinutes: 5,
+    autoRejectMinutes: 30
+  });
+  const approvalWindowMinutes = securitySettings?.approvalTimeWindowMinutes ?? 5;
+  const autoRejectMinutes = securitySettings?.autoRejectMinutes ?? 30;
   
   // CSV Export functions
   const generateCSVExport = () => {
@@ -193,7 +200,7 @@ function AdminOrdersPageContent() {
     };
   }, [activeTab]);
 
-  // Auto-reject expired approvals (30 minutes old)
+  // Auto-reject expired approvals (configurable)
   useEffect(() => {
     const checkAndAutoReject = async () => {
       try {
@@ -213,7 +220,7 @@ function AdminOrdersPageContent() {
             loadActiveOrders();
             // Show notification
             setToast({ 
-              message: `✅ Автоматично отхвърлени ${data.rejectedCount} поръчки (над 30 мин без одобрение)`, 
+              message: `✅ Автоматично отхвърлени ${data.rejectedCount} поръчки (над ${autoRejectMinutes} мин без одобрение)`, 
               type: 'success' 
             });
           }
@@ -230,7 +237,7 @@ function AdminOrdersPageContent() {
     const interval = setInterval(checkAndAutoReject, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [activeTab, loadPendingApprovals, loadActiveOrders]);
+  }, [activeTab, autoRejectMinutes, loadPendingApprovals, loadActiveOrders]);
   
   // Load history when applied filters or page changes
   useEffect(() => {
@@ -252,6 +259,28 @@ function AdminOrdersPageContent() {
       loadPendingApprovals();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/security-settings')
+      .then(res => res.json())
+      .then(data => {
+        if (!isMounted) return;
+        if (data?.settings) {
+          setSecuritySettings({
+            approvalOrderThreshold: data.settings.approvalOrderThreshold ?? 5,
+            approvalTimeWindowMinutes: data.settings.approvalTimeWindowMinutes ?? 5,
+            autoRejectMinutes: data.settings.autoRejectMinutes ?? 30
+          });
+        }
+      })
+      .catch(() => {
+        // use defaults if request fails
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Handle URL params - open approvals tab if specified
   useEffect(() => {
@@ -1629,7 +1658,7 @@ function AdminOrdersPageContent() {
                         Поръчка #{approval.order.orderNumber} - Маса {approval.tableNumber}
                       </h3>
                       <p className="text-yellow-200 text-sm">
-                        {approval.orderCount} поръчки за последните 5 минути
+                        {approval.orderCount} поръчки за последните {approvalWindowMinutes} минути
                       </p>
                       <p className="text-gray-300 text-sm mt-1">
                         Заявена: {new Date(approval.requestedAt).toLocaleString('bg-BG')}
@@ -1681,7 +1710,7 @@ function AdminOrdersPageContent() {
                 ⚠️ Поръчка изисква одобрение
               </h2>
               <p className="text-gray-300">
-                Маса {selectedApproval.tableNumber} - {selectedApproval.orderCount} поръчки за 5 минути
+                Маса {selectedApproval.tableNumber} - {selectedApproval.orderCount} поръчки за {approvalWindowMinutes} минути
               </p>
             </div>
 
@@ -1726,7 +1755,7 @@ function AdminOrdersPageContent() {
 
               <div className="bg-yellow-900/30 border border-yellow-500 rounded-lg p-4 mb-6">
                 <p className="text-yellow-200 text-sm">
-                  <strong>Причина:</strong> Направени са {selectedApproval.orderCount} поръчки за последните 5 минути. 
+                  <strong>Причина:</strong> Направени са {selectedApproval.orderCount} поръчки за последните {approvalWindowMinutes} минути. 
                   Заради съображения за сигурност и превантивно действие при потенциално неправомерни действия 
                   и хакерски атаки, тази поръчка изисква одобрение.
                 </p>

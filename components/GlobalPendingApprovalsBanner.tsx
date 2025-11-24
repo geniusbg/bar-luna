@@ -25,11 +25,12 @@ export default function GlobalPendingApprovalsBanner({
   }
 
   return (
-    <div className="sticky top-20 z-40 px-4 md:px-8 pt-2">
+    <div className="sticky top-20 z-40">
       <PendingApprovalsBanner 
         locale={locale} 
         onApprovalClick={onApprovalClick}
         showButtons={true}
+        className="bg-black/80 backdrop-blur-sm"
       />
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef, useCallback } from 'react';
 import { useSearchParams, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import Price from '@/components/Price';
@@ -37,8 +37,89 @@ function OrderPageContent() {
   const [isOffline, setIsOffline] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
-  const [approvalStatus, setApprovalStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
+  const [approvalStatus, setApprovalStatus] = useState<'pending' | 'approved' | 'rejected' | 'auto-rejected' | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [approvalConfig, setApprovalConfig] = useState<{ threshold: number; windowMinutes: number; autoRejectMinutes?: number } | null>(null);
+
+  const approvalThresholdValue = approvalConfig?.threshold ?? 5;
+  const approvalWindowValue = approvalConfig?.windowMinutes ?? 5;
+  const autoRejectMinutesValue = approvalConfig?.autoRejectMinutes ?? 30;
+
+  const approvalPollRef = useRef<NodeJS.Timeout | null>(null);
+  const approvalTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const approvalStatusRef = useRef<'pending' | 'approved' | 'rejected' | 'auto-rejected' | null>(null);
+  const orderIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    approvalStatusRef.current = approvalStatus;
+  }, [approvalStatus]);
+
+  useEffect(() => {
+    orderIdRef.current = orderId;
+  }, [orderId]);
+
+  const clearApprovalPolling = useCallback(() => {
+    if (approvalPollRef.current) {
+      clearInterval(approvalPollRef.current);
+      approvalPollRef.current = null;
+    }
+    if (approvalTimeoutRef.current) {
+      clearTimeout(approvalTimeoutRef.current);
+      approvalTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handleApprovalStatusUpdate = useCallback(
+    (status: 'approved' | 'rejected' | 'auto-rejected', data?: { items?: { productName: string; quantity: number }[]; reason?: string }) => {
+      clearApprovalPolling();
+      setApprovalStatus(status);
+
+      const itemsList = data?.items && data.items.length
+        ? '\n\n' + data.items.map(item => `${item.quantity}x ${item.productName}`).join('\n')
+        : '';
+
+      if (status === 'approved') {
+        const message =
+          (locale === 'bg'
+            ? '✅ Поръчката е одобрена!'
+            : locale === 'en'
+            ? '✅ Order approved!'
+            : '✅ Bestellung genehmigt!') + itemsList;
+
+        setToast({ message, type: 'success' });
+        setCart([]);
+        setShowCart(false);
+      } else if (status === 'rejected') {
+        const rejectionMessage =
+          (locale === 'bg'
+            ? '❌ Поръчката е отхвърлена'
+            : locale === 'en'
+            ? '❌ Order rejected'
+            : '❌ Bestellung abgelehnt') + (data?.reason ? `: ${data.reason}` : '') + itemsList;
+
+        setToast({ message: rejectionMessage, type: 'error' });
+      } else if (status === 'auto-rejected') {
+        const autoMessage =
+          (locale === 'bg'
+            ? `⏱️ Поръчката беше автоматично отхвърлена след ${autoRejectMinutesValue} минути`
+            : locale === 'en'
+            ? `⏱️ Order was automatically rejected after ${autoRejectMinutesValue} minutes`
+            : `⏱️ Bestellung wurde nach ${autoRejectMinutesValue} Minuten automatisch abgelehnt`) +
+          (data?.reason ? `: ${data.reason}` : '') +
+          itemsList;
+
+        setToast({ message: autoMessage, type: 'error' });
+      }
+
+      setTimeout(() => {
+        setRequiresApproval(false);
+        setApprovalStatus(null);
+        setOrderId(null);
+        setApprovalConfig(null);
+      }, 3000);
+    },
+    [autoRejectMinutesValue, clearApprovalPolling, locale]
+  );
 
   // Health check function
   const checkServerHealth = async (): Promise<boolean> => {
@@ -75,78 +156,140 @@ function OrderPageContent() {
     }
   }, [searchParams, tableNumber]);
 
-  // Listen for order status updates via Pusher
+  useEffect(() => {
+    return () => {
+      clearApprovalPolling();
+    };
+  }, [clearApprovalPolling]);
+
+  // Listen for order status and approval updates via Pusher
   useEffect(() => {
     if (!tableNumber) return;
 
     const pusher = getPusherClient();
     const tableChannel = pusher.subscribe(`table-${tableNumber}`);
 
-    tableChannel.bind('order-status-update', (data: any) => {
+    const statusHandler = (data: any) => {
       console.log('📢 Order status update received:', data);
-      
-      // Build items list for all statuses
-      let itemsList = '';
-      if (data.items && data.items.length > 0) {
-        const itemsFormatted = data.items.map((item: any) => 
-          `${item.quantity}x ${item.productName}`
-        ).join('\n');
-        itemsList = `\n\n${itemsFormatted}`;
-      }
-      
-      // Show toast notification based on status
+
+      const itemsList =
+        data.items && data.items.length
+          ? '\n\n' + data.items.map((item: any) => `${item.quantity}x ${item.productName}`).join('\n')
+          : '';
+
       let message = '';
       let type: 'success' | 'error' = 'success';
-      
+
       switch (data.status) {
         case 'pending':
-          message = locale === 'bg' 
-            ? `🔄 Поръчка #${data.orderNumber} е приета и се подготвя${itemsList}`
-            : locale === 'en'
-            ? `🔄 Order #${data.orderNumber} accepted and being prepared${itemsList}`
-            : `🔄 Bestellung #${data.orderNumber} akzeptiert und wird vorbereitet${itemsList}`;
+          message =
+            (locale === 'bg'
+              ? `🔄 Поръчка #${data.orderNumber} е приета и се подготвя`
+              : locale === 'en'
+              ? `🔄 Order #${data.orderNumber} accepted and being prepared`
+              : `🔄 Bestellung #${data.orderNumber} akzeptiert und wird vorbereitet`) + itemsList;
           break;
         case 'preparing':
-          message = locale === 'bg'
-            ? `👨‍🍳 Поръчка #${data.orderNumber} се приготвя${itemsList}`
-            : locale === 'en'
-            ? `👨‍🍳 Order #${data.orderNumber} is being prepared${itemsList}`
-            : `👨‍🍳 Bestellung #${data.orderNumber} wird vorbereitet${itemsList}`;
+          message =
+            (locale === 'bg'
+              ? `👨‍🍳 Поръчка #${data.orderNumber} се приготвя`
+              : locale === 'en'
+              ? `👨‍🍳 Order #${data.orderNumber} is being prepared`
+              : `👨‍🍳 Bestellung #${data.orderNumber} wird vorbereitet`) + itemsList;
           break;
         case 'ready':
-          message = locale === 'bg'
-            ? `✅ Поръчка #${data.orderNumber} е готова!${itemsList}`
-            : locale === 'en'
-            ? `✅ Order #${data.orderNumber} is ready!${itemsList}`
-            : `✅ Bestellung #${data.orderNumber} ist fertig!${itemsList}`;
+          message =
+            (locale === 'bg'
+              ? `✅ Поръчка #${data.orderNumber} е готова!`
+              : locale === 'en'
+              ? `✅ Order #${data.orderNumber} is ready!`
+              : `✅ Bestellung #${data.orderNumber} ist fertig!`) + itemsList;
           break;
         case 'completed':
-          message = locale === 'bg'
-            ? `✅ Поръчка #${data.orderNumber} е завършена${itemsList}`
-            : locale === 'en'
-            ? `✅ Order #${data.orderNumber} completed${itemsList}`
-            : `✅ Bestellung #${data.orderNumber} abgeschlossen${itemsList}`;
+          message =
+            (locale === 'bg'
+              ? `✅ Поръчка #${data.orderNumber} е завършена`
+              : locale === 'en'
+              ? `✅ Order #${data.orderNumber} completed`
+              : `✅ Bestellung #${data.orderNumber} abgeschlossen`) + itemsList;
           break;
         case 'cancelled':
-          message = locale === 'bg'
-            ? `❌ Поръчка #${data.orderNumber} е отменена${data.cancellationReason ? ': ' + data.cancellationReason : ''}${itemsList}`
-            : locale === 'en'
-            ? `❌ Order #${data.orderNumber} cancelled${data.cancellationReason ? ': ' + data.cancellationReason : ''}${itemsList}`
-            : `❌ Bestellung #${data.orderNumber} storniert${data.cancellationReason ? ': ' + data.cancellationReason : ''}${itemsList}`;
+          message =
+            (locale === 'bg'
+              ? `❌ Поръчка #${data.orderNumber} е отменена${data.cancellationReason ? ': ' + data.cancellationReason : ''}`
+              : locale === 'en'
+              ? `❌ Order #${data.orderNumber} cancelled${data.cancellationReason ? ': ' + data.cancellationReason : ''}`
+              : `❌ Bestellung #${data.orderNumber} storniert${data.cancellationReason ? ': ' + data.cancellationReason : ''}`) + itemsList;
           type = 'error';
           break;
         default:
-          return; // Unknown status, don't show notification
+          return;
       }
 
       setToast({ message, type });
-    });
+    };
+
+    const approvalHandler = (data: any) => {
+      console.log('📢 Order approval status received:', data);
+      
+      // Only process if this is for the current pending order
+      if (orderIdRef.current && data?.orderId && data.orderId !== orderIdRef.current) {
+        console.log('⚠️ Approval status for different order, ignoring');
+        return;
+      }
+      
+      // Process approval status update
+      const status = data?.status as 'approved' | 'rejected' | 'auto-rejected';
+      if (status && ['approved', 'rejected'].includes(status)) {
+        handleApprovalStatusUpdate(status, {
+          items: data.items,
+          reason: data.reason
+        });
+      }
+    };
+
+    const waiterCallHandler = (data: any) => {
+      console.log('📢 Waiter call status received:', data);
+      
+      let message = '';
+      let type: 'success' | 'error' = 'success';
+      
+      if (data.status === 'acknowledged') {
+        message = locale === 'bg'
+          ? '✅ Сервитьорът е уведомен и ще дойде скоро'
+          : locale === 'en'
+          ? '✅ Waiter has been notified and will arrive soon'
+          : '✅ Der Kellner wurde benachrichtigt und wird bald kommen';
+      } else if (data.status === 'completed') {
+        const callTypeText = data.callType === 'payment_cash'
+          ? (locale === 'bg' ? 'Плащане с брой' : locale === 'en' ? 'Payment with cash' : 'Zahlung mit Bargeld')
+          : data.callType === 'payment_card'
+          ? (locale === 'bg' ? 'Плащане с карта' : locale === 'en' ? 'Payment with card' : 'Zahlung mit Karte')
+          : (locale === 'bg' ? 'Помощ' : locale === 'en' ? 'Help' : 'Hilfe');
+        
+        message = locale === 'bg'
+          ? `✅ ${callTypeText} - завършено`
+          : locale === 'en'
+          ? `✅ ${callTypeText} - completed`
+          : `✅ ${callTypeText} - abgeschlossen`;
+      }
+      
+      if (message) {
+        setToast({ message, type, persistent: true });
+      }
+    };
+
+    tableChannel.bind('order-status-update', statusHandler);
+    tableChannel.bind('order-approval-status', approvalHandler);
+    tableChannel.bind('waiter-call-status', waiterCallHandler);
 
     return () => {
-      tableChannel.unbind_all();
+      tableChannel.unbind('order-status-update', statusHandler);
+      tableChannel.unbind('order-approval-status', approvalHandler);
+      tableChannel.unbind('waiter-call-status', waiterCallHandler);
       pusher.unsubscribe(`table-${tableNumber}`);
     };
-  }, [tableNumber, locale]);
+  }, [handleApprovalStatusUpdate, locale, tableNumber]);
 
   useEffect(() => {
     async function loadMenu() {
@@ -213,74 +356,36 @@ function OrderPageContent() {
   const cartTotal = cart.reduce((sum, item) => sum + item.priceBgn * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Poll approval status
-  const pollApprovalStatus = (orderId: string) => {
-    const interval = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/orders/${orderId}/approval-status`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.status !== 'pending') {
-            setApprovalStatus(data.status);
-            clearInterval(interval);
-            
-            if (data.status === 'approved') {
-              // Build message with items
-              let message = locale === 'bg' ? '✅ Поръчката е одобрена!' : 
-                           locale === 'en' ? '✅ Order approved!' : 
-                           '✅ Bestellung genehmigt!';
-              if (data.items && data.items.length > 0) {
-                const itemsList = data.items.map((item: any) => 
-                  `${item.quantity}x ${item.productName}`
-                ).join('\n');
-                message = `${message}\n\n${itemsList}`;
-              }
-              setToast({ 
-                message,
-                type: 'success' 
-              });
-              setCart([]);
-              setShowCart(false);
-              // Reset after 3 seconds
-              setTimeout(() => {
-                setRequiresApproval(false);
-                setApprovalStatus(null);
-                setOrderId(null);
-              }, 3000);
-            } else if (data.status === 'rejected') {
-              setToast({ 
-                message: locale === 'bg' ? '❌ Поръчката е отхвърлена' : 
-                         locale === 'en' ? '❌ Order rejected' : 
-                         '❌ Bestellung abgelehnt', 
-                type: 'error' 
-              });
-              setTimeout(() => {
-                setRequiresApproval(false);
-                setApprovalStatus(null);
-                setOrderId(null);
-              }, 3000);
+  const pollApprovalStatus = useCallback(
+    (orderId: string) => {
+      clearApprovalPolling();
+
+      // Fallback polling only every 60 seconds (Pusher is primary method)
+      // This ensures we still get updates even if Pusher connection fails
+      approvalPollRef.current = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/orders/${orderId}/approval-status`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.status && data.status !== 'pending') {
+              console.log('📡 Fallback poll detected approval status change:', data.status);
+              handleApprovalStatusUpdate(data.status as 'approved' | 'rejected' | 'auto-rejected', data);
             }
           }
+        } catch (error) {
+          console.log('Approval poll failed:', error);
         }
-      } catch (error) {
-        // Continue polling on error
-      }
-    }, 2000); // Poll every 2 seconds
+      }, 60000); // 60 seconds instead of 10 - Pusher is primary
 
-    // Stop polling after 30 minutes (auto-reject timeout)
-    setTimeout(() => {
-      clearInterval(interval);
-      if (approvalStatus === 'pending') {
-        setApprovalStatus('rejected');
-        setToast({ 
-          message: locale === 'bg' ? '⏱️ Поръчката е автоматично отхвърлена след 30 минути' : 
-                   locale === 'en' ? '⏱️ Order automatically rejected after 30 minutes' : 
-                   '⏱️ Bestellung nach 30 Minuten automatisch abgelehnt', 
-          type: 'error' 
-        });
-      }
-    }, 30 * 60 * 1000);
-  };
+      // Auto-reject timeout (still needed as safety mechanism)
+      approvalTimeoutRef.current = setTimeout(() => {
+        if (approvalStatusRef.current === 'pending') {
+          handleApprovalStatusUpdate('auto-rejected');
+        }
+      }, autoRejectMinutesValue * 60 * 1000);
+    },
+    [autoRejectMinutesValue, clearApprovalPolling, handleApprovalStatusUpdate]
+  );
 
   const submitOrder = async () => {
     if (cart.length === 0) return;
@@ -382,13 +487,15 @@ function OrderPageContent() {
         return;
       }
 
+      setApprovalConfig(responseData.approvalConfig ?? null);
+
       // Success - check if approval is required
       if (responseData.requiresApproval) {
         setRequiresApproval(true);
         setApprovalStatus('pending');
         setOrderId(responseData.orderId);
         pollApprovalStatus(responseData.orderId);
-        
+
         setToast({ 
           message: locale === 'bg' 
             ? '⚠️ Поръчката изисква одобрение от администратор'
@@ -472,10 +579,10 @@ function OrderPageContent() {
                 </p>
                 <p className="text-sm mb-2">
                   {locale === 'bg' 
-                    ? 'Направени са 5 поръчки за последните 5 минути. Заради съображения за сигурност и превантивно действие при потенциално неправомерни действия и хакерски атаки, тази поръчка изисква одобрение.'
+                    ? `Направени са ${approvalThresholdValue} поръчки за последните ${approvalWindowValue} минути. Заради съображения за сигурност и превантивно действие при потенциално неправомерни действия и хакерски атаки, тази поръчка изисква одобрение.`
                     : locale === 'en'
-                    ? '5 orders have been placed in the last 5 minutes. Due to security concerns and preventive action against potentially unauthorized actions and hacking attacks, this order requires approval.'
-                    : '5 Bestellungen wurden in den letzten 5 Minuten aufgegeben. Aufgrund von Sicherheitsbedenken und präventiven Maßnahmen gegen möglicherweise unbefugte Aktionen und Hacking-Angriffe erfordert diese Bestellung eine Genehmigung.'}
+                    ? `${approvalThresholdValue} orders have been placed in the last ${approvalWindowValue} minutes. Due to security concerns and preventive action against potentially unauthorized actions and hacking attacks, this order requires approval.`
+                    : `${approvalThresholdValue} Bestellungen wurden in den letzten ${approvalWindowValue} Minuten aufgegeben. Aufgrund von Sicherheitsbedenken und präventiven Maßnahmen gegen möglicherweise unbefugte Aktionen und Hacking-Angriffe erfordert diese Bestellung eine Genehmigung.`}
                 </p>
                 {approvalStatus === 'pending' && (
                   <p className="text-sm font-medium">
@@ -502,6 +609,15 @@ function OrderPageContent() {
                       : locale === 'en'
                       ? '❌ Order rejected'
                       : '❌ Bestellung abgelehnt'}
+                  </p>
+                )}
+                {approvalStatus === 'auto-rejected' && (
+                  <p className="text-sm font-medium text-red-600">
+                    {locale === 'bg'
+                      ? `⏱️ Поръчката беше автоматично отхвърлена след ${autoRejectMinutesValue} минути`
+                      : locale === 'en'
+                      ? `⏱️ Order was automatically rejected after ${autoRejectMinutesValue} minutes`
+                      : `⏱️ Bestellung wurde nach ${autoRejectMinutesValue} Minuten automatisch abgelehnt`}
                   </p>
                 )}
               </div>
@@ -725,10 +841,10 @@ function OrderPageContent() {
                           </p>
                           <p className="text-sm mb-2 text-yellow-100">
                             {locale === 'bg' 
-                              ? 'Направени са 5 поръчки за последните 5 минути. Заради съображения за сигурност и превантивно действие при потенциално неправомерни действия и хакерски атаки, тази поръчка изисква одобрение.'
+                              ? `Направени са ${approvalThresholdValue} поръчки за последните ${approvalWindowValue} минути. Заради съображения за сигурност и превантивно действие при потенциално неправомерни действия и хакерски атаки, тази поръчка изисква одобрение.`
                               : locale === 'en'
-                              ? '5 orders have been placed in the last 5 minutes. Due to security concerns and preventive action against potentially unauthorized actions and hacking attacks, this order requires approval.'
-                              : '5 Bestellungen wurden in den letzten 5 Minuten aufgegeben. Aufgrund von Sicherheitsbedenken und präventiven Maßnahmen gegen möglicherweise unbefugte Aktionen und Hacking-Angriffe erfordert diese Bestellung eine Genehmigung.'}
+                              ? `${approvalThresholdValue} orders have been placed in the last ${approvalWindowValue} minutes. Due to security concerns and preventive action against potentially unauthorized actions and hacking attacks, this order requires approval.`
+                              : `${approvalThresholdValue} Bestellungen wurden in den letzten ${approvalWindowValue} Minuten aufgegeben. Aufgrund von Sicherheitsbedenken und präventiven Maßnahmen gegen möglicherweise unbefugte Aktionen und Hacking-Angriffe erfordert diese Bestellung eine Genehmigung.`}
                           </p>
                           {approvalStatus === 'pending' && (
                             <p className="text-sm font-medium text-yellow-200">

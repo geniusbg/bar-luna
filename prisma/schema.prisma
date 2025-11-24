@@ -287,4 +287,17 @@ model WorkingHours {
   @@map("working_hours")
 }
 
+// Security & Rate Limit Settings
+model SecuritySettings {
+  id                        String   @id @default(uuid())
+  approvalOrderThreshold    Int      @default(5)  @map("approval_order_threshold")      // number of orders before requiring approval
+  approvalTimeWindowMinutes Int      @default(5)  @map("approval_time_window_minutes")  // time window in minutes
+  sessionDurationHours      Int      @default(3)  @map("session_duration_hours")        // QR session duration
+  autoRejectMinutes         Int      @default(30) @map("auto_reject_minutes")           // pending approval auto-reject window
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  @@map("security_settings")
+}
+
 

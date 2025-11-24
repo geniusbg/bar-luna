@@ -7,12 +7,14 @@ interface PendingApprovalsBannerProps {
   locale?: string;
   onApprovalClick?: (approval: any) => void;
   showButtons?: boolean;
+  className?: string;
 }
 
 export default function PendingApprovalsBanner({ 
   locale = 'bg', 
   onApprovalClick,
-  showButtons = true 
+  showButtons = true,
+  className = ''
 }: PendingApprovalsBannerProps) {
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ export default function PendingApprovalsBanner({
   }
 
   return (
-    <div className="fixed top-20 left-0 right-0 z-50 px-4 md:px-8 pt-2 pb-2 bg-black/80 backdrop-blur-sm">
+    <div className={`px-4 md:px-8 pt-2 pb-2 ${className}`}>
       <div className="max-w-7xl mx-auto">
         <div className="bg-yellow-900/50 border-2 border-yellow-500 rounded-xl p-4 md:p-6">
           <div className="flex items-start gap-4">

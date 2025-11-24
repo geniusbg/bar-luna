@@ -36,10 +36,7 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
         <GlobalApprovalsBanner locale={locale} />
         
         <main className="pt-28 px-4 pb-8 md:px-8">
-          {/* Add padding-top for sticky approval banner */}
-          <div className="pt-24">
-            {children}
-          </div>
+          {children}
         </main>
       </div>
     </>

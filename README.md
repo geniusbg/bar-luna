@@ -32,6 +32,7 @@ Modern QR-based ordering system for Luna Bar in Ruse, Bulgaria.
 - 📊 **Analytics Dashboard** - View statistics
 - ⚠️ **Order Approval System** - Monitor and approve suspicious orders (>5 orders per table in 5 minutes)
 - 🔒 **Security Features** - Rate limiting, session validation, auto-reject expired approvals
+- 🛡️ **Security Settings Panel** - Configure threshold, time window, session duration, auto-reject timer
 
 ## 🏗️ Tech Stack
 

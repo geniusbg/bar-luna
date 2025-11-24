@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getSecuritySettings } from '@/lib/security-settings';
 
 export async function GET(
   request: NextRequest,
@@ -48,9 +49,12 @@ export async function GET(
       }
     });
 
-    // Generate session token (valid for 3 hours)
+    const securitySettings = await getSecuritySettings();
+
+    // Generate session token using configured duration
     const now = Date.now();
-    const expiresAt = now + (3 * 60 * 60 * 1000); // 3 hours
+    const sessionDurationMs = (securitySettings.sessionDurationHours || 3) * 60 * 60 * 1000;
+    const expiresAt = now + sessionDurationMs;
     const sessionToken = `table_session_${tableNumber}_${now}_${expiresAt}`;
 
     // Get redirect URL (default to order page with BG locale)

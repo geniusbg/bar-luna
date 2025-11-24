@@ -24,6 +24,15 @@ export async function PATCH(
         tableNumber: call.tableNumber,
         status: call.status
       });
+      
+      // Notify client (table) that waiter call was acknowledged
+      await pusherServer.trigger(`table-${call.tableNumber}`, 'waiter-call-status', {
+        callId: call.id,
+        tableNumber: call.tableNumber,
+        status: 'acknowledged',
+        callType: call.callType,
+        message: call.message
+      });
     } catch (pusherError) {
       console.log('Pusher notification skipped:', pusherError);
     }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { pusherServer } from '@/lib/pusher-server';
+import { getSecuritySettings } from '@/lib/security-settings';
 
 /**
  * Auto-reject pending order approvals that are older than 30 minutes
@@ -8,19 +9,22 @@ import { pusherServer } from '@/lib/pusher-server';
  */
 export async function POST() {
   try {
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+    const securitySettings = await getSecuritySettings();
+    const autoRejectMinutes = securitySettings.autoRejectMinutes || 30;
+    const cutoffDate = new Date(Date.now() - autoRejectMinutes * 60 * 1000);
 
-    // Find all pending approvals older than 30 minutes
-    // If table doesn't exist, fail - table should exist
+    // Find all pending approvals older than configured window
     const expiredApprovals = await prisma.pendingOrderApproval.findMany({
       where: {
         status: 'pending',
         requestedAt: {
-          lte: thirtyMinutesAgo
+          lte: cutoffDate
         }
       },
       include: {
-        order: true
+        order: {
+          include: { items: true }
+        }
       }
     });
 
@@ -52,20 +56,28 @@ export async function POST() {
           where: { id: approval.orderId },
           data: {
             status: 'cancelled',
-            cancellationReason: 'Автоматично отхвърлена след 30 минути без одобрение'
+            cancellationReason: `Автоматично отхвърлена след ${autoRejectMinutes} минути без одобрение`
           }
         });
 
         rejectedOrderIds.push(approval.orderId);
 
-        // Notify client about auto-rejection via Pusher
+        const itemsPayload = approval.order?.items?.map(item => ({
+          productName: item.productName,
+          quantity: item.quantity
+        })) || [];
+
+        // Notify table about auto-rejection via Pusher
         try {
-          await pusherServer.trigger(`order-${approval.orderId}`, 'approval-status', {
-            status: 'rejected',
-            reason: 'Автоматично отхвърлена след 30 минути без одобрение'
+          await pusherServer.trigger(`table-${approval.tableNumber}`, 'order-approval-status', {
+            orderId: approval.orderId,
+            orderNumber: approval.order?.orderNumber ?? null,
+            status: 'auto-rejected',
+            reason: `Автоматично отхвърлена след ${autoRejectMinutes} минути без одобрение`,
+            items: itemsPayload
           });
         } catch (pusherError) {
-          console.log('Pusher notification skipped for order', approval.orderId, pusherError);
+          console.log('Pusher auto-reject notification skipped for order', approval.orderId, pusherError);
         }
       } catch (error) {
         console.error(`Error auto-rejecting approval ${approval.id}:`, error);
@@ -106,21 +118,22 @@ export async function POST() {
  */
 export async function GET() {
   try {
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+    const securitySettings = await getSecuritySettings();
+    const autoRejectMinutes = securitySettings.autoRejectMinutes || 30;
+    const cutoffDate = new Date(Date.now() - autoRejectMinutes * 60 * 1000);
 
-    // If table doesn't exist, fail - table should exist
     const expiredCount = await prisma.pendingOrderApproval.count({
       where: {
         status: 'pending',
         requestedAt: {
-          lte: thirtyMinutesAgo
+          lte: cutoffDate
         }
       }
     });
 
     return NextResponse.json({
       expiredCount,
-      thresholdMinutes: 30
+      thresholdMinutes: autoRejectMinutes
     });
   } catch (error) {
     console.error('Error checking expired approvals:', error);

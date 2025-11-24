@@ -30,7 +30,11 @@ export async function POST(
     try {
       approval = await prisma.pendingOrderApproval.findUnique({
         where: { orderId: id },
-        include: { order: true }
+        include: {
+          order: {
+            include: { items: true }
+          }
+        }
       });
     } catch (dbError: any) {
       // If table doesn't exist (P2021), return error
@@ -65,20 +69,63 @@ export async function POST(
       data: { status: 'pending' }
     });
 
-    // Send Pusher notification to staff
+    let pusherServerInstance: any = null;
     try {
-      const { pusherServer } = await import('@/lib/pusher-server');
-      await pusherServer.trigger('staff-channel', 'new-order', {
-        id: approval.order.id,
-        orderNumber: approval.order.orderNumber,
-        tableNumber: approval.order.tableNumber,
-        status: 'pending',
-        totalBgn: Number(approval.order.totalBgn),
-        totalEur: Number(approval.order.totalEur),
-        createdAt: approval.order.createdAt.toISOString()
-      });
-    } catch (pusherError) {
-      console.log('Pusher notification skipped:', pusherError);
+      const module = await import('@/lib/pusher-server');
+      pusherServerInstance = module.pusherServer;
+    } catch (pusherInitError) {
+      console.log('Pusher not available:', pusherInitError);
+    }
+
+    if (pusherServerInstance) {
+      const itemPayload = approval.order?.items?.map(item => ({
+        productName: item.productName,
+        quantity: item.quantity
+      })) || [];
+
+      // Notify staff that a new order is ready to be processed
+      try {
+        await pusherServerInstance.trigger('staff-channel', 'new-order', {
+          id: approval.order.id,
+          orderNumber: approval.order.orderNumber,
+          tableNumber: approval.order.tableNumber,
+          status: 'pending',
+          totalBgn: Number(approval.order.totalBgn),
+          totalEur: Number(approval.order.totalEur),
+          createdAt: approval.order.createdAt.toISOString()
+        });
+      } catch (pusherError) {
+        console.log('Pusher staff notification skipped:', pusherError);
+      }
+
+      try {
+        await pusherServerInstance.trigger(`table-${approval.tableNumber}`, 'order-approval-status', {
+          orderId: approval.orderId,
+          orderNumber: approval.order.orderNumber,
+          status: 'approved',
+          items: itemPayload
+        });
+      } catch (tableNotifyError) {
+        console.log('Table approval notification skipped:', tableNotifyError);
+      }
+
+      // Notify admin/staff dashboards to refresh pending approvals banner
+      try {
+        const remainingPending = await prisma.pendingOrderApproval.count({
+          where: { status: 'pending' }
+        });
+
+        await pusherServerInstance.trigger('admin-channel', 'order-approval-status', {
+          orderId: approval.orderId,
+          orderNumber: approval.order.orderNumber,
+          tableNumber: approval.tableNumber,
+          status: 'approved',
+          pendingCount: remainingPending,
+          reviewedBy: { id: user.id, name: user.name }
+        });
+      } catch (pusherError) {
+        console.log('Pusher admin approval update skipped:', pusherError);
+      }
     }
 
     return NextResponse.json({ success: true, status: 'approved' });

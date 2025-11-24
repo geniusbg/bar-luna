@@ -30,7 +30,12 @@ export async function POST(
     let approval;
     try {
       approval = await prisma.pendingOrderApproval.findUnique({
-        where: { orderId: id }
+        where: { orderId: id },
+        include: {
+          order: {
+            include: { items: true }
+          }
+        }
       });
     } catch (dbError: any) {
       // If table doesn't exist (P2021), return error
@@ -59,14 +64,61 @@ export async function POST(
       }
     });
 
+    const rejectionReason = reason || 'Отхвърлена от администратор';
+
     // Update order status to 'cancelled'
     await prisma.order.update({
       where: { id: id },
       data: { 
         status: 'cancelled',
-        cancellationReason: reason || 'Отхвърлена от администратор'
+        cancellationReason: rejectionReason
       }
     });
+
+    let pusherServerInstance: any = null;
+    try {
+      const module = await import('@/lib/pusher-server');
+      pusherServerInstance = module.pusherServer;
+    } catch (pusherInitError) {
+      console.log('Pusher not available:', pusherInitError);
+    }
+
+    if (pusherServerInstance) {
+      const itemPayload = approval.order?.items?.map(item => ({
+        productName: item.productName,
+        quantity: item.quantity
+      })) || [];
+
+      try {
+        await pusherServerInstance.trigger(`table-${approval.tableNumber}`, 'order-approval-status', {
+          orderId: approval.orderId,
+          orderNumber: approval.order?.orderNumber ?? null,
+          status: 'rejected',
+          reason: rejectionReason,
+          items: itemPayload
+        });
+      } catch (tableNotifyError) {
+        console.log('Table approval rejection notification skipped:', tableNotifyError);
+      }
+
+      try {
+        const remainingPending = await prisma.pendingOrderApproval.count({
+          where: { status: 'pending' }
+        });
+
+        await pusherServerInstance.trigger('admin-channel', 'order-approval-status', {
+          orderId: approval.orderId,
+          orderNumber: approval.order?.orderNumber ?? null,
+          status: 'rejected',
+          tableNumber: approval.tableNumber,
+          pendingCount: remainingPending,
+          reviewedBy: { id: user.id, name: user.name },
+          reason: rejectionReason
+        });
+      } catch (pusherError) {
+        console.log('Pusher admin rejection update skipped:', pusherError);
+      }
+    }
 
     return NextResponse.json({ success: true, status: 'rejected' });
   } catch (error) {

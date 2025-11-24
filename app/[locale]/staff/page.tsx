@@ -30,6 +30,12 @@ export default function StaffDashboard() {
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
   const [processingApproval, setProcessingApproval] = useState(false);
+  const [securitySettings, setSecuritySettings] = useState({
+    approvalOrderThreshold: 5,
+    approvalTimeWindowMinutes: 5,
+    autoRejectMinutes: 30
+  });
+  const approvalWindowMinutes = securitySettings?.approvalTimeWindowMinutes ?? 5;
   
   // Loading state
   const [initialLoading, setInitialLoading] = useState(true);
@@ -76,6 +82,29 @@ export default function StaffDashboard() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []); // Empty deps - run ONCE on mount
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/security-settings')
+      .then(res => res.json())
+      .then(data => {
+        if (!isMounted) return;
+        if (data?.settings) {
+          setSecuritySettings({
+            approvalOrderThreshold: data.settings.approvalOrderThreshold ?? 5,
+            approvalTimeWindowMinutes: data.settings.approvalTimeWindowMinutes ?? 5,
+            autoRejectMinutes: data.settings.autoRejectMinutes ?? 30
+          });
+        }
+      })
+      .catch(() => {
+        // fallback to defaults
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // DATA & PUSHER SETUP (separate useEffect for data loading and real-time)
   useEffect(() => {
@@ -573,9 +602,7 @@ export default function StaffDashboard() {
   return (
     <div className="min-h-screen bg-gray-900">
       <ServiceWorkerUpdater />
-      
-      {/* Add padding-top for sticky approval banner */}
-      <div className="pt-24 px-8 pb-8">
+      <div className="px-4 pt-6 pb-8 md:px-8">
       {/* Toast Notification */}
       {toast && (
         <Toast
@@ -593,6 +620,7 @@ export default function StaffDashboard() {
           setShowApprovalModal(true);
         }}
         showButtons={true}
+        className="mb-6"
       />
 
       {/* Cancel Order Modal */}
@@ -1359,7 +1387,7 @@ export default function StaffDashboard() {
 
               <div className="bg-yellow-900/30 border border-yellow-500 rounded-lg p-4 mb-6">
                 <p className="text-yellow-200 text-sm">
-                  <strong>Причина:</strong> Направени са {selectedApproval.orderCount} поръчки за последните 5 минути. 
+                  <strong>Причина:</strong> Направени са {selectedApproval.orderCount} поръчки за последните {approvalWindowMinutes} минути. 
                   Заради съображения за сигурност и превантивно действие при потенциално неправомерни действия 
                   и хакерски атаки, тази поръчка изисква одобрение.
                 </p>

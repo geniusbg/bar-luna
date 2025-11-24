@@ -12,22 +12,36 @@ export async function GET(
     try {
       const approval = await prisma.pendingOrderApproval.findUnique({
         where: { orderId: id },
-        select: { status: true, orderId: true }
+        select: {
+          status: true,
+          orderId: true,
+          tableNumber: true,
+          order: {
+            select: {
+              orderNumber: true,
+              cancellationReason: true,
+              items: {
+                select: {
+                  productName: true,
+                  quantity: true
+                }
+              }
+            }
+          }
+        }
       });
 
       if (!approval) {
         return NextResponse.json({ status: 'not_found' }, { status: 404 });
       }
 
-      // Include order items for display in approval message
-      const order = await prisma.order.findUnique({
-        where: { id: approval.orderId },
-        include: { items: true }
-      });
-
       return NextResponse.json({ 
         status: approval.status,
-        items: order?.items.map(item => ({
+        orderId: approval.orderId,
+        orderNumber: approval.order?.orderNumber ?? null,
+        tableNumber: approval.tableNumber,
+        reason: approval.order?.cancellationReason || null,
+        items: approval.order?.items?.map(item => ({
           productName: item.productName,
           quantity: item.quantity
         })) || []
