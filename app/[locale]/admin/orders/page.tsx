@@ -8,6 +8,7 @@ import Toast from '@/components/Toast';
 import { getPusherClient } from '@/lib/pusher-client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import PendingApprovalsBanner from '@/components/PendingApprovalsBanner';
+import { useLockScroll } from '@/lib/use-lock-scroll';
 
 type OrderTab = 'active' | 'history' | 'stats' | 'approvals';
 
@@ -140,6 +141,9 @@ function AdminOrdersPageContent() {
   // Selected order for modal
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  
+  // Lock scroll when modals are open (must be after all useState declarations)
+  useLockScroll(showCancelModal || showApprovalModal || showOrderModal);
 
   // Load active orders and pending approvals on mount
   useEffect(() => {

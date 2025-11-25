@@ -109,7 +109,7 @@ export default function AdminCategoriesPage() {
       });
 
       // Check if server is offline (503 or network error)
-      if (response.status === 503 || !response.ok) {
+      if (response.status === 503) {
         // Trigger offline banner
         if (typeof window !== 'undefined' && (window as any).__setOfflineState) {
           (window as any).__setOfflineState(true);
@@ -124,7 +124,7 @@ export default function AdminCategoriesPage() {
         loadCategories();
         setToast({ message: '✅ Категорията е изтрита успешно', type: 'success' });
       } else {
-        const data = await response.json();
+        const data = await response.json().catch(() => ({ error: 'Грешка при изтриване на категорията' }));
         setToast({ message: data.error || 'Грешка при изтриване на категорията', type: 'error' });
       }
     } catch (error: any) {

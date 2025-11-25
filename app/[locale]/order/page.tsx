@@ -7,6 +7,7 @@ import Price from '@/components/Price';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import Toast from '@/components/Toast';
 import { getPusherClient } from '@/lib/pusher-client';
+import { useLockScroll } from '@/lib/use-lock-scroll';
 
 interface CartItem {
   productId: string;
@@ -32,8 +33,12 @@ function OrderPageContent() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; persistent?: boolean } | null>(null);
+  
+  // Lock scroll when cart modal is open or when loading screen is visible
+  useLockScroll(showCart || showLoadingScreen);
   const [isOffline, setIsOffline] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
@@ -49,6 +54,24 @@ function OrderPageContent() {
   const approvalTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const approvalStatusRef = useRef<'pending' | 'approved' | 'rejected' | 'auto-rejected' | null>(null);
   const orderIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    let hideTimer: NodeJS.Timeout | null = null;
+
+    if (loading) {
+      setShowLoadingScreen(true);
+    } else {
+      hideTimer = setTimeout(() => {
+        setShowLoadingScreen(false);
+      }, 5000);
+    }
+
+    return () => {
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+      }
+    };
+  }, [loading]);
 
   useEffect(() => {
     approvalStatusRef.current = approvalStatus;
@@ -291,6 +314,36 @@ function OrderPageContent() {
     };
   }, [handleApprovalStatusUpdate, locale, tableNumber]);
 
+  // Reset scroll position immediately when component mounts and while the loading screen is visible
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Force scroll to top immediately on mount
+    const resetScroll = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      // Also try scrollTo with different methods
+      if (document.documentElement) {
+        document.documentElement.scrollTop = 0;
+      }
+      if (document.body) {
+        document.body.scrollTop = 0;
+      }
+    };
+    
+    resetScroll();
+    
+    // Reset on loading screen visibility change
+    if (showLoadingScreen) {
+      resetScroll();
+      // Also use requestAnimationFrame to ensure it happens after render
+      requestAnimationFrame(() => {
+        resetScroll();
+      });
+    }
+  }, [showLoadingScreen]);
+
   useEffect(() => {
     async function loadMenu() {
       try {
@@ -532,21 +585,67 @@ function OrderPageContent() {
     }
   };
 
-  if (loading) {
+  if (showLoadingScreen) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
-            <Image
-              src="/bg/luna-logo.svg"
-              alt="LUNA Logo"
-              width={384}
-              height={384}
-              className="h-64 w-64 md:h-96 md:w-96"
-              priority
-            />
+      <div 
+        className="fixed bg-black flex items-center justify-center z-50"
+        style={{
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          position: 'fixed',
+          overflow: 'hidden',
+          margin: 0,
+          padding: 0
+        }}
+      >
+        <div className="flex flex-col items-center justify-center text-center w-full px-6">
+          {/* Logo with enhanced moon glow effect */}
+          <div className="relative mb-16 flex items-center justify-center">
+            <div className="relative h-64 w-64 md:h-[28rem] md:w-[28rem] flex items-center justify-center">
+              {/* Outer glow ring */}
+              <div className="absolute inset-0 rounded-full animate-pulse-glow" style={{
+                boxShadow: '0 0 60px rgba(255, 255, 255, 0.75), 0 0 120px rgba(255, 255, 255, 0.5), 0 0 180px rgba(255, 255, 255, 0.35)'
+              }}></div>
+              
+              {/* Logo container */}
+              <div className="relative h-full w-full rounded-full overflow-hidden flex items-center justify-center" style={{
+                boxShadow: '0 0 40px rgba(255, 255, 255, 0.9), 0 0 80px rgba(255, 255, 255, 0.7), 0 0 140px rgba(255, 255, 255, 0.5)'
+              }}>
+                <Image
+                  src="/bg/luna-logo.svg"
+                  alt="LUNA Logo"
+                  width={512}
+                  height={512}
+                  className="h-full w-full object-contain animate-fade-in scale-[1.5]"
+                  priority
+                />
+              </div>
+              
+              {/* Spinning ring around logo */}
+              <div className="absolute -inset-8 md:-inset-14 flex items-center justify-center pointer-events-none">
+                <div className="w-full h-full border-[3px] md:border-4 border-white/20 rounded-full animate-spin-slow">
+                  <div className="w-full h-full border-t-[6px] md:border-t-8 border-white/80 rounded-full"></div>
+                </div>
+              </div>
+            </div>
           </div>
-          <p className="text-white text-3xl font-medium">Зареждане...</p>
+          
+          {/* Loading text with fade animation */}
+          <div className="space-y-4 animate-fade-in flex flex-col items-center">
+            <p className="text-white text-3xl md:text-4xl font-semibold tracking-wide drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">
+              {locale === 'bg' ? 'Зареждане...' : locale === 'en' ? 'Loading...' : 'Wird geladen...'}
+            </p>
+            {/* Loading dots animation */}
+            <div className="flex justify-center gap-2">
+              <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          </div>
         </div>
       </div>
     );

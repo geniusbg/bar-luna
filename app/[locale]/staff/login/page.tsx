@@ -22,6 +22,16 @@ export default function StaffLoginPage() {
     }
   }, [session, router]);
 
+  // Prevent body scroll on login page
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -52,17 +62,17 @@ export default function StaffLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-start md:items-center justify-center p-4 pt-20 md:pt-4">
+    <div className="fixed inset-0 bg-black flex items-center justify-center p-4 sm:p-6 md:p-8">
       <div className="w-full max-w-md">
-        <div className="bg-gray-900 border border-gray-700 rounded-2xl p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Luna Bar</h1>
-            <p className="text-gray-400">Staff панел</p>
+        <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 sm:p-8 shadow-2xl">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Luna Bar</h1>
+            <p className="text-gray-400 text-sm sm:text-base">Staff панел</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
             {error && (
-              <div className="bg-red-500/20 text-red-300 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
@@ -79,7 +89,7 @@ export default function StaffLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-white/50"
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/50 transition-all"
                 placeholder="your@email.com"
               />
             </div>
@@ -96,7 +106,7 @@ export default function StaffLoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-white/50"
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/50 transition-all"
                 placeholder="••••••••"
               />
             </div>
@@ -104,16 +114,16 @@ export default function StaffLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-white/30"
             >
               {loading ? 'Влизане...' : 'Вход'}
             </button>
           </form>
-        </div>
 
-        <p className="text-center text-gray-500 text-sm mt-6">
-          Контакт: <span className="text-white">support@gsoft.bg</span>
-        </p>
+          <p className="text-center text-gray-500 text-xs sm:text-sm mt-6 pt-6 border-t border-gray-800">
+            Контакт: <span className="text-white">support@gsoft.bg</span>
+          </p>
+        </div>
       </div>
     </div>
   );

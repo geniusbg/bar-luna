@@ -272,7 +272,37 @@ select option {
 }
 
 .animate-pulse-glow {
-  animation: pulseGlow 1s ease-in-out infinite;
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Slow spin animation for loading ring */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+/* Enhanced pulse glow for loading screen */
+@keyframes loading-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.animate-loading-glow {
+  animation: loading-glow 2s ease-in-out infinite;
 }
 
 /* Hide scrollbar but keep functionality */
