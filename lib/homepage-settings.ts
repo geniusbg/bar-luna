@@ -236,7 +236,7 @@ export async function updateHomepageSettings(data: Partial<HomepageSettings>): P
         moodTextBg: updated.moodTextBg,
         moodTextEn: updated.moodTextEn,
         moodTextDe: updated.moodTextDe,
-        stats: updated.stats as HomepageStats,
+        stats: updated.stats as unknown as HomepageStats,
         ctaPrimaryBg: updated.ctaPrimaryBg,
         ctaPrimaryEn: updated.ctaPrimaryEn,
         ctaPrimaryDe: updated.ctaPrimaryDe,
@@ -256,7 +256,7 @@ export async function updateHomepageSettings(data: Partial<HomepageSettings>): P
     return {
       id: created.id,
       ...DEFAULT_HOMEPAGE_SETTINGS,
-      stats: created.stats as HomepageStats
+      stats: created.stats as unknown as HomepageStats
     };
   } catch (error) {
     console.error('Error updating homepage settings:', error);
