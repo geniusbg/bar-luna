@@ -96,7 +96,7 @@ const DEFAULT_STATS: HomepageStats = {
   ]
 };
 
-const DEFAULT_STATS_JSON = DEFAULT_STATS as unknown as Prisma.JsonValue;
+const DEFAULT_STATS_JSON = DEFAULT_STATS as unknown as Prisma.InputJsonValue;
 
 export async function getHomepageSettings(): Promise<HomepageSettings> {
   try {
@@ -209,7 +209,7 @@ export async function updateHomepageSettings(data: Partial<HomepageSettings>): P
           moodTextBg: data.moodTextBg ?? existing.moodTextBg,
           moodTextEn: data.moodTextEn ?? existing.moodTextEn,
           moodTextDe: data.moodTextDe ?? existing.moodTextDe,
-          stats: data.stats ? (data.stats as Prisma.JsonValue) : existing.stats,
+          stats: data.stats ? (data.stats as unknown as Prisma.InputJsonValue) : (existing.stats as Prisma.InputJsonValue),
           ctaPrimaryBg: data.ctaPrimaryBg ?? existing.ctaPrimaryBg,
           ctaPrimaryEn: data.ctaPrimaryEn ?? existing.ctaPrimaryEn,
           ctaPrimaryDe: data.ctaPrimaryDe ?? existing.ctaPrimaryDe,
@@ -249,7 +249,7 @@ export async function updateHomepageSettings(data: Partial<HomepageSettings>): P
     const created = await prisma.homepageSettings.create({
       data: {
         ...DEFAULT_HOMEPAGE_SETTINGS,
-        stats: data.stats ? (data.stats as Prisma.JsonValue) : DEFAULT_STATS_JSON
+        stats: data.stats ? (data.stats as unknown as Prisma.InputJsonValue) : DEFAULT_STATS_JSON
       }
     });
 
