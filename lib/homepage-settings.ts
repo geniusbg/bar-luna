@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 
 export interface HomepageStats {
@@ -95,6 +96,8 @@ const DEFAULT_STATS: HomepageStats = {
   ]
 };
 
+const DEFAULT_STATS_JSON = DEFAULT_STATS as Prisma.JsonValue;
+
 export async function getHomepageSettings(): Promise<HomepageSettings> {
   try {
     const settings = await prisma.homepageSettings.findFirst({
@@ -133,7 +136,7 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
     const newSettings = await prisma.homepageSettings.create({
       data: {
         ...DEFAULT_HOMEPAGE_SETTINGS,
-        stats: DEFAULT_STATS
+        stats: DEFAULT_STATS_JSON
       }
     });
 
@@ -206,7 +209,7 @@ export async function updateHomepageSettings(data: Partial<HomepageSettings>): P
           moodTextBg: data.moodTextBg ?? existing.moodTextBg,
           moodTextEn: data.moodTextEn ?? existing.moodTextEn,
           moodTextDe: data.moodTextDe ?? existing.moodTextDe,
-          stats: data.stats ?? existing.stats,
+          stats: data.stats ? (data.stats as Prisma.JsonValue) : existing.stats,
           ctaPrimaryBg: data.ctaPrimaryBg ?? existing.ctaPrimaryBg,
           ctaPrimaryEn: data.ctaPrimaryEn ?? existing.ctaPrimaryEn,
           ctaPrimaryDe: data.ctaPrimaryDe ?? existing.ctaPrimaryDe,
@@ -246,7 +249,7 @@ export async function updateHomepageSettings(data: Partial<HomepageSettings>): P
     const created = await prisma.homepageSettings.create({
       data: {
         ...DEFAULT_HOMEPAGE_SETTINGS,
-        stats: data.stats || DEFAULT_STATS
+        stats: data.stats ? (data.stats as Prisma.JsonValue) : DEFAULT_STATS_JSON
       }
     });
 
