@@ -96,7 +96,7 @@ const DEFAULT_STATS: HomepageStats = {
   ]
 };
 
-const DEFAULT_STATS_JSON = DEFAULT_STATS as Prisma.JsonValue;
+const DEFAULT_STATS_JSON = DEFAULT_STATS as unknown as Prisma.JsonValue;
 
 export async function getHomepageSettings(): Promise<HomepageSettings> {
   try {
