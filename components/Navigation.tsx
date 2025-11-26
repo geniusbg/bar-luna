@@ -57,7 +57,7 @@ export default function Navigation() {
           <Link href={`/${locale}`}>
             <div className="h-20 flex items-center">
               <Image 
-                src={`/${locale}/logo_luna2.svg`} 
+                src={locale === 'de' ? '/bg/logo_luna2.svg' : `/${locale}/logo_luna2.svg`} 
                 alt="L.U.N.A." 
                 width={280}
                 height={80}

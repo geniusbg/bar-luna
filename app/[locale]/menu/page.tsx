@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Price from '@/components/Price';
 
-export default function MenuPage() {
+function MenuPageContent() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const locale = pathname.split('/')[1] || 'bg';
   
   const [categories, setCategories] = useState<any[]>([]);
@@ -27,16 +28,37 @@ export default function MenuPage() {
       setCategories(categoriesData.categories || []);
       setProducts(productsData.products || []);
       
-      // Set first category as active
-      if (categoriesData.categories && categoriesData.categories.length > 0) {
+      // Check URL params for category and product
+      const categoryParam = searchParams.get('category');
+      const productParam = searchParams.get('product');
+      
+      // Set active category from URL or first category
+      if (categoryParam && categoriesData.categories?.some((c: any) => c.id === categoryParam)) {
+        setActiveCategory(categoryParam);
+      } else if (categoriesData.categories && categoriesData.categories.length > 0) {
         setActiveCategory(categoriesData.categories[0].id);
+      }
+      
+      // Scroll to product if specified
+      if (productParam) {
+        setTimeout(() => {
+          const productElement = document.getElementById(`product-${productParam}`);
+          if (productElement) {
+            productElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Highlight the product briefly
+            productElement.classList.add('ring-2', 'ring-white', 'ring-opacity-50');
+            setTimeout(() => {
+              productElement.classList.remove('ring-2', 'ring-white', 'ring-opacity-50');
+            }, 2000);
+          }
+        }, 500);
       }
       
       setLoading(false);
     }
 
     loadData();
-  }, []);
+  }, [searchParams]);
 
   if (loading) {
     return (
@@ -167,6 +189,7 @@ export default function MenuPage() {
 
               return (
                 <div
+                  id={`product-${product.id}`}
                   key={product.id}
                   className={`group relative bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl overflow-hidden hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 transform hover:-translate-y-1 ${
                     !product.isAvailable ? 'opacity-60' : ''
@@ -229,5 +252,29 @@ export default function MenuPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function MenuPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="logo-container h-80 w-80 md:h-[28rem] md:w-[28rem] mx-auto mb-10 animate-pulse-glow">
+            <Image
+              src="/bg/luna-logo.svg"
+              alt="LUNA Logo"
+              width={448}
+              height={448}
+              className="h-80 w-80 md:h-[28rem] md:w-[28rem]"
+              priority
+            />
+          </div>
+          <p className="text-white text-3xl font-medium">Зареждане...</p>
+        </div>
+      </main>
+    }>
+      <MenuPageContent />
+    </Suspense>
   );
 }

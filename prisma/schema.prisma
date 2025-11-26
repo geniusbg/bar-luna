@@ -300,4 +300,72 @@ model SecuritySettings {
   @@map("security_settings")
 }
 
+// Location Settings - Store location/address for all locales
+model LocationSettings {
+  id        String   @id @default(uuid())
+  addressBg String   @map("address_bg") // Bulgarian address
+  addressEn String   @map("address_en") // English address
+  addressDe String   @map("address_de") // German address
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("location_settings")
+}
+
+// Homepage Settings - Store all homepage content (offerings section)
+model HomepageSettings {
+  id        String   @id @default(uuid())
+  // Section header
+  sectionLabelBg String   @map("section_label_bg")
+  sectionLabelEn String   @map("section_label_en")
+  sectionLabelDe String   @map("section_label_de")
+  titleBg        String   @map("title_bg")
+  titleEn        String   @map("title_en")
+  titleDe        String   @map("title_de")
+  subtitleBg     String   @map("subtitle_bg")
+  subtitleEn     String   @map("subtitle_en")
+  subtitleDe     String   @map("subtitle_de")
+  descriptionBg  String   @map("description_bg") @db.Text
+  descriptionEn  String   @map("description_en") @db.Text
+  descriptionDe  String   @map("description_de") @db.Text
+  moodTextBg     String   @map("mood_text_bg")
+  moodTextEn     String   @map("mood_text_en")
+  moodTextDe     String   @map("mood_text_de")
+  // Stats (JSON array)
+  stats          Json     // [{ label: string, value: string }] for each locale
+  // CTA buttons
+  ctaPrimaryBg   String   @map("cta_primary_bg")
+  ctaPrimaryEn   String   @map("cta_primary_en")
+  ctaPrimaryDe   String   @map("cta_primary_de")
+  ctaSecondaryBg String   @map("cta_secondary_bg")
+  ctaSecondaryEn String   @map("cta_secondary_en")
+  ctaSecondaryDe String   @map("cta_secondary_de")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("homepage_settings")
+}
+
+// Homepage Offering Cards - Dynamic cards for offerings section
+model HomepageOfferingCard {
+  id          String   @id @default(uuid())
+  order       Int      @default(0) // Display order
+  icon        String   // Emoji or icon identifier
+  titleBg     String   @map("title_bg")
+  titleEn     String   @map("title_en")
+  titleDe     String   @map("title_de")
+  descriptionBg String @map("description_bg") @db.Text
+  descriptionEn String @map("description_en") @db.Text
+  descriptionDe String @map("description_de") @db.Text
+  badgeBg     String   @map("badge_bg")
+  badgeEn     String   @map("badge_en")
+  badgeDe     String   @map("badge_de")
+  highlights  Json     // Array of strings for each locale: { bg: string[], en: string[], de: string[] }
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("homepage_offering_cards")
+}
+
 
