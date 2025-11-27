@@ -39,8 +39,9 @@ function OrderPageContent() {
   const [activeSubCategory, setActiveSubCategory] = useState<string>('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; persistent?: boolean } | null>(null);
   
-  // Lock scroll when cart modal is open or when loading screen is visible
-  useLockScroll(showCart || showLoadingScreen);
+  // Lock scroll only when the cart modal is open.
+  // The global LoadingScreen component already handles scroll locking during page load.
+  useLockScroll(showCart);
   const [isOffline, setIsOffline] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(false);
