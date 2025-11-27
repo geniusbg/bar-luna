@@ -1,7 +1,7 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
 // ⚠️ SW VERSION - Single source of truth (no duplicates)
-const CACHE_VERSION = 'v3.3.19';
+const CACHE_VERSION = 'v3.3.20';
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
