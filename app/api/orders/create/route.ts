@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { bgnToEur } from '@/lib/currency';
 import { getSecuritySettings } from '@/lib/security-settings';
+import { TABLE_SESSION_COOKIE_NAME, TableSessionInvalidReason, validateTableSession } from '@/lib/table-sessions';
 
 // In-memory rate limiting storage (per table)
 const orderRateLimits = new Map<string, { count: number; resetTime: number }>();
@@ -25,54 +26,44 @@ function checkRateLimit(key: string, maxOrders: number = 2, windowMs: number = 5
   return { allowed: true, remaining: maxOrders - record.count, resetTime: record.resetTime };
 }
 
-// Helper function to validate session token
-function validateSessionToken(token: string | undefined, tableNumber: number): { valid: boolean; error?: string } {
-  if (!token) {
-    return { valid: false, error: 'Сесията е изтекла. Моля, сканирайте QR кода отново.' };
-  }
+const SESSION_ERROR_MESSAGES: Record<TableSessionInvalidReason, string> = {
+  missing: 'Сесията е изтекла. Моля, сканирайте QR кода отново.',
+  expired: 'Сесията е изтекла. Моля, сканирайте QR кода отново.',
+  revoked: 'Сесията е невалидна. Моля, сканирайте QR кода отново.',
+  invalid: 'Невалидна сесия. Моля, сканирайте QR кода отново.'
+};
 
-  try {
-    const parts = token.split('_');
-    if (parts.length !== 5 || parts[0] !== 'table' || parts[1] !== 'session') {
-      return { valid: false, error: 'Невалидна сесия. Моля, сканирайте QR кода отново.' };
-    }
-
-    const tokenTableNumber = parseInt(parts[2]);
-    const createdAt = parseInt(parts[3]);
-    const expiresAt = parseInt(parts[4]);
-
-    // Check table number matches
-    if (tokenTableNumber !== tableNumber) {
-      return { valid: false, error: 'Сесията не съответства на масата. Моля, сканирайте QR кода отново.' };
-    }
-
-    // Check if token is expired
-    const now = Date.now();
-    if (now > expiresAt) {
-      return { valid: false, error: 'Сесията е изтекла. Моля, сканирайте QR кода отново.' };
-    }
-
-    return { valid: true };
-  } catch (error) {
-    return { valid: false, error: 'Невалидна сесия. Моля, сканирайте QR кода отново.' };
-  }
+function buildInvalidSessionResponse(reason: TableSessionInvalidReason) {
+  const response = NextResponse.json(
+    { error: SESSION_ERROR_MESSAGES[reason], reason },
+    { status: 401 }
+  );
+  response.cookies.delete(TABLE_SESSION_COOKIE_NAME);
+  return response;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { tableNumber, items, sessionToken } = await request.json();
+    const body = await request.json();
+    const requestedTableNumber = parseInt(body.tableNumber || '0');
+    const items = body.items;
+    const legacySessionToken = body.sessionToken as string | undefined;
     const securitySettings = await getSecuritySettings();
     
-    if (!tableNumber || !items || items.length === 0) {
+    if (!items || items.length === 0) {
       return NextResponse.json({ error: 'Invalid order data' }, { status: 400 });
     }
 
-    // Validate session token
-    const sessionValidation = validateSessionToken(sessionToken, tableNumber);
+    const sessionToken = request.cookies.get(TABLE_SESSION_COOKIE_NAME)?.value || legacySessionToken;
+    const sessionValidation = await validateTableSession(sessionToken);
     if (!sessionValidation.valid) {
-      return NextResponse.json({ 
-        error: sessionValidation.error || 'Сесията е изтекла. Моля, сканирайте QR кода отново.'
-      }, { status: 401 });
+      return buildInvalidSessionResponse(sessionValidation.reason);
+    }
+    const tableNumber = sessionValidation.session.tableNumber;
+    if (requestedTableNumber && requestedTableNumber !== tableNumber) {
+      console.warn(
+        `Order create: table mismatch detected (cookie: ${tableNumber}, body: ${requestedTableNumber})`
+      );
     }
 
     // Check if there's a pending approval for this table

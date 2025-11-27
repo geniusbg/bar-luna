@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { ensureUniqueCategorySlug } from '@/lib/slug';
 
 // Update category
 export async function PUT(
@@ -36,13 +37,16 @@ export async function PUT(
       }
     }
 
+    const slugSource = (data.slug || data.name_en || data.name_bg || data.name_de || '').trim();
+    const slug = await ensureUniqueCategorySlug(slugSource, id);
+
     const category = await prisma.category.update({
       where: { id },
       data: {
         nameBg: data.name_bg,
         nameEn: data.name_en,
         nameDe: data.name_de,
-        slug: data.slug,
+        slug,
         order: data.order || 0,
         parentCategoryId: data.parent_category_id || null
       },

@@ -24,7 +24,8 @@ interface CartItem {
 function OrderPageContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const tableNumber = searchParams.get('table');
+  const initialTableNumber = searchParams.get('table');
+  const [tableNumber, setTableNumber] = useState<string | null>(initialTableNumber);
   
   // Get locale from URL path
   const locale = pathname.split('/')[1] || 'bg';
@@ -38,6 +39,8 @@ function OrderPageContent() {
   const [activeCategory, setActiveCategory] = useState<string>('');
   const [activeSubCategory, setActiveSubCategory] = useState<string>('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; persistent?: boolean } | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<'checking' | 'valid' | 'invalid'>('checking');
+  const [sessionMessage, setSessionMessage] = useState<string | null>(null);
   
   // Lock scroll only when the cart modal is open.
   // The global LoadingScreen component already handles scroll locking during page load.
@@ -168,19 +171,85 @@ function OrderPageContent() {
   }, []);
 
   // Save session token from URL to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined' && tableNumber) {
-      const sessionToken = searchParams.get('session');
-      if (sessionToken) {
-        // Save session token to localStorage
-        localStorage.setItem(`tableSession_${tableNumber}`, sessionToken);
-        // Remove session from URL to keep it clean
-        const url = new URL(window.location.href);
-        url.searchParams.delete('session');
-        window.history.replaceState({}, '', url.toString());
+  const getSessionMessageForReason = useCallback((reason?: string) => {
+    const messages: Record<string, { bg: string; en: string; de: string }> = {
+      missing: {
+        bg: 'Сесията е изтекла. Моля, сканирайте QR кода от масата отново.',
+        en: 'Your session has expired. Please scan the table QR code again.',
+        de: 'Ihre Sitzung ist abgelaufen. Bitte scannen Sie den QR-Code erneut.'
+      },
+      expired: {
+        bg: 'Сесията е изтекла. Моля, сканирайте QR кода от масата отново.',
+        en: 'Your session has expired. Please scan the table QR code again.',
+        de: 'Ihre Sitzung ist abgelaufen. Bitte scannen Sie den QR-Code erneut.'
+      },
+      revoked: {
+        bg: 'Сесията е невалидна. Моля, сканирайте QR кода от масата отново.',
+        en: 'Your session is no longer valid. Please scan the table QR code again.',
+        de: 'Ihre Sitzung ist nicht mehr gültig. Bitte scannen Sie den QR-Code erneut.'
+      },
+      invalid: {
+        bg: 'Невалидна сесия. Моля, сканирайте QR кода от масата отново.',
+        en: 'Invalid session. Please scan the table QR code again.',
+        de: 'Ungültige Sitzung. Bitte scannen Sie den QR-Code erneut.'
+      },
+      default: {
+        bg: 'Моля, сканирайте QR кода от масата, за да продължите.',
+        en: 'Please scan the table QR code to continue.',
+        de: 'Bitte scannen Sie den QR-Code am Tisch, um fortzufahren.'
       }
+    };
+
+    const localeMessages = messages[reason ?? 'default'] || messages.default;
+    return localeMessages[locale as 'bg' | 'en' | 'de'] || messages.default.bg;
+  }, [locale]);
+
+  const validateSession = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (!silent) {
+      setSessionStatus('checking');
     }
-  }, [searchParams, tableNumber]);
+
+    try {
+      const response = await fetch('/api/table-session/validate', {
+        method: 'POST',
+        cache: 'no-store'
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok) {
+        if (data.tableNumber) {
+          setTableNumber(String(data.tableNumber));
+        }
+        setSessionStatus('valid');
+        setSessionMessage(null);
+        return { ok: true as const, tableNumber: data.tableNumber };
+      }
+
+      const message = getSessionMessageForReason(data.reason);
+      setSessionStatus('invalid');
+      setSessionMessage(message);
+      setTableNumber(null);
+      return { ok: false as const, reason: data.reason };
+    } catch {
+      const message = getSessionMessageForReason('missing');
+      setSessionStatus('invalid');
+      setSessionMessage(message);
+      setTableNumber(null);
+      return { ok: false as const, reason: 'missing' };
+    }
+  }, [getSessionMessageForReason]);
+
+  useEffect(() => {
+    validateSession();
+  }, [validateSession]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && searchParams.get('session')) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('session');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     return () => {
@@ -494,10 +563,15 @@ function OrderPageContent() {
     }
 
     try {
-      // Get session token from localStorage
-      const sessionToken = typeof window !== 'undefined' && tableNumber
-        ? localStorage.getItem(`tableSession_${tableNumber}`)
-        : null;
+      const sessionCheck = await validateSession({ silent: true });
+      if (!sessionCheck.ok) {
+        setToast({ 
+          message: getSessionMessageForReason(sessionCheck.reason),
+          type: 'error' 
+        });
+        setSubmitting(false);
+        return;
+      }
 
       // Prepare items with productName for the API
       const orderItems = cart.map(item => ({
@@ -512,8 +586,7 @@ function OrderPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tableNumber: parseInt(tableNumber || '0'),
-          items: orderItems,
-          sessionToken: sessionToken || undefined
+          items: orderItems
         })
       });
 
@@ -532,8 +605,11 @@ function OrderPageContent() {
         
         // Handle 401 Unauthorized - session expired
         if (response.status === 401) {
+          const message = getSessionMessageForReason(responseData.reason);
+          setSessionStatus('invalid');
+          setSessionMessage(message);
           setToast({ 
-            message: responseData.error || 'Сесията е изтекла. Моля, сканирайте QR кода отново.',
+            message,
             type: 'error' 
           });
           setSubmitting(false);
@@ -607,6 +683,26 @@ function OrderPageContent() {
       setSubmitting(false);
     }
   };
+
+  const sessionOverlayTitle = sessionStatus === 'checking'
+    ? (locale === 'bg'
+        ? 'Проверка на сесията...'
+        : locale === 'en'
+        ? 'Verifying your session...'
+        : 'Sitzung wird überprüft...')
+    : (locale === 'bg'
+        ? 'Сесията е изтекла'
+        : locale === 'en'
+        ? 'Session expired'
+        : 'Sitzung abgelaufen');
+
+  const sessionOverlayBody = sessionStatus === 'checking'
+    ? (locale === 'bg'
+        ? 'Моля, изчакайте докато проверим връзката със системата.'
+        : locale === 'en'
+        ? 'Please wait while we verify the connection to the system.'
+        : 'Bitte warten Sie, während wir die Verbindung überprüfen.')
+    : (sessionMessage || getSessionMessageForReason());
 
   if (showLoadingScreen) {
     return <LoadingScreen locale={locale} />;
@@ -1101,6 +1197,41 @@ function OrderPageContent() {
                  locale === 'en' ? 'Call Waiter' : 
                  'Kellner rufen'}
           </a>
+        </div>
+      )}
+
+      {sessionStatus !== 'valid' && (
+        <div className="fixed inset-0 z-[60] bg-black/95 px-6 flex items-center justify-center text-center">
+          <div className="max-w-2xl">
+            <div className="text-6xl mb-6">
+              {sessionStatus === 'checking' ? '🔄' : '🔒'}
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-4">{sessionOverlayTitle}</h2>
+            <p className="text-gray-300 text-lg mb-8 whitespace-pre-line">
+              {sessionOverlayBody}
+            </p>
+
+            {sessionStatus === 'invalid' ? (
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={() => validateSession()}
+                  className="px-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all"
+                >
+                  🔄 {locale === 'bg' ? 'Провери отново' : locale === 'en' ? 'Check again' : 'Erneut prüfen'}
+                </button>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-6 py-3 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-600 transition-all"
+                >
+                  ↻ {locale === 'bg' ? 'Обнови страницата' : locale === 'en' ? 'Refresh page' : 'Seite neu laden'}
+                </button>
+              </div>
+            ) : (
+              <div className="flex justify-center">
+                <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </main>

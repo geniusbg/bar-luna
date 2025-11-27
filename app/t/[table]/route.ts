@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSecuritySettings } from '@/lib/security-settings';
+import { createTableSession } from '@/lib/table-sessions';
 
 export async function GET(
   request: NextRequest,
@@ -50,29 +51,44 @@ export async function GET(
     });
 
     const securitySettings = await getSecuritySettings();
-
-    // Generate session token using configured duration
-    const now = Date.now();
-    const sessionDurationMs = (securitySettings.sessionDurationHours || 3) * 60 * 60 * 1000;
-    const expiresAt = now + sessionDurationMs;
-    const sessionToken = `table_session_${tableNumber}_${now}_${expiresAt}`;
+    const sessionDurationHours = securitySettings.sessionDurationHours || 3;
+    const sessionDurationMs = sessionDurationHours * 60 * 60 * 1000;
+    const { token: sessionToken } = await createTableSession(tableNumber, sessionDurationHours);
 
     // Get redirect URL (default to order page with BG locale)
     const baseRedirectUrl = barTable.redirectUrl || `/bg/order?table=${tableNumber}`;
     
-    // Add session token to redirect URL
-    const separator = baseRedirectUrl.includes('?') ? '&' : '?';
-    const redirectUrl = `${baseRedirectUrl}${separator}session=${encodeURIComponent(sessionToken)}`;
-    
-    // Build absolute URL using baseUrl
-    if (redirectUrl.startsWith('/')) {
+    const isAbsoluteUrl = /^https?:\/\//i.test(baseRedirectUrl);
+
+    // Build absolute URL using baseUrl when needed
+    if (!isAbsoluteUrl) {
       // Relative URL - use baseUrl from environment
-      const absoluteUrl = new URL(redirectUrl, baseUrl);
-      return NextResponse.redirect(absoluteUrl);
+      const absoluteUrl = new URL(baseRedirectUrl, baseUrl);
+      const response = NextResponse.redirect(absoluteUrl);
+      response.cookies.set({
+        name: 'table_session',
+        value: sessionToken,
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: Math.floor(sessionDurationMs / 1000)
+      });
+      return response;
     }
     
     // If it's already an absolute URL, redirect directly
-    return NextResponse.redirect(redirectUrl);
+    const response = NextResponse.redirect(baseRedirectUrl);
+    response.cookies.set({
+      name: 'table_session',
+      value: sessionToken,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: Math.floor(sessionDurationMs / 1000)
+    });
+    return response;
 
   } catch (error) {
     console.error('QR redirect error:', error);

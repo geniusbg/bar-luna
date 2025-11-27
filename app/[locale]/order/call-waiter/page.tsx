@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Toast from '@/components/Toast';
 
@@ -8,7 +8,8 @@ function CallWaiterContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const tableNumber = searchParams.get('table');
+  const initialTableNumber = searchParams.get('table');
+  const [tableNumber, setTableNumber] = useState<string | null>(initialTableNumber);
   
   // Get locale from URL path
   const locale = pathname.split('/')[1] || 'bg';
@@ -16,15 +17,123 @@ function CallWaiterContent() {
   const [calling, setCalling] = useState(false);
   const [called, setCalled] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<'checking' | 'valid' | 'invalid'>('checking');
+  const [sessionMessage, setSessionMessage] = useState<string | null>(null);
+
+  const getSessionMessageForReason = useCallback((reason?: string) => {
+    const messages: Record<string, { bg: string; en: string; de: string }> = {
+      missing: {
+        bg: 'Сесията е изтекла. Моля, сканирайте QR кода от масата отново.',
+        en: 'Your session has expired. Please scan the table QR code again.',
+        de: 'Ihre Sitzung ist abgelaufen. Bitte scannen Sie den QR-Code erneut.'
+      },
+      expired: {
+        bg: 'Сесията е изтекла. Моля, сканирайте QR кода от масата отново.',
+        en: 'Your session has expired. Please scan the table QR code again.',
+        de: 'Ihre Sitzung ist abgelaufen. Bitte scannen Sie den QR-Code erneut.'
+      },
+      revoked: {
+        bg: 'Сесията е невалидна. Моля, сканирайте QR кода от масата отново.',
+        en: 'Your session is no longer valid. Please scan the table QR code again.',
+        de: 'Ihre Sitzung ist nicht mehr gültig. Bitte scannen Sie den QR-Code erneut.'
+      },
+      invalid: {
+        bg: 'Невалидна сесия. Моля, сканирайте QR кода от масата отново.',
+        en: 'Invalid session. Please scan the table QR code again.',
+        de: 'Ungültige Sitzung. Bitte scannen Sie den QR-Code erneut.'
+      },
+      default: {
+        bg: 'Моля, сканирайте QR кода от масата, за да продължите.',
+        en: 'Please scan the table QR code to continue.',
+        de: 'Bitte scannen Sie den QR-Code am Tisch, um fortzufahren.'
+      }
+    };
+
+    const localeMessages = messages[reason ?? 'default'] || messages.default;
+    return localeMessages[locale as 'bg' | 'en' | 'de'] || messages.default.bg;
+  }, [locale]);
+
+  const validateSession = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (!silent) {
+      setSessionStatus('checking');
+    }
+
+    try {
+      const response = await fetch('/api/table-session/validate', {
+        method: 'POST',
+        cache: 'no-store'
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok) {
+        if (data.tableNumber) {
+          setTableNumber(String(data.tableNumber));
+        }
+        setSessionStatus('valid');
+        setSessionMessage(null);
+        return { ok: true as const };
+      }
+
+      const message = getSessionMessageForReason(data.reason);
+      setSessionStatus('invalid');
+      setSessionMessage(message);
+      setTableNumber(null);
+      return { ok: false as const, reason: data.reason };
+    } catch {
+      const message = getSessionMessageForReason('missing');
+      setSessionStatus('invalid');
+      setSessionMessage(message);
+      setTableNumber(null);
+      return { ok: false as const, reason: 'missing' };
+    }
+  }, [getSessionMessageForReason]);
+
+  useEffect(() => {
+    validateSession();
+  }, [validateSession]);
+
+  const sessionOverlayTitle = sessionStatus === 'checking'
+    ? (locale === 'bg'
+        ? 'Проверка на сесията...'
+        : locale === 'en'
+        ? 'Verifying your session...'
+        : 'Sitzung wird überprüft...')
+    : (locale === 'bg'
+        ? 'Сесията е изтекла'
+        : locale === 'en'
+        ? 'Session expired'
+        : 'Sitzung abgelaufen');
+
+  const sessionOverlayBody = sessionStatus === 'checking'
+    ? (locale === 'bg'
+        ? 'Моля, изчакайте докато проверим връзката със системата.'
+        : locale === 'en'
+        ? 'Please wait while we verify the connection to the system.'
+        : 'Bitte warten Sie, während wir die Verbindung überprüfen.')
+    : (sessionMessage || getSessionMessageForReason());
   
   const callWaiter = async (callType: string) => {
-    // Prevent duplicate calls
-    if (calling) return;
+    if (calling || sessionStatus !== 'valid') {
+      setToast({
+        message: sessionMessage || getSessionMessageForReason(),
+        type: 'error'
+      });
+      return;
+    }
     
     setCalling(true);
 
     try {
-      // Get localized message
+      const sessionCheck = await validateSession({ silent: true });
+      if (!sessionCheck.ok) {
+        setToast({
+          message: getSessionMessageForReason(sessionCheck.reason),
+          type: 'error'
+        });
+        setCalling(false);
+        return;
+      }
+
       const messages = {
         payment_cash: {
           bg: 'Плащане с брой',
@@ -55,16 +164,25 @@ function CallWaiterContent() {
         })
       });
 
+      const responseData = await response.json().catch(() => ({}));
+
       if (response.ok) {
         setCalled(true);
         setTimeout(() => {
           router.back();
         }, 3000);
       } else {
-        const errorMsg = locale === 'bg' ? '❌ Грешка при повикване' : 
-                        locale === 'en' ? '❌ Error calling waiter' : 
-                        '❌ Fehler beim Anrufen des Kellners';
-        setToast({ message: errorMsg, type: 'error' });
+        if (response.status === 401) {
+          const messageText = getSessionMessageForReason(responseData.reason);
+          setSessionStatus('invalid');
+          setSessionMessage(messageText);
+          setToast({ message: messageText, type: 'error' });
+        } else {
+          const errorMsg = locale === 'bg' ? '❌ Грешка при повикване' : 
+                          locale === 'en' ? '❌ Error calling waiter' : 
+                          '❌ Fehler beim Anrufen des Kellners';
+          setToast({ message: errorMsg, type: 'error' });
+        }
       }
     } catch (error) {
       const errorMsg = locale === 'bg' ? '❌ Грешка при повикване' : 
@@ -122,7 +240,7 @@ function CallWaiterContent() {
             {/* Payment Cash */}
             <button
               onClick={() => callWaiter('payment_cash')}
-              disabled={calling}
+              disabled={calling || sessionStatus !== 'valid'}
               className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 hover:bg-white/20 transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {calling ? (
@@ -152,7 +270,7 @@ function CallWaiterContent() {
             {/* Payment Card */}
             <button
               onClick={() => callWaiter('payment_card')}
-              disabled={calling}
+              disabled={calling || sessionStatus !== 'valid'}
               className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 hover:bg-white/20 transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {calling ? (
@@ -182,7 +300,7 @@ function CallWaiterContent() {
             {/* General Help */}
             <button
               onClick={() => callWaiter('help')}
-              disabled={calling}
+              disabled={calling || sessionStatus !== 'valid'}
               className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 hover:bg-white/20 transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed md:col-span-2"
             >
               {calling ? (
@@ -222,6 +340,41 @@ function CallWaiterContent() {
           </div>
         </div>
       </div>
+
+      {sessionStatus !== 'valid' && (
+        <div className="fixed inset-0 z-40 bg-black/95 px-6 flex items-center justify-center text-center">
+          <div className="max-w-2xl">
+            <div className="text-6xl mb-6">
+              {sessionStatus === 'checking' ? '🔄' : '🔒'}
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-4">{sessionOverlayTitle}</h2>
+            <p className="text-gray-300 text-lg mb-8 whitespace-pre-line">
+              {sessionOverlayBody}
+            </p>
+
+            {sessionStatus === 'invalid' ? (
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={() => validateSession()}
+                  className="px-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all"
+                >
+                  🔄 {locale === 'bg' ? 'Провери отново' : locale === 'en' ? 'Check again' : 'Erneut prüfen'}
+                </button>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-6 py-3 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-600 transition-all"
+                >
+                  ↻ {locale === 'bg' ? 'Обнови страницата' : locale === 'en' ? 'Refresh page' : 'Seite neu laden'}
+                </button>
+              </div>
+            ) : (
+              <div className="flex justify-center">
+                <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

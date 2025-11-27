@@ -20,6 +20,18 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
     parent_category_id: ''
   });
   const [loading, setLoading] = useState(false);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+
+  const generateSlug = (value: string) => {
+    return value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60);
+  };
 
   // Reset form when modal opens/closes or category changes
   useEffect(() => {
@@ -33,6 +45,7 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
           order: category.order || 0,
           parent_category_id: category.parentCategoryId || ''
         });
+        setSlugManuallyEdited(Boolean(category.slug));
       } else {
         setFormData({
           name_bg: '',
@@ -42,6 +55,7 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
           order: 0,
           parent_category_id: ''
         });
+        setSlugManuallyEdited(false);
       }
     }
   }, [isOpen, category]);
@@ -118,7 +132,17 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
               <input
                 type="text"
                 value={formData.name_bg}
-                onChange={(e) => setFormData({ ...formData, name_bg: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    name_bg: value,
+                    slug:
+                      !slugManuallyEdited && value
+                        ? generateSlug(value)
+                        : prev.slug
+                  }));
+                }}
                 className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
                 required
                 autoFocus
@@ -130,7 +154,17 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
               <input
                 type="text"
                 value={formData.name_en}
-                onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    name_en: value,
+                    slug:
+                      !slugManuallyEdited && value
+                        ? generateSlug(value)
+                        : prev.slug
+                  }));
+                }}
                 className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
                 required
               />
@@ -141,7 +175,17 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
               <input
                 type="text"
                 value={formData.name_de}
-                onChange={(e) => setFormData({ ...formData, name_de: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    name_de: value,
+                    slug:
+                      !slugManuallyEdited && value
+                        ? generateSlug(value)
+                        : prev.slug
+                  }));
+                }}
                 className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
                 required
               />
@@ -155,9 +199,13 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
               <input
                 type="text"
                 value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                onChange={(e) => {
+                  const value = generateSlug(e.target.value);
+                  setFormData({ ...formData, slug: value });
+                  setSlugManuallyEdited(Boolean(value));
+                }}
                 className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
-                required
+                placeholder="(ще се генерира автоматично ако е празно)"
               />
             </div>
 

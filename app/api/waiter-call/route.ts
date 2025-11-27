@@ -1,24 +1,52 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { TABLE_SESSION_COOKIE_NAME, TableSessionInvalidReason, validateTableSession } from '@/lib/table-sessions';
 
-export async function POST(request: Request) {
+const SESSION_ERROR_MESSAGES: Record<TableSessionInvalidReason, string> = {
+  missing: 'Сесията е изтекла. Моля, сканирайте QR кода отново.',
+  expired: 'Сесията е изтекла. Моля, сканирайте QR кода отново.',
+  revoked: 'Сесията е невалидна. Моля, сканирайте QR кода отново.',
+  invalid: 'Невалидна сесия. Моля, сканирайте QR кода отново.'
+};
+
+function buildInvalidSessionResponse(reason: TableSessionInvalidReason) {
+  const response = NextResponse.json(
+    { error: SESSION_ERROR_MESSAGES[reason], reason },
+    { status: 401 }
+  );
+  response.cookies.delete(TABLE_SESSION_COOKIE_NAME);
+  return response;
+}
+
+export async function POST(request: NextRequest) {
   try {
     console.log('📞 Waiter call API called');
     const body = await request.json();
     console.log('Body:', body);
     
-    const { tableNumber, callType, message } = body;
-
-    if (!tableNumber || !callType) {
+    const { callType, message } = body;
+    if (!callType) {
       console.log('❌ Invalid data');
       return NextResponse.json({ error: 'Invalid call data' }, { status: 400 });
     }
 
+    const sessionToken = request.cookies.get(TABLE_SESSION_COOKIE_NAME)?.value || body.sessionToken;
+    const validation = await validateTableSession(sessionToken);
+    if (!validation.valid) {
+      console.log('❌ Invalid session for waiter call:', validation.reason);
+      return buildInvalidSessionResponse(validation.reason);
+    }
+
+    const tableNumber = validation.session.tableNumber;
+    const bodyTableNumber = parseInt(body.tableNumber || '0');
+    if (bodyTableNumber && bodyTableNumber !== tableNumber) {
+      console.warn(`Waiter call: table mismatch (cookie ${tableNumber}, body ${bodyTableNumber})`);
+    }
+
     console.log('💾 Creating waiter call in DB...');
-    // Create waiter call
     const waiterCall = await prisma.waiterCall.create({
       data: {
-        tableNumber: parseInt(tableNumber),
+        tableNumber,
         callType,
         message: message || null,
         status: 'pending'
@@ -26,7 +54,6 @@ export async function POST(request: Request) {
     });
     console.log('✅ Waiter call created:', waiterCall.id);
 
-    // Send real-time notification to staff (optional)
     try {
       const { pusherServer } = await import('@/lib/pusher-server');
       await pusherServer.trigger('staff-channel', 'waiter-call', {
@@ -39,10 +66,8 @@ export async function POST(request: Request) {
       });
     } catch (pusherError) {
       console.log('Pusher notification skipped:', pusherError);
-      // Continue without pusher - polling will pick it up
     }
 
-    // Send Web Push notification
     try {
       const icon = callType.includes('payment') ? '💰' : '🆘';
       const typeText = callType === 'payment_cash' ? 'Плащане с брой' :
