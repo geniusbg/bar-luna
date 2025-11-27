@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import LoadingScreen from '@/components/LoadingScreen';
 
 interface HomepageSettings {
   id: string;
@@ -264,14 +265,7 @@ export default function HomepageSettingsPage({
   };
 
   if (status === 'loading' || loading || !settings) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white">Зареждане...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen locale={locale} />;
   }
 
   return (
@@ -359,7 +353,7 @@ export default function HomepageSettingsPage({
               {/* Section Label */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Section Label (BG)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Етикет на секцията (БГ)</label>
                   <input
                     type="text"
                     value={settings.sectionLabelBg}
@@ -368,7 +362,7 @@ export default function HomepageSettingsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Section Label (EN)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Етикет на секцията (EN)</label>
                   <input
                     type="text"
                     value={settings.sectionLabelEn}
@@ -377,7 +371,7 @@ export default function HomepageSettingsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Section Label (DE)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Етикет на секцията (DE)</label>
                   <input
                     type="text"
                     value={settings.sectionLabelDe}
@@ -390,7 +384,7 @@ export default function HomepageSettingsPage({
               {/* Title */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Title (BG)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Заглавие (БГ)</label>
                   <input
                     type="text"
                     value={settings.titleBg}
@@ -399,7 +393,7 @@ export default function HomepageSettingsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Title (EN)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Заглавие (EN)</label>
                   <input
                     type="text"
                     value={settings.titleEn}
@@ -408,7 +402,7 @@ export default function HomepageSettingsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Title (DE)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Заглавие (DE)</label>
                   <input
                     type="text"
                     value={settings.titleDe}
@@ -421,7 +415,7 @@ export default function HomepageSettingsPage({
               {/* Subtitle */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Subtitle (BG)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Подзаглавие (БГ)</label>
                   <input
                     type="text"
                     value={settings.subtitleBg}
@@ -430,7 +424,7 @@ export default function HomepageSettingsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Subtitle (EN)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Подзаглавие (EN)</label>
                   <input
                     type="text"
                     value={settings.subtitleEn}
@@ -439,7 +433,7 @@ export default function HomepageSettingsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Subtitle (DE)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Подзаглавие (DE)</label>
                   <input
                     type="text"
                     value={settings.subtitleDe}
@@ -452,7 +446,7 @@ export default function HomepageSettingsPage({
               {/* Description */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Description (BG)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Описание (БГ)</label>
                   <textarea
                     value={settings.descriptionBg}
                     onChange={(e) => setSettings({ ...settings, descriptionBg: e.target.value })}
@@ -461,7 +455,7 @@ export default function HomepageSettingsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Description (EN)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Описание (EN)</label>
                   <textarea
                     value={settings.descriptionEn}
                     onChange={(e) => setSettings({ ...settings, descriptionEn: e.target.value })}
@@ -470,7 +464,7 @@ export default function HomepageSettingsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Description (DE)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Описание (DE)</label>
                   <textarea
                     value={settings.descriptionDe}
                     onChange={(e) => setSettings({ ...settings, descriptionDe: e.target.value })}
@@ -483,7 +477,7 @@ export default function HomepageSettingsPage({
               {/* Mood Text */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Mood Text (BG)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Текст за настроение (БГ)</label>
                   <textarea
                     value={settings.moodTextBg}
                     onChange={(e) => setSettings({ ...settings, moodTextBg: e.target.value })}
@@ -492,7 +486,7 @@ export default function HomepageSettingsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Mood Text (EN)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Текст за настроение (EN)</label>
                   <textarea
                     value={settings.moodTextEn}
                     onChange={(e) => setSettings({ ...settings, moodTextEn: e.target.value })}
@@ -501,7 +495,7 @@ export default function HomepageSettingsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Mood Text (DE)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Текст за настроение (DE)</label>
                   <textarea
                     value={settings.moodTextDe}
                     onChange={(e) => setSettings({ ...settings, moodTextDe: e.target.value })}
@@ -514,7 +508,7 @@ export default function HomepageSettingsPage({
               {/* CTA Buttons */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">CTA Primary (BG)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Основен призив (БГ)</label>
                   <input
                     type="text"
                     value={settings.ctaPrimaryBg}
@@ -523,7 +517,7 @@ export default function HomepageSettingsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">CTA Primary (EN)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Основен призив (EN)</label>
                   <input
                     type="text"
                     value={settings.ctaPrimaryEn}
@@ -532,7 +526,7 @@ export default function HomepageSettingsPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">CTA Primary (DE)</label>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">Основен призив (DE)</label>
                   <input
                     type="text"
                     value={settings.ctaPrimaryDe}

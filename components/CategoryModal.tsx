@@ -7,16 +7,19 @@ interface CategoryModalProps {
   onClose: () => void;
   onSubmit: (data: any) => Promise<boolean>; // Returns true on success
   category?: any; // For editing existing category
+  categories?: any[]; // All categories for parent selection
 }
 
-export default function CategoryModal({ isOpen, onClose, onSubmit, category }: CategoryModalProps) {
+export default function CategoryModal({ isOpen, onClose, onSubmit, category, categories = [] }: CategoryModalProps) {
   const [formData, setFormData] = useState({
     name_bg: '',
     name_en: '',
     name_de: '',
     slug: '',
-    order: 0
+    order: 0,
+    parent_category_id: ''
   });
+  const [loading, setLoading] = useState(false);
 
   // Reset form when modal opens/closes or category changes
   useEffect(() => {
@@ -27,7 +30,8 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category }: C
           name_en: category.nameEn || '',
           name_de: category.nameDe || '',
           slug: category.slug || '',
-          order: category.order || 0
+          order: category.order || 0,
+          parent_category_id: category.parentCategoryId || ''
         });
       } else {
         setFormData({
@@ -35,7 +39,8 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category }: C
           name_en: '',
           name_de: '',
           slug: '',
-          order: 0
+          order: 0,
+          parent_category_id: ''
         });
       }
     }
@@ -65,10 +70,15 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category }: C
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await onSubmit(formData);
-    // Only close modal if submission was successful
-    if (success) {
-      onClose();
+    setLoading(true);
+    try {
+      const success = await onSubmit(formData);
+      // Only close modal if submission was successful
+      if (success) {
+        onClose();
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -153,6 +163,27 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category }: C
 
             <div>
               <label className="block text-gray-300 font-semibold mb-2">
+                Родителска категория
+                <span className="ml-2 text-sm text-gray-400 font-normal">(остави празно за главна категория)</span>
+              </label>
+              <select
+                value={formData.parent_category_id}
+                onChange={(e) => setFormData({ ...formData, parent_category_id: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
+              >
+                <option value="">-- Главна категория --</option>
+                {categories
+                  .filter((c: any) => !c.parentCategoryId && c.id !== category?.id) // Only parent categories, exclude self
+                  .map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nameBg}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-gray-300 font-semibold mb-2">
                 Подредба
                 <span className="ml-2 text-sm text-gray-400 font-normal">(по-малко = показва се по-рано)</span>
               </label>
@@ -168,14 +199,26 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category }: C
             <div className="flex gap-4 pt-4">
               <button
                 type="submit"
-                className="px-8 py-3 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all flex-1"
+                disabled={loading}
+                className="px-8 py-3 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {category ? 'Обнови' : 'Добави'}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {category ? 'Обновяване...' : 'Добавяне...'}
+                  </span>
+                ) : (
+                  category ? 'Обнови' : 'Добави'
+                )}
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-all"
+                disabled={loading}
+                className="px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Отказ
               </button>

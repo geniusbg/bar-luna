@@ -5,10 +5,11 @@ import { useState } from 'react';
 interface ImageUploadProps {
   currentImageUrl?: string;
   onImageUploaded: (url: string) => void;
-  bucket: 'product-images' | 'event-images';
+  bucket: 'product-images' | 'event-images' | 'menu-backgrounds';
+  recommendedSize?: string;
 }
 
-export default function ImageUpload({ currentImageUrl, onImageUploaded, bucket }: ImageUploadProps) {
+export default function ImageUpload({ currentImageUrl, onImageUploaded, bucket, recommendedSize }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(currentImageUrl || '');
 
@@ -50,12 +51,16 @@ export default function ImageUpload({ currentImageUrl, onImageUploaded, bucket }
       <label className="block text-gray-300 font-semibold mb-2">Снимка</label>
       
       {preview && (
-        <div className="relative h-64 w-full rounded-lg overflow-hidden bg-gray-800">
+        <div className={`relative w-full rounded-lg overflow-hidden bg-gray-800 ${
+          bucket === 'menu-backgrounds' ? 'h-48' : 'h-64'
+        }`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={preview}
             alt="Preview"
-            className="w-full h-full object-contain"
+            className={`w-full h-full ${
+              bucket === 'menu-backgrounds' ? 'object-cover' : 'object-contain'
+            }`}
           />
         </div>
       )}
@@ -91,7 +96,7 @@ export default function ImageUpload({ currentImageUrl, onImageUploaded, bucket }
       </div>
 
       <p className="text-gray-400 text-sm">
-        Препоръчителни размери: 800x600px, максимум 5MB
+        {recommendedSize ? `Препоръчителни размери: ${recommendedSize}, максимум 5MB` : 'Препоръчителни размери: 800x600px, максимум 5MB'}
       </p>
     </div>
   );

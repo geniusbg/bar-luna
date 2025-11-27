@@ -227,6 +227,25 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
+              {/* Description */}
+              {(() => {
+                const description = 
+                  (locale === 'bg' && product.descriptionBg) ||
+                  (locale === 'en' && product.descriptionEn) ||
+                  (locale === 'de' && product.descriptionDe) ||
+                  product.descriptionBg ||
+                  product.descriptionEn ||
+                  product.descriptionDe;
+                
+                return description ? (
+                  <div className="mb-3">
+                    <p className="text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap">
+                      {description}
+                    </p>
+                  </div>
+                ) : null;
+              })()}
+
               {/* Actions */}
               <div className="flex gap-2">
                 <Link

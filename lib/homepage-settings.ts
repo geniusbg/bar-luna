@@ -122,7 +122,7 @@ export async function getHomepageSettings(): Promise<HomepageSettings> {
         moodTextBg: settings.moodTextBg || DEFAULT_HOMEPAGE_SETTINGS.moodTextBg,
         moodTextEn: settings.moodTextEn || DEFAULT_HOMEPAGE_SETTINGS.moodTextEn,
         moodTextDe: settings.moodTextDe || DEFAULT_HOMEPAGE_SETTINGS.moodTextDe,
-        stats: (settings.stats as any) || DEFAULT_STATS,
+        stats: (settings.stats as unknown as HomepageStats) || DEFAULT_STATS,
         ctaPrimaryBg: settings.ctaPrimaryBg || DEFAULT_HOMEPAGE_SETTINGS.ctaPrimaryBg,
         ctaPrimaryEn: settings.ctaPrimaryEn || DEFAULT_HOMEPAGE_SETTINGS.ctaPrimaryEn,
         ctaPrimaryDe: settings.ctaPrimaryDe || DEFAULT_HOMEPAGE_SETTINGS.ctaPrimaryDe,

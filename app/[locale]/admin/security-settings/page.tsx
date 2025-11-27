@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import LoadingScreen from '@/components/LoadingScreen';
 
 export default function SecuritySettingsPage({
   params
@@ -123,14 +124,7 @@ export default function SecuritySettingsPage({
   };
 
   if (status === 'loading' || settingsLoading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white">Зареждане...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen locale={locale} />;
   }
 
   return (

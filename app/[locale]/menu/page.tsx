@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Price from '@/components/Price';
+import LoadingScreen from '@/components/LoadingScreen';
 
 function MenuPageContent() {
   const pathname = usePathname();
@@ -13,20 +14,47 @@ function MenuPageContent() {
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('');
+  const [activeSubCategory, setActiveSubCategory] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [menuSettings, setMenuSettings] = useState<{
+    titleBg: string;
+    titleEn: string;
+    titleDe: string;
+    subtitleBg: string;
+    subtitleEn: string;
+    subtitleDe: string;
+    backgroundImageUrl: string | null;
+  } | null>(null);
 
   useEffect(() => {
     async function loadData() {
-      const [categoriesRes, productsRes] = await Promise.all([
+      const [categoriesRes, productsRes, settingsRes] = await Promise.all([
         fetch('/api/categories'),
-        fetch('/api/menu')
+        fetch('/api/menu'),
+        fetch('/api/menu-settings')
       ]);
 
       const categoriesData = await categoriesRes.json();
       const productsData = await productsRes.json();
+      const settingsData = await settingsRes.json();
 
       setCategories(categoriesData.categories || []);
       setProducts(productsData.products || []);
+      
+      if (settingsData.settings) {
+        setMenuSettings(settingsData.settings);
+      } else {
+        // Fallback to defaults
+        setMenuSettings({
+          titleBg: '🍸 Нашето Меню',
+          titleEn: '🍸 Our Menu',
+          titleDe: '🍸 Unser Menü',
+          subtitleBg: 'Открийте нашата селекция от напитки и деликатеси',
+          subtitleEn: 'Discover our selection of drinks and delicacies',
+          subtitleDe: 'Entdecken Sie unsere Auswahl an Getränken und Köstlichkeiten',
+          backgroundImageUrl: null
+        });
+      }
       
       // Check URL params for category and product
       const categoryParam = searchParams.get('category');
@@ -34,9 +62,28 @@ function MenuPageContent() {
       
       // Set active category from URL or first category
       if (categoryParam && categoriesData.categories?.some((c: any) => c.id === categoryParam)) {
-        setActiveCategory(categoryParam);
+        const selectedCategory = categoriesData.categories.find((c: any) => c.id === categoryParam);
+        if (selectedCategory?.parentCategoryId) {
+          // If it's a subcategory, set parent as active and subcategory
+          setActiveCategory(selectedCategory.parentCategoryId);
+          setActiveSubCategory(categoryParam);
+        } else {
+          setActiveCategory(categoryParam);
+          setActiveSubCategory('');
+        }
       } else if (categoriesData.categories && categoriesData.categories.length > 0) {
-        setActiveCategory(categoriesData.categories[0].id);
+        // Find first parent category
+        const firstParent = categoriesData.categories.find((c: any) => !c.parentCategoryId);
+        if (firstParent) {
+          setActiveCategory(firstParent.id);
+          // If parent has subcategories, select first one
+          const firstSub = categoriesData.categories.find((c: any) => c.parentCategoryId === firstParent.id);
+          if (firstSub) {
+            setActiveSubCategory(firstSub.id);
+          } else {
+            setActiveSubCategory('');
+          }
+        }
       }
       
       // Scroll to product if specified
@@ -61,44 +108,64 @@ function MenuPageContent() {
   }, [searchParams]);
 
   if (loading) {
-    return (
-      <main className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="logo-container h-80 w-80 md:h-[28rem] md:w-[28rem] mx-auto mb-10 animate-pulse-glow">
-            <Image
-              src="/bg/luna-logo.svg"
-              alt="LUNA Logo"
-              width={448}
-              height={448}
-              className="h-80 w-80 md:h-[28rem] md:w-[28rem]"
-              priority
-            />
-          </div>
-          <p className="text-white text-3xl font-medium">
-            {locale === 'bg' ? 'Зареждане...' : locale === 'en' ? 'Loading...' : 'Laden...'}
-          </p>
-        </div>
-      </main>
-    );
+    return <LoadingScreen locale={locale} />;
   }
 
-  const categoryProducts = products.filter((p: any) => p.categoryId === activeCategory);
+  // Get parent categories and subcategories
+  const parentCategories = categories.filter((c: any) => !c.parentCategoryId);
+  const subCategories = categories.filter((c: any) => c.parentCategoryId === activeCategory);
+  
+  // Determine which category to show products from
+  const displayCategoryId = activeSubCategory || activeCategory;
+  const categoryProducts = products.filter((p: any) => p.categoryId === displayCategoryId);
+  
+  // Handle category selection
+  const handleCategorySelect = (categoryId: string) => {
+    setActiveCategory(categoryId);
+    // If category has subcategories, select first one, otherwise show parent's products
+    const subs = categories.filter((c: any) => c.parentCategoryId === categoryId);
+    if (subs.length > 0) {
+      setActiveSubCategory(subs[0].id);
+    } else {
+      setActiveSubCategory('');
+    }
+  };
+  
+  const handleSubCategorySelect = (subCategoryId: string) => {
+    setActiveSubCategory(subCategoryId);
+  };
 
   return (
     <main className="min-h-screen bg-black">
       {/* Hero Header with gradient */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-black via-gray-900 to-black py-12 md:py-16 border-b border-gray-800">
+      <div 
+        className="relative overflow-hidden bg-gradient-to-br from-black via-gray-900 to-black py-12 md:py-16 border-b border-gray-800"
+        style={{
+          backgroundImage: menuSettings?.backgroundImageUrl 
+            ? `linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url(${menuSettings.backgroundImageUrl})`
+            : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-700/10 via-black to-black"></div>
         
         <div className="relative container mx-auto px-4">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-              {locale === 'bg' ? '🍸 Нашето Меню' : locale === 'en' ? '🍸 Our Menu' : '🍸 Unser Menü'}
+              {menuSettings 
+                ? (locale === 'bg' ? menuSettings.titleBg : locale === 'en' ? menuSettings.titleEn : menuSettings.titleDe)
+                : (locale === 'bg' ? '🍸 Нашето Меню' : locale === 'en' ? '🍸 Our Menu' : '🍸 Unser Menü')
+              }
             </h1>
             <p className="text-lg md:text-xl text-gray-300 mb-6">
-              {locale === 'bg' ? 'Открийте нашата селекция от напитки и деликатеси' : 
-               locale === 'en' ? 'Discover our selection of drinks and delicacies' : 
-               'Entdecken Sie unsere Auswahl an Getränken und Köstlichkeiten'}
+              {menuSettings
+                ? (locale === 'bg' ? menuSettings.subtitleBg : locale === 'en' ? menuSettings.subtitleEn : menuSettings.subtitleDe)
+                : (locale === 'bg' ? 'Открийте нашата селекция от напитки и деликатеси' : 
+                   locale === 'en' ? 'Discover our selection of drinks and delicacies' : 
+                   'Entdecken Sie unsere Auswahl an Getränken und Köstlichkeiten')
+              }
             </p>
 
             {/* Dual Currency Info */}
@@ -118,10 +185,10 @@ function MenuPageContent() {
 
         {/* Category Tabs - Sticky on scroll */}
         <div className="sticky top-16 z-30 bg-black/95 backdrop-blur-lg border-y border-gray-800 py-4 -mx-4 px-4 mb-8">
-          {/* Mobile: Horizontal scroll */}
-          <div className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar">
+          {/* Parent Categories - Mobile: Horizontal scroll */}
+          <div className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar mb-3">
             <div className="flex gap-3 min-w-max mx-auto justify-center px-4">
-              {categories.map((category: any) => {
+              {parentCategories.map((category: any) => {
                 const categoryName = locale === 'bg' ? category.nameBg : 
                                    locale === 'en' ? category.nameEn : 
                                    category.nameDe;
@@ -130,7 +197,7 @@ function MenuPageContent() {
                 return (
                   <button
                     key={category.id}
-                    onClick={() => setActiveCategory(category.id)}
+                    onClick={() => handleCategorySelect(category.id)}
                     className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
                       isActive
                         ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
@@ -144,10 +211,10 @@ function MenuPageContent() {
             </div>
           </div>
           
-          {/* Desktop: Multi-row grid */}
-          <div className="hidden md:block">
+          {/* Parent Categories - Desktop: Multi-row grid */}
+          <div className="hidden md:block mb-3">
             <div className="flex flex-wrap gap-3 justify-center max-w-6xl mx-auto">
-              {categories.map((category: any) => {
+              {parentCategories.map((category: any) => {
                 const categoryName = locale === 'bg' ? category.nameBg : 
                                    locale === 'en' ? category.nameEn : 
                                    category.nameDe;
@@ -156,7 +223,7 @@ function MenuPageContent() {
                 return (
                   <button
                     key={category.id}
-                    onClick={() => setActiveCategory(category.id)}
+                    onClick={() => handleCategorySelect(category.id)}
                     className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
                       isActive
                         ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
@@ -169,6 +236,63 @@ function MenuPageContent() {
               })}
             </div>
           </div>
+          
+          {/* Subcategories - Only show if parent has subcategories */}
+          {subCategories.length > 0 && (
+            <>
+              {/* Mobile: Horizontal scroll */}
+              <div className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar">
+                <div className="flex gap-2 min-w-max mx-auto justify-center px-4">
+                  {subCategories.map((subCategory: any) => {
+                    const subCategoryName = locale === 'bg' ? subCategory.nameBg : 
+                                          locale === 'en' ? subCategory.nameEn : 
+                                          subCategory.nameDe;
+                    const isActive = subCategory.id === activeSubCategory;
+                    
+                    return (
+                      <button
+                        key={subCategory.id}
+                        onClick={() => handleSubCategorySelect(subCategory.id)}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 whitespace-nowrap text-sm ${
+                          isActive
+                            ? 'bg-gray-700 text-white border-2 border-white/50'
+                            : 'bg-gray-800/30 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300 border border-gray-700/50'
+                        }`}
+                      >
+                        {subCategoryName}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* Desktop: Flex wrap */}
+              <div className="hidden md:block">
+                <div className="flex flex-wrap gap-2 justify-center max-w-6xl mx-auto">
+                  {subCategories.map((subCategory: any) => {
+                    const subCategoryName = locale === 'bg' ? subCategory.nameBg : 
+                                          locale === 'en' ? subCategory.nameEn : 
+                                          subCategory.nameDe;
+                    const isActive = subCategory.id === activeSubCategory;
+                    
+                    return (
+                      <button
+                        key={subCategory.id}
+                        onClick={() => handleSubCategorySelect(subCategory.id)}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 whitespace-nowrap text-sm ${
+                          isActive
+                            ? 'bg-gray-700 text-white border-2 border-white/50'
+                            : 'bg-gray-800/30 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300 border border-gray-700/50'
+                        }`}
+                      >
+                        {subCategoryName}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Products Grid */}
@@ -225,7 +349,7 @@ function MenuPageContent() {
                     </h3>
                     
                     {productDesc && (
-                      <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+                      <p className="text-gray-400 text-sm mb-4 leading-relaxed break-words whitespace-pre-wrap">
                         {productDesc}
                       </p>
                     )}

@@ -200,6 +200,13 @@ export default function AdminDashboard({
             <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">🏠</div>
             <h3 className="text-white font-bold text-lg">Начална страница</h3>
           </a>
+          <a
+            href="/bg/admin/menu-settings"
+            className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-6 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 text-center"
+          >
+            <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">📋</div>
+            <h3 className="text-white font-bold text-lg">Настройки на меню</h3>
+          </a>
         </div>
       </div>
     </div>

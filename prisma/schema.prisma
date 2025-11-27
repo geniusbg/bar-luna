@@ -15,16 +15,20 @@ datasource db {
 // ============================================
 
 model Category {
-  id        String    @id @default(uuid())
-  nameBg    String    @map("name_bg")
-  nameEn    String    @map("name_en")
-  nameDe    String    @map("name_de")
-  slug      String    @unique
-  order     Int       @default(0)
-  products  Product[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  id              String     @id @default(uuid())
+  nameBg          String     @map("name_bg")
+  nameEn          String     @map("name_en")
+  nameDe          String     @map("name_de")
+  slug            String     @unique
+  order           Int        @default(0)
+  parentCategoryId String?  @map("parent_category_id")
+  parentCategory  Category?  @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: Cascade)
+  subCategories   Category[] @relation("CategoryHierarchy")
+  products        Product[]
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
+  @@index([parentCategoryId])
   @@map("categories")
 }
 
@@ -366,6 +370,22 @@ model HomepageOfferingCard {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("homepage_offering_cards")
+}
+
+// Menu Settings - Store menu page content (title, subtitle, background image)
+model MenuSettings {
+  id           String   @id @default(uuid())
+  titleBg      String   @map("title_bg")
+  titleEn      String   @map("title_en")
+  titleDe      String   @map("title_de")
+  subtitleBg   String   @map("subtitle_bg")
+  subtitleEn   String   @map("subtitle_en")
+  subtitleDe  String   @map("subtitle_de")
+  backgroundImageUrl String? @map("background_image_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("menu_settings")
 }
 
 

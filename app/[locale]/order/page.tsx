@@ -8,6 +8,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import Toast from '@/components/Toast';
 import { getPusherClient } from '@/lib/pusher-client';
 import { useLockScroll } from '@/lib/use-lock-scroll';
+import LoadingScreen from '@/components/LoadingScreen';
 
 interface CartItem {
   productId: string;
@@ -34,7 +35,8 @@ function OrderPageContent() {
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showLoadingScreen, setShowLoadingScreen] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [activeCategory, setActiveCategory] = useState<string>('');
+  const [activeSubCategory, setActiveSubCategory] = useState<string>('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; persistent?: boolean } | null>(null);
   
   // Lock scroll when cart modal is open or when loading screen is visible
@@ -347,10 +349,30 @@ function OrderPageContent() {
   useEffect(() => {
     async function loadMenu() {
       try {
-        const response = await fetch('/api/menu');
-        const data = await response.json();
-        setCategories(data.categories || []);
-        setProducts(data.products || []);
+        const [categoriesRes, productsRes] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/menu')
+        ]);
+        
+        const categoriesData = await categoriesRes.json();
+        const productsData = await productsRes.json();
+        
+        setCategories(categoriesData.categories || []);
+        setProducts(productsData.products || []);
+        
+        // Set initial active category
+        if (categoriesData.categories && categoriesData.categories.length > 0) {
+          const firstParent = categoriesData.categories.find((c: any) => !c.parentCategoryId);
+          if (firstParent) {
+            setActiveCategory(firstParent.id);
+            const firstSub = categoriesData.categories.find((c: any) => c.parentCategoryId === firstParent.id);
+            if (firstSub) {
+              setActiveSubCategory(firstSub.id);
+            } else {
+              setActiveSubCategory('');
+            }
+          }
+        }
       } catch (error) {
         // Error loading menu
       } finally {
@@ -586,69 +608,7 @@ function OrderPageContent() {
   };
 
   if (showLoadingScreen) {
-    return (
-      <div 
-        className="fixed bg-black flex items-center justify-center z-50"
-        style={{
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100vw',
-          height: '100vh',
-          position: 'fixed',
-          overflow: 'hidden',
-          margin: 0,
-          padding: 0
-        }}
-      >
-        <div className="flex flex-col items-center justify-center text-center w-full px-6">
-          {/* Logo with enhanced moon glow effect */}
-          <div className="relative mb-16 flex items-center justify-center">
-            <div className="relative h-64 w-64 md:h-[28rem] md:w-[28rem] flex items-center justify-center">
-              {/* Outer glow ring */}
-              <div className="absolute inset-0 rounded-full animate-pulse-glow" style={{
-                boxShadow: '0 0 60px rgba(255, 255, 255, 0.75), 0 0 120px rgba(255, 255, 255, 0.5), 0 0 180px rgba(255, 255, 255, 0.35)'
-              }}></div>
-              
-              {/* Logo container */}
-              <div className="relative h-full w-full rounded-full overflow-hidden flex items-center justify-center" style={{
-                boxShadow: '0 0 40px rgba(255, 255, 255, 0.9), 0 0 80px rgba(255, 255, 255, 0.7), 0 0 140px rgba(255, 255, 255, 0.5)'
-              }}>
-                <Image
-                  src="/bg/luna-logo.svg"
-                  alt="LUNA Logo"
-                  width={512}
-                  height={512}
-                  className="h-full w-full object-contain animate-fade-in scale-[1.5]"
-                  priority
-                />
-              </div>
-              
-              {/* Spinning ring around logo */}
-              <div className="absolute -inset-8 md:-inset-14 flex items-center justify-center pointer-events-none">
-                <div className="w-full h-full border-[3px] md:border-4 border-white/20 rounded-full animate-spin-slow">
-                  <div className="w-full h-full border-t-[6px] md:border-t-8 border-white/80 rounded-full"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Loading text with fade animation */}
-          <div className="space-y-4 animate-fade-in flex flex-col items-center">
-            <p className="text-white text-3xl md:text-4xl font-semibold tracking-wide drop-shadow-[0_0_15px_rgba(255,255,255,0.6)]">
-              {locale === 'bg' ? 'Зареждане...' : locale === 'en' ? 'Loading...' : 'Wird geladen...'}
-            </p>
-            {/* Loading dots animation */}
-            <div className="flex justify-center gap-2">
-              <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingScreen locale={locale} />;
   }
 
   return (
@@ -774,98 +734,170 @@ function OrderPageContent() {
       {/* Category Filter - Sticky */}
       <div className="sticky top-[5rem] z-30 bg-black/95 backdrop-blur-lg border-b border-gray-800 py-4">
         <div className="container mx-auto px-4">
-          {/* Mobile: Horizontal scroll */}
-          <div className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar">
-            <div className="flex gap-3 min-w-max">
-              <button
-                onClick={() => setSelectedCategory('all')}
-                className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
-                  selectedCategory === 'all'
-                    ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
-                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
-                }`}
-              >
-                {locale === 'bg' ? 'Всички' : locale === 'en' ? 'All' : 'Alle'} ({products.length})
-              </button>
-              {categories.map((category: any) => {
-                const count = products.filter(p => p.categoryId === category.id).length;
-                const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameDe;
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
-                      selectedCategory === category.id
-                        ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
-                        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
-                    }`}
-                  >
-                    {categoryName} ({count})
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          
-          {/* Desktop: Multi-row grid */}
-          <div className="hidden md:block">
-            <div className="flex flex-wrap gap-3 justify-center max-w-6xl mx-auto">
-              <button
-                onClick={() => setSelectedCategory('all')}
-                className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
-                  selectedCategory === 'all'
-                    ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
-                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
-                }`}
-              >
-                {locale === 'bg' ? 'Всички' : locale === 'en' ? 'All' : 'Alle'} ({products.length})
-              </button>
-              {categories.map((category: any) => {
-                const count = products.filter(p => p.categoryId === category.id).length;
-                const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameDe;
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
-                      selectedCategory === category.id
-                        ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
-                        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
-                    }`}
-                  >
-                    {categoryName} ({count})
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {/* Get parent categories and subcategories */}
+          {(() => {
+            const parentCategories = categories.filter((c: any) => !c.parentCategoryId);
+            const subCategories = categories.filter((c: any) => c.parentCategoryId === activeCategory);
+            const displayCategoryId = activeSubCategory || activeCategory;
+            const categoryProducts = products.filter((p: any) => p.categoryId === displayCategoryId);
+            
+            const handleCategorySelect = (categoryId: string) => {
+              setActiveCategory(categoryId);
+              const subs = categories.filter((c: any) => c.parentCategoryId === categoryId);
+              if (subs.length > 0) {
+                setActiveSubCategory(subs[0].id);
+              } else {
+                setActiveSubCategory('');
+              }
+            };
+            
+            const handleSubCategorySelect = (subCategoryId: string) => {
+              setActiveSubCategory(subCategoryId);
+            };
+            
+            return (
+              <>
+                {/* Parent Categories - Mobile */}
+                <div className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar mb-3">
+                  <div className="flex gap-3 min-w-max">
+                    {parentCategories.map((category: any) => {
+                      const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameDe;
+                      const isActive = category.id === activeCategory;
+                      return (
+                        <button
+                          key={category.id}
+                          onClick={() => handleCategorySelect(category.id)}
+                          className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
+                            isActive
+                              ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
+                              : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
+                          }`}
+                        >
+                          {categoryName}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Parent Categories - Desktop */}
+                <div className="hidden md:block mb-3">
+                  <div className="flex flex-wrap gap-3 justify-center max-w-6xl mx-auto">
+                    {parentCategories.map((category: any) => {
+                      const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameDe;
+                      const isActive = category.id === activeCategory;
+                      return (
+                        <button
+                          key={category.id}
+                          onClick={() => handleCategorySelect(category.id)}
+                          className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
+                            isActive
+                              ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
+                              : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
+                          }`}
+                        >
+                          {categoryName}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Subcategories - Only show if parent has subcategories */}
+                {subCategories.length > 0 && (
+                  <>
+                    {/* Mobile */}
+                    <div className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar">
+                      <div className="flex gap-2 min-w-max">
+                        {subCategories.map((subCategory: any) => {
+                          const subCategoryName = locale === 'bg' ? subCategory.nameBg : locale === 'en' ? subCategory.nameEn : subCategory.nameDe;
+                          const isActive = subCategory.id === activeSubCategory;
+                          return (
+                            <button
+                              key={subCategory.id}
+                              onClick={() => handleSubCategorySelect(subCategory.id)}
+                              className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 whitespace-nowrap text-sm ${
+                                isActive
+                                  ? 'bg-gray-700 text-white border-2 border-white/50'
+                                  : 'bg-gray-800/30 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300 border border-gray-700/50'
+                              }`}
+                            >
+                              {subCategoryName}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    
+                    {/* Desktop */}
+                    <div className="hidden md:block">
+                      <div className="flex flex-wrap gap-2 justify-center max-w-6xl mx-auto">
+                        {subCategories.map((subCategory: any) => {
+                          const subCategoryName = locale === 'bg' ? subCategory.nameBg : locale === 'en' ? subCategory.nameEn : subCategory.nameDe;
+                          const isActive = subCategory.id === activeSubCategory;
+                          return (
+                            <button
+                              key={subCategory.id}
+                              onClick={() => handleSubCategorySelect(subCategory.id)}
+                              className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 whitespace-nowrap text-sm ${
+                                isActive
+                                  ? 'bg-gray-700 text-white border-2 border-white/50'
+                                  : 'bg-gray-800/30 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300 border border-gray-700/50'
+                              }`}
+                            >
+                              {subCategoryName}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 
       {/* Menu */}
       <div className="container mx-auto px-4 py-8">
-        {categories
-          .filter(category => selectedCategory === 'all' || category.id === selectedCategory)
-          .map(category => {
-            const categoryProducts = products.filter(p => p.categoryId === category.id);
-            if (categoryProducts.length === 0) return null;
-            
-            const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameDe;
-
+        {(() => {
+          const displayCategoryId = activeSubCategory || activeCategory;
+          const categoryProducts = products.filter((p: any) => p.categoryId === displayCategoryId);
+          
+          if (categoryProducts.length === 0) {
             return (
-              <div key={category.id} className="mb-16">
-                {/* Category Header */}
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="h-1 w-8 bg-white rounded-full"></div>
-                  <h2 className="text-3xl md:text-4xl font-bold text-white">{categoryName}</h2>
-                  <div className="flex-1 h-px bg-gray-800"></div>
-                </div>
-                
-                {/* Products Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  {categoryProducts.map((product: any) => {
-                    const productName = locale === 'bg' ? product.nameBg : locale === 'en' ? product.nameEn : product.nameDe;
-                    return (
+              <div className="text-center py-20">
+                <div className="text-6xl mb-4">🔍</div>
+                <p className="text-gray-300 text-xl">
+                  {locale === 'bg' ? 'Няма продукти в тази категория' : 
+                   locale === 'en' ? 'No products in this category' : 
+                   'Keine Produkte in dieser Kategorie'}
+                </p>
+              </div>
+            );
+          }
+          
+          // Get category name for display
+          const currentCategory = categories.find((c: any) => c.id === displayCategoryId);
+          const categoryName = currentCategory 
+            ? (locale === 'bg' ? currentCategory.nameBg : locale === 'en' ? currentCategory.nameEn : currentCategory.nameDe)
+            : '';
+          
+          return (
+            <div className="mb-16">
+              {/* Category Header */}
+              <div className="flex items-center gap-3 mb-8">
+                <div className="h-1 w-8 bg-white rounded-full"></div>
+                <h2 className="text-3xl md:text-4xl font-bold text-white">{categoryName}</h2>
+                <div className="flex-1 h-px bg-gray-800"></div>
+              </div>
+              
+              {/* Products Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {categoryProducts.map((product: any) => {
+                  const productName = locale === 'bg' ? product.nameBg : locale === 'en' ? product.nameEn : product.nameDe;
+                  return (
                     <div
                       key={product.id}
                       className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-4 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300"
@@ -874,34 +906,36 @@ function OrderPageContent() {
                         {productName}
                       </h3>
                       
-                      <div className="pt-3 border-t border-gray-700/50">
-                        <div className="flex justify-between items-center gap-3">
-                          <Price
-                            priceBgn={Number(product.priceBgn)}
-                            className="text-xl font-bold text-white"
-                            showBoth={true}
-                            inline={true}
-                          />
-                          {product.unit && product.quantity && (
-                            <span className="text-sm text-gray-400">
-                              {product.quantity} {product.unit === 'pcs' ? 'бр.' : product.unit}
-                            </span>
-                          )}
-                        </div>
+                      {product.descriptionBg || product.descriptionEn || product.descriptionDe ? (
+                        <p className="text-gray-400 text-sm mb-4 leading-relaxed break-words whitespace-pre-wrap">
+                          {locale === 'bg' && product.descriptionBg ? product.descriptionBg :
+                           locale === 'en' && product.descriptionEn ? product.descriptionEn :
+                           locale === 'de' && product.descriptionDe ? product.descriptionDe :
+                           product.descriptionBg || product.descriptionEn || product.descriptionDe}
+                        </p>
+                      ) : null}
+                      
+                      <div className="flex justify-between items-center pt-4 border-t border-gray-700/50">
+                        <Price
+                          priceBgn={Number(product.priceBgn)}
+                          className="text-2xl font-bold text-white"
+                          showBoth={true}
+                          inline={true}
+                        />
                         <button
                           onClick={() => addToCart(product)}
-                          className="w-full mt-2 px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-xl font-bold transition-all text-sm md:text-base"
+                          className="px-6 py-2 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all text-sm md:text-base"
                         >
-                          + {locale === 'bg' ? 'Добави' : locale === 'en' ? 'Add' : 'Hinzufügen'}
+                          {locale === 'bg' ? '+ Добави' : locale === 'en' ? '+ Add' : '+ Hinzufügen'}
                         </button>
                       </div>
                     </div>
-                    );
-                  })}
-                </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Cart Modal */}

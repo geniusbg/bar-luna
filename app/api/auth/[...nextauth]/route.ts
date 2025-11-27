@@ -73,17 +73,6 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET || 'dev-secret-change-in-production',
   // Use dynamic URL detection instead of hardcoded NEXTAUTH_URL
   // NextAuth will automatically detect the current host
-  cookies: {
-    sessionToken: {
-      name: 'next-auth.session-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax', // CSRF protection
-        path: '/',
-        secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      },
-    },
-  },
 };
 
 const handler = NextAuth(authOptions);

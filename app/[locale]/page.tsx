@@ -6,6 +6,7 @@ import { getHomepageSettings, getHomepageOfferingCards } from '@/lib/homepage-se
 import ChefsPicksCarousel from '@/components/ChefsPicksCarousel';
 
 export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function HomePage({
   params
@@ -199,7 +200,8 @@ export default async function HomePage({
   } as const;
 
   // Use database settings if available, otherwise fallback to hardcoded
-  const useDbSettings = homepageCards.length > 0;
+  // Check if we have settings in DB (by checking if homepageSettings has an id)
+  const useDbSettings = !!homepageSettings.id;
   
   const offerings = localeContent[locale as 'bg' | 'en' | 'de'] ?? localeContent.bg;
   
