@@ -3,7 +3,6 @@
 import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Toast from '@/components/Toast';
-import { useLockScroll } from '@/lib/use-lock-scroll';
 
 function CallWaiterContent() {
   const searchParams = useSearchParams();
@@ -18,9 +17,6 @@ function CallWaiterContent() {
   const [called, setCalled] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
-  // Lock scroll on this full-screen page
-  useLockScroll(true);
-
   const callWaiter = async (callType: string) => {
     // Prevent duplicate calls
     if (calling) return;
