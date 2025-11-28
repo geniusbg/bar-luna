@@ -1,6 +1,6 @@
 # Luna Bar - Project Status
 
-**Last Updated:** 2025-01-27  
+**Last Updated:** 2025-11-28  
 **Status:** ✅ Phase 1 Complete - Functional Implementation
 
 ---
@@ -126,6 +126,7 @@
 #### **Category Management**
 - ✅ Full CRUD operations
 - ✅ Multi-language (BG, EN, DE)
+- ✅ Auto translation buttons (BG ➜ EN/DE) for names
 - ✅ Slug for URLs
 - ✅ Order (sort position)
 - ✅ Delete validation (checks for products)
@@ -134,6 +135,7 @@
 #### **Product Management**
 - ✅ Full CRUD operations
 - ✅ Multi-language (BG, EN, DE)
+- ✅ Auto translation for names & descriptions (BG ➜ EN/DE)
 - ✅ Image upload:
   - **Option 1:** Upload from computer → `/public/uploads/`
   - **Option 2:** External URL
@@ -159,6 +161,7 @@
 #### **Events Management**
 - ✅ Add/edit events
 - ✅ Multi-language
+- ✅ Auto translation for titles, descriptions & locations (BG ➜ EN/DE)
 - ✅ Image upload
 - ✅ Date & location
 - ✅ External/Internal event types
@@ -222,6 +225,7 @@
 - ✅ Mobile-responsive tab layout with horizontal scrolling
 - ✅ Date filters on single row for mobile devices
 - ✅ Service Worker version v3.3.22
+- ✅ Auto translation tooling shared across categories, products & events
 
 ---
 

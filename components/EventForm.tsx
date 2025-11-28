@@ -31,6 +31,8 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
   });
 
   const [loading, setLoading] = useState(false);
+  const [translatingField, setTranslatingField] = useState<string | null>(null);
+  const [translationError, setTranslationError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -40,6 +42,57 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
       setFormData({ ...formData, [name]: checked });
     } else {
       setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleTranslate = async (field: 'title_en' | 'title_de' | 'description_en' | 'description_de' | 'location_en' | 'location_de', targetLang: 'en' | 'de') => {
+    // Determine source field based on target
+    let sourceField: string;
+    if (field.includes('title')) {
+      sourceField = 'title_bg';
+    } else if (field.includes('description')) {
+      sourceField = 'description_bg';
+    } else {
+      sourceField = 'location_bg';
+    }
+    
+    const source = formData[sourceField]?.trim() || '';
+    
+    if (!source) {
+      setTranslationError('Моля, въведете текст на български, за да използвате автоматичен превод.');
+      return;
+    }
+
+    setTranslationError(null);
+    setTranslatingField(field);
+
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: source,
+          targetLang
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Translation failed');
+      }
+
+      const data = await response.json();
+      if (data?.text) {
+        setFormData((prev) => ({
+          ...prev,
+          [field]: data.text
+        }));
+      } else {
+        setTranslationError('Неуспешно получаване на превода. Опитайте отново.');
+      }
+    } catch (error) {
+      setTranslationError('Неуспешен превод. Моля, опитайте отново.');
+    } finally {
+      setTranslatingField(null);
     }
   };
 
@@ -119,7 +172,17 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
           />
         </div>
         <div>
-          <label className="block text-gray-300 font-semibold mb-2">Title (EN) *</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-gray-300 font-semibold">Title (EN) *</label>
+            <button
+              type="button"
+              onClick={() => handleTranslate('title_en', 'en')}
+              disabled={!formData.title_bg || translatingField === 'title_en'}
+              className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+            >
+              {translatingField === 'title_en' ? 'Превеждам...' : 'Авто превод'}
+            </button>
+          </div>
           <input
             type="text"
             name="title_en"
@@ -130,7 +193,17 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
           />
         </div>
         <div>
-          <label className="block text-gray-300 font-semibold mb-2">Titel (DE) *</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-gray-300 font-semibold">Titel (DE) *</label>
+            <button
+              type="button"
+              onClick={() => handleTranslate('title_de', 'de')}
+              disabled={!formData.title_bg || translatingField === 'title_de'}
+              className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+            >
+              {translatingField === 'title_de' ? 'Превеждам...' : 'Авто превод'}
+            </button>
+          </div>
           <input
             type="text"
             name="title_de"
@@ -156,7 +229,17 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
           />
         </div>
         <div>
-          <label className="block text-gray-300 font-semibold mb-2">Description (EN) *</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-gray-300 font-semibold">Description (EN) *</label>
+            <button
+              type="button"
+              onClick={() => handleTranslate('description_en', 'en')}
+              disabled={!formData.description_bg || translatingField === 'description_en'}
+              className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+            >
+              {translatingField === 'description_en' ? 'Превеждам...' : 'Авто превод'}
+            </button>
+          </div>
           <textarea
             name="description_en"
             value={formData.description_en}
@@ -167,7 +250,17 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
           />
         </div>
         <div>
-          <label className="block text-gray-300 font-semibold mb-2">Beschreibung (DE) *</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-gray-300 font-semibold">Beschreibung (DE) *</label>
+            <button
+              type="button"
+              onClick={() => handleTranslate('description_de', 'de')}
+              disabled={!formData.description_bg || translatingField === 'description_de'}
+              className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+            >
+              {translatingField === 'description_de' ? 'Превеждам...' : 'Авто превод'}
+            </button>
+          </div>
           <textarea
             name="description_de"
             value={formData.description_de}
@@ -208,7 +301,17 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
             />
           </div>
           <div>
-            <label className="block text-gray-300 font-semibold mb-2">Location (EN)</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-gray-300 font-semibold">Location (EN)</label>
+              <button
+                type="button"
+                onClick={() => handleTranslate('location_en', 'en')}
+                disabled={!formData.location_bg || translatingField === 'location_en'}
+                className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+              >
+                {translatingField === 'location_en' ? 'Превеждам...' : 'Авто превод'}
+              </button>
+            </div>
             <input
               type="text"
               name="location_en"
@@ -219,7 +322,17 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
             />
           </div>
           <div>
-            <label className="block text-gray-300 font-semibold mb-2">Standort (DE)</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-gray-300 font-semibold">Standort (DE)</label>
+              <button
+                type="button"
+                onClick={() => handleTranslate('location_de', 'de')}
+                disabled={!formData.location_bg || translatingField === 'location_de'}
+                className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+              >
+                {translatingField === 'location_de' ? 'Превеждам...' : 'Авто превод'}
+              </button>
+            </div>
             <input
               type="text"
               name="location_de"
@@ -242,6 +355,12 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
             placeholder="LUNA Bar, Русе"
             required
           />
+        </div>
+      )}
+
+      {translationError && (
+        <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-lg text-sm">
+          {translationError}
         </div>
       )}
 

@@ -32,6 +32,8 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
   });
 
   const [loading, setLoading] = useState(false);
+  const [translatingField, setTranslatingField] = useState<string | null>(null);
+  const [translationError, setTranslationError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -43,6 +45,49 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
       setFormData({ ...formData, [name]: value === '' ? '' : parseFloat(value) || 0 });
     } else {
       setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleTranslate = async (field: 'name_en' | 'name_de' | 'description_en' | 'description_de', targetLang: 'en' | 'de') => {
+    // Determine source field based on target
+    const sourceField = field.includes('name') ? 'name_bg' : 'description_bg';
+    const source = formData[sourceField]?.trim() || '';
+    
+    if (!source) {
+      setTranslationError('Моля, въведете текст на български, за да използвате автоматичен превод.');
+      return;
+    }
+
+    setTranslationError(null);
+    setTranslatingField(field);
+
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: source,
+          targetLang
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Translation failed');
+      }
+
+      const data = await response.json();
+      if (data?.text) {
+        setFormData((prev) => ({
+          ...prev,
+          [field]: data.text
+        }));
+      } else {
+        setTranslationError('Неуспешно получаване на превода. Опитайте отново.');
+      }
+    } catch (error) {
+      setTranslationError('Неуспешен превод. Моля, опитайте отново.');
+    } finally {
+      setTranslatingField(null);
     }
   };
 
@@ -99,7 +144,17 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
           />
         </div>
         <div>
-          <label className="block text-gray-300 font-semibold mb-2">Name (EN) *</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-gray-300 font-semibold">Name (EN) *</label>
+            <button
+              type="button"
+              onClick={() => handleTranslate('name_en', 'en')}
+              disabled={!formData.name_bg || translatingField === 'name_en'}
+              className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+            >
+              {translatingField === 'name_en' ? 'Превеждам...' : 'Авто превод'}
+            </button>
+          </div>
           <input
             type="text"
             name="name_en"
@@ -110,7 +165,17 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
           />
         </div>
         <div>
-          <label className="block text-gray-300 font-semibold mb-2">Name (DE) *</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-gray-300 font-semibold">Name (DE) *</label>
+            <button
+              type="button"
+              onClick={() => handleTranslate('name_de', 'de')}
+              disabled={!formData.name_bg || translatingField === 'name_de'}
+              className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+            >
+              {translatingField === 'name_de' ? 'Превеждам...' : 'Авто превод'}
+            </button>
+          </div>
           <input
             type="text"
             name="name_de"
@@ -135,7 +200,17 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
           />
         </div>
         <div>
-          <label className="block text-gray-300 font-semibold mb-2">Description (EN)</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-gray-300 font-semibold">Description (EN)</label>
+            <button
+              type="button"
+              onClick={() => handleTranslate('description_en', 'en')}
+              disabled={!formData.description_bg || translatingField === 'description_en'}
+              className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+            >
+              {translatingField === 'description_en' ? 'Превеждам...' : 'Авто превод'}
+            </button>
+          </div>
           <textarea
             name="description_en"
             value={formData.description_en}
@@ -145,7 +220,17 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
           />
         </div>
         <div>
-          <label className="block text-gray-300 font-semibold mb-2">Beschreibung (DE)</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-gray-300 font-semibold">Beschreibung (DE)</label>
+            <button
+              type="button"
+              onClick={() => handleTranslate('description_de', 'de')}
+              disabled={!formData.description_bg || translatingField === 'description_de'}
+              className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+            >
+              {translatingField === 'description_de' ? 'Превеждам...' : 'Авто превод'}
+            </button>
+          </div>
           <textarea
             name="description_de"
             value={formData.description_de}
@@ -155,6 +240,12 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
           />
         </div>
       </div>
+      
+      {translationError && (
+        <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-lg text-sm">
+          {translationError}
+        </div>
+      )}
 
       {/* Price and Order */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

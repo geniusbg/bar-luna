@@ -40,28 +40,43 @@ export function useLockScroll(isLocked: boolean) {
       
       // Prevent scrolling, but allow scrolling inside modals
       const preventScroll = (e: Event) => {
-        const target = e.target as HTMLElement;
-        if (!target) {
+        const target = e.target;
+        
+        // Check if target is a valid Element
+        if (!target || !(target instanceof Element)) {
           e.preventDefault();
           return false;
         }
         
         // Check if the event is coming from an element that can scroll
         // (has overflow-y: auto or overflow-y: scroll)
-        let element: HTMLElement | null = target;
+        let element: Element | null = target;
         while (element && element !== document.body && element !== document.documentElement) {
-          const style = window.getComputedStyle(element);
-          const overflowY = style.overflowY;
-          const overflow = style.overflow;
+          // Ensure element is a valid Element before calling getComputedStyle
+          if (!(element instanceof Element)) {
+            element = element.parentElement;
+            continue;
+          }
           
-          // If element has scrollable overflow, allow the scroll
-          if (overflowY === 'auto' || overflowY === 'scroll' || 
-              overflow === 'auto' || overflow === 'scroll') {
-            // Check if element can actually scroll
-            const canScroll = element.scrollHeight > element.clientHeight;
-            if (canScroll) {
-              return true; // Allow scrolling in this element
+          try {
+            const style = window.getComputedStyle(element);
+            const overflowY = style.overflowY;
+            const overflow = style.overflow;
+            
+            // If element has scrollable overflow, allow the scroll
+            if (overflowY === 'auto' || overflowY === 'scroll' || 
+                overflow === 'auto' || overflow === 'scroll') {
+              // Check if element can actually scroll (only for HTMLElement)
+              if (element instanceof HTMLElement) {
+                const canScroll = element.scrollHeight > element.clientHeight;
+                if (canScroll) {
+                  return true; // Allow scrolling in this element
+                }
+              }
             }
+          } catch (error) {
+            // If getComputedStyle fails, continue to parent
+            console.warn('Error getting computed style:', error);
           }
           
           element = element.parentElement;
