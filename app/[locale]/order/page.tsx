@@ -7,8 +7,8 @@ import Price from '@/components/Price';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import Toast from '@/components/Toast';
 import { getPusherClient } from '@/lib/pusher-client';
-import { useLockScroll } from '@/lib/use-lock-scroll';
 import LoadingScreen from '@/components/LoadingScreen';
+import { useLockScroll } from '@/lib/use-lock-scroll';
 
 interface CartItem {
   productId: string;
@@ -42,8 +42,7 @@ function OrderPageContent() {
   const [sessionStatus, setSessionStatus] = useState<'checking' | 'valid' | 'invalid'>('checking');
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
   
-  // Lock scroll only when the cart modal is open.
-  // The global LoadingScreen component already handles scroll locking during page load.
+  // Lock scroll when cart modal is open (backdrop locked, cart can scroll)
   useLockScroll(showCart);
   const [isOffline, setIsOffline] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -69,7 +68,7 @@ function OrderPageContent() {
     } else {
       hideTimer = setTimeout(() => {
         setShowLoadingScreen(false);
-      }, 5000);
+      }, 3000);
     }
 
     return () => {

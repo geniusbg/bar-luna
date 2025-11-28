@@ -21,7 +21,7 @@ function buildErrorResponse(reason: TableSessionInvalidReason | 'error') {
 
 async function handleValidation() {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const rawToken = cookieStore.get(TABLE_SESSION_COOKIE_NAME)?.value;
 
     const validation = await validateTableSession(rawToken);

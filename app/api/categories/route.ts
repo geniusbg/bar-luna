@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const slugSource = (data.slug || data.name_en || data.name_bg || data.name_de || '').trim();
+    const slugSource = (data.name_bg ?? data.slug ?? '').toString().trim();
     const slug = await ensureUniqueCategorySlug(slugSource);
 
     const category = await prisma.category.create({

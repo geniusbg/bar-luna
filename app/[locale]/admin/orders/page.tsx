@@ -9,6 +9,7 @@ import { getPusherClient } from '@/lib/pusher-client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import PendingApprovalsBanner from '@/components/PendingApprovalsBanner';
 import { useLockScroll } from '@/lib/use-lock-scroll';
+import LoadingScreen from '@/components/LoadingScreen';
 
 type OrderTab = 'active' | 'history' | 'stats' | 'approvals';
 
@@ -142,7 +143,7 @@ function AdminOrdersPageContent() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   
-  // Lock scroll when modals are open (must be after all useState declarations)
+  // Lock scroll when modals are open (backdrop locked, modals can scroll)
   useLockScroll(showCancelModal || showApprovalModal || showOrderModal);
 
   // Load active orders and pending approvals on mount
@@ -631,23 +632,7 @@ function AdminOrdersPageContent() {
   const completedTodayOrders = orders.filter(o => o.status === 'completed');
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
-            <Image 
-              src="/bg/luna-logo.svg"
-              alt="LUNA Logo" 
-              width={384}
-              height={384}
-              className="h-64 w-64 md:h-96 md:w-96"
-              priority
-            />
-          </div>
-          <p className="text-white text-3xl font-medium">Зареждане на поръчки...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen locale={locale} />;
   }
 
   return (
@@ -1079,10 +1064,19 @@ function AdminOrdersPageContent() {
           {/* Orders Table */}
           <div className="bg-gray-800 rounded-xl overflow-hidden">
             {historyLoading ? (
-              <div className="flex items-center justify-center py-20">
+              <div className="min-h-[60vh] flex items-center justify-center">
                 <div className="text-center">
-                  <div className="inline-block w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-gray-300">Зареждане...</p>
+                  <div className="logo-container h-32 w-32 md:h-48 md:w-48 mx-auto mb-6 animate-pulse-glow">
+                    <Image 
+                      src="/bg/luna-logo.svg"
+                      alt="LUNA Logo" 
+                      width={192}
+                      height={192}
+                      className="h-32 w-32 md:h-48 md:w-48"
+                      priority
+                    />
+                  </div>
+                  <p className="text-white text-2xl font-medium">Зареждане на история...</p>
                 </div>
               </div>
             ) : historyOrders.length === 0 ? (
@@ -1638,8 +1632,20 @@ function AdminOrdersPageContent() {
           </div>
 
           {approvalsLoading ? (
-            <div className="text-center py-20 bg-gray-800 rounded-xl">
-              <p className="text-gray-200 text-xl">Зареждане...</p>
+            <div className="min-h-[60vh] flex items-center justify-center">
+              <div className="text-center">
+                <div className="logo-container h-32 w-32 md:h-48 md:w-48 mx-auto mb-6 animate-pulse-glow">
+                  <Image 
+                    src="/bg/luna-logo.svg"
+                    alt="LUNA Logo" 
+                    width={192}
+                    height={192}
+                    className="h-32 w-32 md:h-48 md:w-48"
+                    priority
+                  />
+                </div>
+                <p className="text-white text-2xl font-medium">Зареждане на одобрения...</p>
+              </div>
             </div>
           ) : pendingApprovals.length === 0 ? (
             <div className="text-center py-20 bg-gray-800 rounded-xl">
@@ -1802,11 +1808,7 @@ function AdminOrdersPageContent() {
 export default function AdminOrdersPage() {
   return (
     <Suspense
-      fallback={
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <p className="text-white text-2xl">Зареждане...</p>
-        </div>
-      }
+      fallback={<LoadingScreen locale="bg" />}
     >
       <AdminOrdersPageContent />
     </Suspense>

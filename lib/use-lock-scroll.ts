@@ -38,8 +38,36 @@ export function useLockScroll(isLocked: boolean) {
       document.body.style.left = '0';
       document.body.style.right = '0';
       
-      // Prevent any scrolling
+      // Prevent scrolling, but allow scrolling inside modals
       const preventScroll = (e: Event) => {
+        const target = e.target as HTMLElement;
+        if (!target) {
+          e.preventDefault();
+          return false;
+        }
+        
+        // Check if the event is coming from an element that can scroll
+        // (has overflow-y: auto or overflow-y: scroll)
+        let element: HTMLElement | null = target;
+        while (element && element !== document.body && element !== document.documentElement) {
+          const style = window.getComputedStyle(element);
+          const overflowY = style.overflowY;
+          const overflow = style.overflow;
+          
+          // If element has scrollable overflow, allow the scroll
+          if (overflowY === 'auto' || overflowY === 'scroll' || 
+              overflow === 'auto' || overflow === 'scroll') {
+            // Check if element can actually scroll
+            const canScroll = element.scrollHeight > element.clientHeight;
+            if (canScroll) {
+              return true; // Allow scrolling in this element
+            }
+          }
+          
+          element = element.parentElement;
+        }
+        
+        // If we reach here, the scroll is on the body, prevent it
         e.preventDefault();
         e.stopPropagation();
         return false;

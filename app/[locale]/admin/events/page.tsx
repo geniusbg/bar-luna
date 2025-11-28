@@ -1,21 +1,37 @@
-import { prisma } from '@/lib/prisma';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import LoadingScreen from '@/components/LoadingScreen';
 
-async function getEvents() {
-  const events = await prisma.event.findMany({
-    orderBy: { eventDate: 'desc' }
-  });
+export default function AdminEventsPage() {
+  const pathname = usePathname();
+  const locale = pathname.split('/')[1] || 'bg';
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  return events;
-}
+  useEffect(() => {
+    async function loadEvents() {
+      try {
+        const response = await fetch('/api/events');
+        if (response.ok) {
+          const data = await response.json();
+          setEvents(data.events || []);
+        }
+      } catch (error) {
+        console.error('Error loading events:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-export default async function AdminEventsPage({
-  params
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
-  const events = await getEvents();
+    loadEvents();
+  }, []);
+
+  if (loading) {
+    return <LoadingScreen locale={locale} />;
+  }
 
   return (
     <div className="max-w-7xl mx-auto">

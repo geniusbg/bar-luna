@@ -10,7 +10,6 @@ import Toast from '@/components/Toast';
 import Price from '@/components/Price';
 import ServiceWorkerUpdater from '@/components/ServiceWorkerUpdater';
 import PendingApprovalsBanner from '@/components/PendingApprovalsBanner';
-import { useLockScroll } from '@/lib/use-lock-scroll';
 import { 
   isPushSupported, 
   isSubscribed, 

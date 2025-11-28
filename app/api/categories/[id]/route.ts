@@ -37,7 +37,7 @@ export async function PUT(
       }
     }
 
-    const slugSource = (data.slug || data.name_en || data.name_bg || data.name_de || '').trim();
+    const slugSource = (data.name_bg ?? data.slug ?? '').toString().trim();
     const slug = await ensureUniqueCategorySlug(slugSource, id);
 
     const category = await prisma.category.update({

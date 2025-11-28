@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import LoadingScreen from '@/components/LoadingScreen';
 
 interface User {
   id: string;
@@ -48,7 +49,7 @@ export default function UsersPage({ params }: { params: Promise<{ locale: string
   };
 
   if (!session) {
-    return <div>Loading...</div>;
+    return <LoadingScreen locale={locale} />;
   }
 
   const userRole = (session.user as any)?.role;
@@ -105,7 +106,7 @@ export default function UsersPage({ params }: { params: Promise<{ locale: string
       </div>
 
       {loading ? (
-        <div className="text-white text-center py-12">Зареждане...</div>
+        <LoadingScreen locale={locale} />
       ) : (
         <>
           {/* Mobile Card View */}

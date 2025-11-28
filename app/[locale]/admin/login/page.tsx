@@ -22,16 +22,6 @@ export default function AdminLoginPage() {
     }
   }, [session, router]);
 
-  // Prevent body scroll on login page
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-    };
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -49,7 +39,7 @@ export default function AdminLoginPage() {
       });
 
       if (result?.error) {
-        setError('Невалидни credentials');
+        setError('Невалидни данни за вход');
       } else if (result?.ok) {
         router.push(`/${pathLocale}/admin`);
         router.refresh();

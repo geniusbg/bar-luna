@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useLockScroll } from '@/lib/use-lock-scroll';
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -15,70 +16,92 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
     name_bg: '',
     name_en: '',
     name_de: '',
-    slug: '',
     order: 0,
     parent_category_id: ''
   });
   const [loading, setLoading] = useState(false);
-  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [translatingField, setTranslatingField] = useState<'name_en' | 'name_de' | null>(null);
+  const [translationError, setTranslationError] = useState<string | null>(null);
 
-  const generateSlug = (value: string) => {
-    return value
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/&/g, 'and')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 60);
+  // Lock scroll when modal is open (backdrop locked, modal can scroll)
+  useLockScroll(isOpen);
+
+
+  const handleTranslate = async (field: 'name_en' | 'name_de', targetLang: 'en' | 'de') => {
+    const source = formData.name_bg.trim();
+    if (!source) {
+      setTranslationError('Моля, въведете име на български, за да използвате автоматичен превод.');
+      return;
+    }
+
+    setTranslationError(null);
+    setTranslatingField(field);
+
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: source,
+          targetLang
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Translation failed');
+      }
+
+      const data = await response.json();
+      if (data?.text) {
+        setFormData((prev) => ({
+          ...prev,
+          [field]: data.text
+        }));
+      } else {
+        setTranslationError('Неуспешно получаване на превода. Опитайте отново.');
+      }
+    } catch (error) {
+      setTranslationError('Неуспешен превод. Моля, опитайте отново.');
+    } finally {
+      setTranslatingField(null);
+    }
   };
 
   // Reset form when modal opens/closes or category changes
   useEffect(() => {
-    if (isOpen) {
-      if (category) {
-        setFormData({
-          name_bg: category.nameBg || '',
-          name_en: category.nameEn || '',
-          name_de: category.nameDe || '',
-          slug: category.slug || '',
-          order: category.order || 0,
-          parent_category_id: category.parentCategoryId || ''
-        });
-        setSlugManuallyEdited(Boolean(category.slug));
-      } else {
-        setFormData({
-          name_bg: '',
-          name_en: '',
-          name_de: '',
-          slug: '',
-          order: 0,
-          parent_category_id: ''
-        });
-        setSlugManuallyEdited(false);
-      }
+    if (!isOpen) return;
+    if (category) {
+      setFormData({
+        name_bg: category.nameBg || '',
+        name_en: category.nameEn || '',
+        name_de: category.nameDe || '',
+        order: category.order || 0,
+        parent_category_id: category.parentCategoryId || ''
+      });
+    } else {
+      setFormData({
+        name_bg: '',
+        name_en: '',
+        name_de: '',
+        order: 0,
+        parent_category_id: ''
+      });
     }
   }, [isOpen, category]);
 
   // Handle Escape key
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape') {
         onClose();
       }
     };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      // Lock body scroll
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
+    document.addEventListener('keydown', handleEscape);
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
 
@@ -132,17 +155,12 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
               <input
                 type="text"
                 value={formData.name_bg}
-                onChange={(e) => {
-                  const value = e.target.value;
+                onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    name_bg: value,
-                    slug:
-                      !slugManuallyEdited && value
-                        ? generateSlug(value)
-                        : prev.slug
-                  }));
-                }}
+                    name_bg: e.target.value
+                  }))
+                }
                 className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
                 required
                 autoFocus
@@ -150,64 +168,60 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
             </div>
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Name (EN) *</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-gray-300 font-semibold">Name (EN) *</label>
+                <button
+                  type="button"
+                  onClick={() => handleTranslate('name_en', 'en')}
+                  disabled={!formData.name_bg || translatingField === 'name_en'}
+                  className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {translatingField === 'name_en' ? 'Превеждам...' : 'Авто превод'}
+                </button>
+              </div>
               <input
                 type="text"
                 value={formData.name_en}
-                onChange={(e) => {
-                  const value = e.target.value;
+                onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    name_en: value,
-                    slug:
-                      !slugManuallyEdited && value
-                        ? generateSlug(value)
-                        : prev.slug
-                  }));
-                }}
+                    name_en: e.target.value
+                  }))
+                }
                 className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Name (DE) *</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-gray-300 font-semibold">Name (DE) *</label>
+                <button
+                  type="button"
+                  onClick={() => handleTranslate('name_de', 'de')}
+                  disabled={!formData.name_bg || translatingField === 'name_de'}
+                  className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {translatingField === 'name_de' ? 'Превеждам...' : 'Авто превод'}
+                </button>
+              </div>
               <input
                 type="text"
                 value={formData.name_de}
-                onChange={(e) => {
-                  const value = e.target.value;
+                onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    name_de: value,
-                    slug:
-                      !slugManuallyEdited && value
-                        ? generateSlug(value)
-                        : prev.slug
-                  }));
-                }}
+                    name_de: e.target.value
+                  }))
+                }
                 className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-gray-300 font-semibold mb-2">
-                Slug (URL)
-                <span className="ml-2 text-sm text-gray-400 font-normal">(cocktails, coffee, food...)</span>
-              </label>
-              <input
-                type="text"
-                value={formData.slug}
-                onChange={(e) => {
-                  const value = generateSlug(e.target.value);
-                  setFormData({ ...formData, slug: value });
-                  setSlugManuallyEdited(Boolean(value));
-                }}
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
-                placeholder="(ще се генерира автоматично ако е празно)"
-              />
-            </div>
+            {translationError && (
+              <p className="text-sm text-red-400">{translationError}</p>
+            )}
 
             <div>
               <label className="block text-gray-300 font-semibold mb-2">

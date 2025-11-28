@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Toast from '@/components/Toast';
+import LoadingScreen from '@/components/LoadingScreen';
 
 interface WorkingHour {
   dayOfWeek: number;
@@ -111,25 +112,7 @@ export default function WorkingHoursPage({
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
-            <Image
-              src="/bg/luna-logo.svg"
-              alt="LUNA Logo"
-              width={384}
-              height={384}
-              className="h-64 w-64 md:h-96 md:w-96"
-              priority
-            />
-          </div>
-          <p className="text-white text-3xl font-medium">
-            {locale === 'bg' ? 'Зареждане...' : locale === 'en' ? 'Loading...' : 'Laden...'}
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen locale={locale} />;
   }
 
   return (
