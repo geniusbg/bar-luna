@@ -704,10 +704,10 @@ function AdminOrdersPageContent() {
       <div className="mb-8">
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">Поръчки & Статистики</h1>
         
-        <div className="flex gap-2 bg-gray-800 p-1 rounded-lg">
+        <div className="flex gap-2 bg-gray-800 p-1 rounded-lg overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setActiveTab('active')}
-            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+            className={`flex-shrink-0 px-4 md:px-6 py-2 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base whitespace-nowrap ${
               activeTab === 'active'
                 ? 'bg-white text-black'
                 : 'text-gray-300 hover:bg-gray-700'
@@ -717,7 +717,7 @@ function AdminOrdersPageContent() {
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+            className={`flex-shrink-0 px-4 md:px-6 py-2 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base whitespace-nowrap ${
               activeTab === 'history'
                 ? 'bg-white text-black'
                 : 'text-gray-300 hover:bg-gray-700'
@@ -727,7 +727,7 @@ function AdminOrdersPageContent() {
           </button>
           <button
             onClick={() => setActiveTab('stats')}
-            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+            className={`flex-shrink-0 px-4 md:px-6 py-2 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base whitespace-nowrap ${
               activeTab === 'stats'
                 ? 'bg-white text-black'
                 : 'text-gray-300 hover:bg-gray-700'
@@ -737,7 +737,7 @@ function AdminOrdersPageContent() {
           </button>
           <button
             onClick={() => setActiveTab('approvals')}
-            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all relative ${
+            className={`flex-shrink-0 px-4 md:px-6 py-2 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base whitespace-nowrap relative ${
               activeTab === 'approvals'
                 ? 'bg-white text-black'
                 : 'text-gray-300 hover:bg-gray-700'
@@ -955,7 +955,7 @@ function AdminOrdersPageContent() {
           {/* Filters */}
           <div className="bg-gray-800 rounded-xl p-6 mb-6">
             <h3 className="text-xl font-bold text-white mb-4">Филтри</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm text-gray-300 mb-2">От дата</label>
                 <input
@@ -1247,7 +1247,7 @@ function AdminOrdersPageContent() {
           {/* Stats Filters */}
           <div className="bg-gray-800 rounded-xl p-6 mb-6">
             <h3 className="text-xl font-bold text-white mb-4">Филтър за период</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm text-gray-300 mb-2">От дата</label>
                 <input
