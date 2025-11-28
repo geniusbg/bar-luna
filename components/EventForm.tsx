@@ -71,16 +71,23 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
     }
   };
 
-  const handleTranslate = async (field: 'title_en' | 'title_de' | 'description_en' | 'description_de' | 'location_en' | 'location_de', targetLang: 'en' | 'de') => {
-    // Determine source field based on target
-    let sourceField: string;
-    if (field.includes('title')) {
-      sourceField = 'title_bg';
-    } else if (field.includes('description')) {
-      sourceField = 'description_bg';
-    } else {
-      sourceField = 'location_bg';
-    }
+  type TranslatableField =
+    | 'title_en'
+    | 'title_de'
+    | 'description_en'
+    | 'description_de'
+    | 'location_en'
+    | 'location_de';
+
+  type SourceField = 'title_bg' | 'description_bg' | 'location_bg';
+
+  const handleTranslate = async (field: TranslatableField, targetLang: 'en' | 'de') => {
+    // Determine source field based on target; TypeScript knows these are valid keys
+    const sourceField: SourceField = field.includes('title')
+      ? 'title_bg'
+      : field.includes('description')
+      ? 'description_bg'
+      : 'location_bg';
     
     const source = formData[sourceField]?.trim() || '';
     
