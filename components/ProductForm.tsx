@@ -7,28 +7,51 @@ import ImageUpload from './ImageUpload';
 
 interface ProductFormProps {
   categories: Category[];
-  initialData?: any;
+  initialData?: Partial<ProductFormData>;
   onSubmit: (data: any) => Promise<void>;
   locale: string;
 }
 
+type ProductFormData = {
+  name_bg: string;
+  name_en: string;
+  name_de: string;
+  description_bg: string;
+  description_en: string;
+  description_de: string;
+  category_id: string;
+  price_bgn: number | '';
+  unit: string;
+  quantity: number;
+  is_available: boolean;
+  is_hidden: boolean;
+  is_featured: boolean;
+  image_url: string;
+  order: number;
+};
+
+const defaultProductFormData = (categories: Category[]): ProductFormData => ({
+  name_bg: '',
+  name_en: '',
+  name_de: '',
+  description_bg: '',
+  description_en: '',
+  description_de: '',
+  category_id: categories[0]?.id || '',
+  price_bgn: 0,
+  unit: 'pcs',
+  quantity: 1,
+  is_available: true,
+  is_hidden: false,
+  is_featured: false,
+  image_url: '',
+  order: 0
+});
+
 export default function ProductForm({ categories, initialData, onSubmit, locale }: ProductFormProps) {
-  const [formData, setFormData] = useState(initialData || {
-    name_bg: '',
-    name_en: '',
-    name_de: '',
-    description_bg: '',
-    description_en: '',
-    description_de: '',
-    category_id: categories[0]?.id || '',
-    price_bgn: 0,
-    unit: 'pcs',
-    quantity: 1,
-    is_available: true,
-    is_hidden: false,
-    is_featured: false,
-    image_url: '',
-    order: 0
+  const [formData, setFormData] = useState<ProductFormData>({
+    ...defaultProductFormData(categories),
+    ...(initialData || {})
   });
 
   const [loading, setLoading] = useState(false);

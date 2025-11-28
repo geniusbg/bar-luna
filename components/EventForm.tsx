@@ -3,31 +3,57 @@
 import { useState } from 'react';
 
 interface EventFormProps {
-  initialData?: any;
+  initialData?: Partial<EventFormData>;
   onSubmit: (data: any) => Promise<void>;
   locale: string;
 }
 
+type EventFormData = {
+  title_bg: string;
+  title_en: string;
+  title_de: string;
+  description_bg: string;
+  description_en: string;
+  description_de: string;
+  event_date: string;
+  location: string;
+  location_bg: string;
+  location_en: string;
+  location_de: string;
+  is_external: boolean;
+  external_url: string;
+  contact_phone: string;
+  contact_email: string;
+  contact_facebook: string;
+  is_published: boolean;
+  image_url: string;
+};
+
+const defaultEventFormData: EventFormData = {
+  title_bg: '',
+  title_en: '',
+  title_de: '',
+  description_bg: '',
+  description_en: '',
+  description_de: '',
+  event_date: '',
+  location: '',
+  location_bg: '',
+  location_en: '',
+  location_de: '',
+  is_external: false,
+  external_url: '',
+  contact_phone: '',
+  contact_email: '',
+  contact_facebook: '',
+  is_published: false,
+  image_url: ''
+};
+
 export default function EventForm({ initialData, onSubmit, locale }: EventFormProps) {
-  const [formData, setFormData] = useState(initialData || {
-    title_bg: '',
-    title_en: '',
-    title_de: '',
-    description_bg: '',
-    description_en: '',
-    description_de: '',
-    event_date: '',
-    location: '',
-    location_bg: '',
-    location_en: '',
-    location_de: '',
-    is_external: false,
-    external_url: '',
-    contact_phone: '',
-    contact_email: '',
-    contact_facebook: '',
-    is_published: false,
-    image_url: ''
+  const [formData, setFormData] = useState<EventFormData>({
+    ...defaultEventFormData,
+    ...(initialData || {})
   });
 
   const [loading, setLoading] = useState(false);
