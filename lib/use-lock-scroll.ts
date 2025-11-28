@@ -50,14 +50,8 @@ export function useLockScroll(isLocked: boolean) {
         
         // Check if the event is coming from an element that can scroll
         // (has overflow-y: auto or overflow-y: scroll)
-        let element: Element | null = target;
+        let element: HTMLElement | null = target instanceof HTMLElement ? target : target.parentElement;
         while (element && element !== document.body && element !== document.documentElement) {
-          // Ensure element is a valid Element before calling getComputedStyle
-          if (!(element instanceof Element)) {
-            element = element.parentElement;
-            continue;
-          }
-          
           try {
             const style = window.getComputedStyle(element);
             const overflowY = style.overflowY;
@@ -66,12 +60,10 @@ export function useLockScroll(isLocked: boolean) {
             // If element has scrollable overflow, allow the scroll
             if (overflowY === 'auto' || overflowY === 'scroll' || 
                 overflow === 'auto' || overflow === 'scroll') {
-              // Check if element can actually scroll (only for HTMLElement)
-              if (element instanceof HTMLElement) {
-                const canScroll = element.scrollHeight > element.clientHeight;
-                if (canScroll) {
-                  return true; // Allow scrolling in this element
-                }
+              // Check if element can actually scroll
+              const canScroll = element.scrollHeight > element.clientHeight;
+              if (canScroll) {
+                return true; // Allow scrolling in this element
               }
             }
           } catch (error) {
