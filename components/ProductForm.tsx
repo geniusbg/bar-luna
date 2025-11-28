@@ -54,6 +54,9 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
     ...(initialData || {})
   });
 
+  const resolvePriceBgn = (price: number | ''): number =>
+    typeof price === 'number' ? price : parseFloat(price || '0') || 0;
+
   const [loading, setLoading] = useState(false);
   const [translatingField, setTranslatingField] = useState<string | null>(null);
   const [translationError, setTranslationError] = useState<string | null>(null);
@@ -119,9 +122,12 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
     setLoading(true);
 
     // Calculate EUR price
+    const priceBgnValue = resolvePriceBgn(formData.price_bgn);
+
     const dataToSubmit = {
       ...formData,
-      price_eur: bgnToEur(formData.price_bgn)
+      price_bgn: priceBgnValue,
+      price_eur: bgnToEur(priceBgnValue)
     };
 
     try {
@@ -286,7 +292,7 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
             required
           />
           <p className="text-gray-400 text-sm mt-1">
-            EUR: €{bgnToEur(formData.price_bgn || 0).toFixed(2)}
+            EUR: €{bgnToEur(resolvePriceBgn(formData.price_bgn)).toFixed(2)}
           </p>
         </div>
         <div>
