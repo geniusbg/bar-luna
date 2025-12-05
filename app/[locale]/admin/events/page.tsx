@@ -4,30 +4,54 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import LoadingScreen from '@/components/LoadingScreen';
+import Toast from '@/components/Toast';
 
 export default function AdminEventsPage() {
   const pathname = usePathname();
   const locale = pathname.split('/')[1] || 'bg';
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const loadEvents = async () => {
+    try {
+      const response = await fetch('/api/events');
+      if (response.ok) {
+        const data = await response.json();
+        setEvents(data.events || []);
+      }
+    } catch (error) {
+      console.error('Error loading events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadEvents() {
-      try {
-        const response = await fetch('/api/events');
-        if (response.ok) {
-          const data = await response.json();
-          setEvents(data.events || []);
-        }
-      } catch (error) {
-        console.error('Error loading events:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadEvents();
   }, []);
+
+  const handleDelete = async (eventId: string, eventTitle: string) => {
+    if (!confirm(`Сигурен ли си, че искаш да изтриеш "${eventTitle}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setToast({ message: '✅ Събитието е изтрито успешно', type: 'success' });
+        loadEvents(); // Reload events list
+      } else {
+        const data = await response.json().catch(() => ({ error: 'Грешка при изтриване на събитието' }));
+        setToast({ message: data.error || 'Грешка при изтриване на събитието', type: 'error' });
+      }
+    } catch (error) {
+      setToast({ message: 'Грешка при изтриване на събитието', type: 'error' });
+    }
+  };
 
   if (loading) {
     return <LoadingScreen locale={locale} />;
@@ -35,6 +59,13 @@ export default function AdminEventsPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-white">Събития</h1>
         <Link
@@ -116,7 +147,10 @@ export default function AdminEventsPage() {
                   >
                     Редактирай
                   </Link>
-                  <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-all">
+                  <button
+                    onClick={() => handleDelete(event.id, event.titleBg)}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-all"
+                  >
                     Изтрий
                   </button>
                 </div>
