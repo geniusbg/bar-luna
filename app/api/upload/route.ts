@@ -2,9 +2,24 @@ import { NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function POST(request: Request) {
   try {
+    // SECURITY: Require authentication for file uploads
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Only ADMIN and SUPER_ADMIN can upload files
+    const userRole = (session.user as any).role;
+    if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
@@ -12,10 +27,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Validate file type
+    // SECURITY: Validate file type strictly
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       return NextResponse.json({ error: 'Invalid file type. Use JPG, PNG or WebP' }, { status: 400 });
+    }
+
+    // SECURITY: Validate file extension matches MIME type
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    const validExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+    if (!fileExt || !validExtensions.includes(fileExt)) {
+      return NextResponse.json({ error: 'Invalid file extension' }, { status: 400 });
+    }
+
+    // SECURITY: Double-check MIME type matches extension
+    const mimeToExt: Record<string, string[]> = {
+      'image/jpeg': ['jpg', 'jpeg'],
+      'image/jpg': ['jpg', 'jpeg'],
+      'image/png': ['png'],
+      'image/webp': ['webp'],
+    };
+    const allowedExts = mimeToExt[file.type];
+    if (!allowedExts || !allowedExts.includes(fileExt)) {
+      return NextResponse.json({ error: 'File type mismatch' }, { status: 400 });
     }
 
     // Validate file size (max 5MB)
@@ -23,8 +57,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'File too large. Max 5MB' }, { status: 400 });
     }
 
-    // Generate unique filename
-    const fileExt = file.name.split('.').pop();
+    // Generate unique filename (already validated fileExt above)
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
     // Convert File to Buffer

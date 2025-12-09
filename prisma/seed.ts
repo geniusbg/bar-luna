@@ -14,8 +14,17 @@ async function main() {
   console.log('🌱 Seeding database...');
 
   // Seed default SUPER_ADMIN user
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@lunabar.bg';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  // SECURITY: Require environment variables - no default credentials!
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  
+  if (!adminEmail || !adminPassword) {
+    throw new Error(
+      'ADMIN_EMAIL and ADMIN_PASSWORD must be set in environment variables. ' +
+      'Example: ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=strong_password npm run db:seed'
+    );
+  }
+  
   const adminPasswordHash = hashPassword(adminPassword);
 
   const adminUser = await prisma.user.upsert({

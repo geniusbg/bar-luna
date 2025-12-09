@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { loginUser } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 declare module 'next-auth' {
   interface User {
@@ -35,6 +36,17 @@ export const authOptions = {
           return null;
         }
 
+        // Rate limiting: 5 attempts per 15 minutes per IP/email
+        const rateLimitKey = `login:${credentials.email}`;
+        const rateLimitResult = rateLimit(rateLimitKey, 5, 15 * 60 * 1000);
+        
+        if (!rateLimitResult.allowed) {
+          console.warn(`Rate limit exceeded for email: ${credentials.email}`);
+          throw new Error(
+            `Too many login attempts. Please try again after ${Math.ceil((rateLimitResult.resetTime - Date.now()) / 60000)} minutes.`
+          );
+        }
+
         try {
           const user = await loginUser(credentials.email, credentials.password);
           
@@ -45,6 +57,7 @@ export const authOptions = {
             role: user.role,
           };
         } catch (error) {
+          // Don't reveal if email exists or not (security best practice)
           return null;
         }
       },
@@ -70,7 +83,22 @@ export const authOptions = {
     signIn: '/bg/admin/login',
     error: '/bg/admin/login',
   },
-  secret: process.env.NEXTAUTH_SECRET || 'dev-secret-change-in-production',
+  secret: (() => {
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) {
+      throw new Error(
+        'NEXTAUTH_SECRET must be set in environment variables. ' +
+        'Generate one with: openssl rand -base64 32'
+      );
+    }
+    if (secret === 'dev-secret-change-in-production' || secret.length < 32) {
+      throw new Error(
+        'NEXTAUTH_SECRET must be a secure random string of at least 32 characters. ' +
+        'Generate one with: openssl rand -base64 32'
+      );
+    }
+    return secret;
+  })(),
   // Use dynamic URL detection instead of hardcoded NEXTAUTH_URL
   // NextAuth will automatically detect the current host
 };

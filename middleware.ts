@@ -52,9 +52,17 @@ export default async function middleware(request: NextRequest) {
   
   // Only check auth for admin/staff routes that are NOT login pages
   if ((isAdminRoute || isStaffRoute) && !isLoginPage) {
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) {
+      console.error('NEXTAUTH_SECRET is not set in environment variables');
+      // Redirect to login instead of throwing to avoid breaking the app
+      const locale = pathname.split('/')[1] || 'bg';
+      return NextResponse.redirect(new URL(`/${locale}/admin/login`, request.url));
+    }
+    
     const token = await getToken({ 
       req: request,
-      secret: process.env.NEXTAUTH_SECRET || 'dev-secret-change-in-production'
+      secret: secret
     });
     
     if (!token) {
