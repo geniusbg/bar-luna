@@ -55,7 +55,7 @@ export async function GET(request: Request) {
       }
     });
     
-    // Get table details from BarTable
+    // Get table details from BarTable (including scan stats)
     const tablesWithDetails = await Promise.all(
       tableStats.map(async (stat) => {
         const table = await prisma.barTable.findUnique({
@@ -63,7 +63,9 @@ export async function GET(request: Request) {
           select: {
             tableName: true,
             location: true,
-            capacity: true
+            capacity: true,
+            scanCount: true,
+            lastScannedAt: true
           }
         });
         
@@ -75,11 +77,13 @@ export async function GET(request: Request) {
           ordersCount: stat._count,
           totalRevenue: Number(stat._sum.totalBgn || 0),
           totalRevenueEur: Number(stat._sum.totalEur || 0),
-          avgOrderValue: Number(stat._avg.totalBgn || 0)
+          avgOrderValue: Number(stat._avg.totalBgn || 0),
+          scanCount: table?.scanCount || 0,
+          lastScannedAt: table?.lastScannedAt
         };
       })
     );
-    
+
     // Calculate total utilization
     const totalTables = await prisma.barTable.count({ where: { isActive: true } });
     const activeTablesCount = tableStats.length;
