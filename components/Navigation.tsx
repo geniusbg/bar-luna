@@ -2,7 +2,6 @@
 
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import LanguageSwitcher from './LanguageSwitcher';
 
@@ -56,14 +55,11 @@ export default function Navigation() {
           {/* Logo */}
           <Link href={`/${locale}`}>
             <div className="h-20 flex items-center">
-              <Image 
+              <img 
                 src={locale === 'de' ? '/bg/logo_luna2.svg' : `/${locale}/logo_luna2.svg`} 
                 alt="L.U.N.A." 
-                width={280}
-                height={80}
-                className="h-[80px]"
-                priority
-                style={{ width: 'auto', height: '80px', aspectRatio: '3.5/1' }}
+                className="h-[80px] w-auto"
+                style={{ aspectRatio: '3.5/1' }}
               />
             </div>
           </Link>

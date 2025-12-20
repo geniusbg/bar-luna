@@ -126,6 +126,8 @@ function AdminOrdersPageContent() {
   const [productStats, setProductStats] = useState<any>(null);
   const [tableStats, setTableStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [qrScanStats, setQrScanStats] = useState<any[]>([]);
+  const [qrScanStatsLoading, setQrScanStatsLoading] = useState(false);
   
   // Stats filters - temporary (before applying)
   const [tempStatsFilters, setTempStatsFilters] = useState({
@@ -138,6 +140,46 @@ function AdminOrdersPageContent() {
     dateFrom: new Date().toISOString().split('T')[0], // Today
     dateTo: new Date().toISOString().split('T')[0]
   });
+
+  // Quick filter presets
+  const setQuickFilter = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let dateFrom: Date;
+    let dateTo: Date = new Date(today);
+    dateTo.setHours(23, 59, 59, 999);
+    
+    switch (preset) {
+      case 'today':
+        dateFrom = new Date(today);
+        break;
+      case 'yesterday':
+        dateFrom = new Date(today);
+        dateFrom.setDate(dateFrom.getDate() - 1);
+        dateTo = new Date(dateFrom);
+        dateTo.setHours(23, 59, 59, 999);
+        break;
+      case 'week':
+        dateFrom = new Date(today);
+        dateFrom.setDate(dateFrom.getDate() - 7);
+        break;
+      case 'month':
+        dateFrom = new Date(today);
+        dateFrom.setMonth(dateFrom.getMonth() - 1);
+        break;
+      default:
+        dateFrom = new Date(today);
+    }
+    
+    const newFilters = {
+      dateFrom: dateFrom.toISOString().split('T')[0],
+      dateTo: dateTo.toISOString().split('T')[0]
+    };
+    
+    setTempStatsFilters(newFilters);
+    setStatsFilters(newFilters);
+  };
   
   // Selected order for modal
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -255,6 +297,7 @@ function AdminOrdersPageContent() {
   useEffect(() => {
     if (activeTab === 'stats') {
       loadStats();
+      loadQrScanStats();
     }
   }, [activeTab, statsFilters]);
 
@@ -376,6 +419,19 @@ function AdminOrdersPageContent() {
       console.error('Load stats error:', error);
       setToast({ message: 'Грешка при зареждане на статистиките', type: 'error' });
       setStatsLoading(false);
+    }
+  }
+
+  async function loadQrScanStats() {
+    setQrScanStatsLoading(true);
+    try {
+      const response = await fetch('/api/qr/redirects');
+      const data = await response.json();
+      setQrScanStats(data.tables || []);
+      setQrScanStatsLoading(false);
+    } catch (error) {
+      console.error('Load QR scan stats error:', error);
+      setQrScanStatsLoading(false);
     }
   }
 
@@ -1247,6 +1303,35 @@ function AdminOrdersPageContent() {
           {/* Stats Filters */}
           <div className="bg-gray-800 rounded-xl p-6 mb-6">
             <h3 className="text-xl font-bold text-white mb-4">Филтър за период</h3>
+            
+            {/* Quick filter buttons */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <button
+                onClick={() => setQuickFilter('today')}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors text-sm"
+              >
+                Днес
+              </button>
+              <button
+                onClick={() => setQuickFilter('yesterday')}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors text-sm"
+              >
+                Вчера
+              </button>
+              <button
+                onClick={() => setQuickFilter('week')}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors text-sm"
+              >
+                Седмица
+              </button>
+              <button
+                onClick={() => setQuickFilter('month')}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors text-sm"
+              >
+                Месец
+              </button>
+            </div>
+            
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm text-gray-300 mb-2">От дата</label>
@@ -1352,7 +1437,7 @@ function AdminOrdersPageContent() {
                           revenue: Number(day.revenue || 0),
                           orders: day.orders
                         }))}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        margin={{ top: 20, right: 10, left: 20, bottom: 5 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                         <XAxis 
@@ -1363,7 +1448,7 @@ function AdminOrdersPageContent() {
                         <YAxis 
                           stroke="#9CA3AF"
                           tick={{ fill: '#9CA3AF' }}
-                          label={{ value: 'Приход (лв)', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
+                          label={{ value: 'Приход (лв)', angle: -90, position: 'insideLeft', fill: '#9CA3AF', style: { fontSize: '12px' } }}
                         />
                         <Tooltip
                           contentStyle={{
@@ -1461,7 +1546,7 @@ function AdminOrdersPageContent() {
                         </p>
                       </div>
                       <div className="bg-gray-700/50 rounded-lg p-4">
-                        <p className="text-gray-300 text-sm mb-1">Утилизация</p>
+                        <p className="text-gray-300 text-sm mb-1">Заетост</p>
                         <p className="text-2xl font-bold text-white">
                           {tableStats.summary.utilizationPercent}%
                         </p>
@@ -1506,18 +1591,168 @@ function AdminOrdersPageContent() {
                 </div>
               )}
 
-              {/* Export Button */}
-              <div className="flex justify-center">
-                <button
-                  onClick={() => {
-                    const csvData = generateCSVExport();
-                    downloadCSV(csvData, `luna-orders-${new Date().toISOString().split('T')[0]}.csv`);
-                    setToast({ message: '✅ Експорт завършен успешно!', type: 'success' });
-                  }}
-                  className="px-8 py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl font-bold text-lg transition-all shadow-lg"
-                >
-                  📥 Експорт CSV (Днес)
-                </button>
+              {/* QR Code Scan Statistics */}
+              {qrScanStats.length > 0 && (
+                <div className="mt-8">
+                  <h2 className="text-2xl font-bold text-white mb-4">📱 QR Сканирания</h2>
+                  
+                  {/* Stats Summary */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 md:p-4">
+                      <div className="text-gray-400 text-xs md:text-sm mb-1">Всички маси</div>
+                      <div className="text-2xl md:text-3xl font-bold text-white">{qrScanStats.length}</div>
+                    </div>
+                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 md:p-4">
+                      <div className="text-gray-400 text-xs md:text-sm mb-1">Активни</div>
+                      <div className="text-2xl md:text-3xl font-bold text-green-500">
+                        {qrScanStats.filter(t => t.isActive).length}
+                      </div>
+                    </div>
+                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 md:p-4">
+                      <div className="text-gray-400 text-xs md:text-sm mb-1">Деактивирани</div>
+                      <div className="text-2xl md:text-3xl font-bold text-red-500">
+                        {qrScanStats.filter(t => !t.isActive).length}
+                      </div>
+                    </div>
+                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 md:p-4">
+                      <div className="text-gray-400 text-xs md:text-sm mb-1">Общо сканирания</div>
+                      <div className="text-2xl md:text-3xl font-bold text-blue-500">
+                        {qrScanStats.reduce((sum, t) => sum + (t.scanCount || 0), 0)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Scan Statistics Table - Desktop */}
+                  <div className="bg-gray-800 rounded-xl overflow-hidden mb-4 hidden md:block">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-900 border-b border-gray-700">
+                          <tr>
+                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Маса</th>
+                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Име</th>
+                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Статус</th>
+                            <th className="text-right px-4 py-3 text-gray-400 font-semibold">Сканирания</th>
+                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Последно сканиране</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-700">
+                          {qrScanStats.map((table) => (
+                            <tr key={table.id} className={!table.isActive ? 'opacity-50' : 'hover:bg-gray-700/50 transition-colors'}>
+                              <td className="px-4 py-3">
+                                <div className="font-semibold text-white">
+                                  Маса {table.tableNumber}
+                                </div>
+                                {table.tableName && (
+                                  <div className="text-sm text-gray-400">{table.tableName}</div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {table.tableName ? (
+                                  <span className="text-gray-300">{table.tableName}</span>
+                                ) : (
+                                  <span className="text-gray-500">-</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                  table.isActive
+                                    ? 'bg-green-500/20 text-green-400'
+                                    : 'bg-red-500/20 text-red-400'
+                                }`}>
+                                  {table.isActive ? '✓ Активна' : '✗ Спряна'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <span className="text-blue-400 font-bold text-lg">{table.scanCount || 0}</span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-400">
+                                {table.lastScannedAt 
+                                  ? new Date(table.lastScannedAt).toLocaleString('bg-BG', {
+                                      day: '2-digit',
+                                      month: '2-digit',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })
+                                  : 'Никога'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Scan Statistics Cards - Mobile */}
+                  <div className="md:hidden space-y-4">
+                    {qrScanStats.map((table) => (
+                      <div key={table.id} className={`bg-gray-800 border border-gray-700 rounded-lg p-4 ${!table.isActive ? 'opacity-50' : ''}`}>
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="font-semibold text-white text-lg">
+                              Маса {table.tableNumber}
+                            </div>
+                            {table.tableName && (
+                              <div className="text-sm text-gray-400 mt-1">{table.tableName}</div>
+                            )}
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            table.isActive
+                              ? 'bg-green-500/20 text-green-400'
+                              : 'bg-red-500/20 text-red-400'
+                          }`}>
+                            {table.isActive ? 'Активна' : 'Спряна'}
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400 text-sm">Сканирания:</span>
+                            <span className="text-blue-400 font-bold text-lg">{table.scanCount || 0}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400 text-sm">Последно:</span>
+                            <span className="text-gray-300 text-sm">
+                              {table.lastScannedAt 
+                                ? new Date(table.lastScannedAt).toLocaleString('bg-BG', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })
+                                : 'Никога'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Export Section */}
+              <div className="mt-8 bg-gray-800 rounded-xl p-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Експорт на данни</h3>
+                    <p className="text-sm text-gray-400">
+                      Изтегли поръчките за днес в CSV формат за по-нататъшна обработка
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const csvData = generateCSVExport();
+                      downloadCSV(csvData, `luna-orders-${new Date().toISOString().split('T')[0]}.csv`);
+                      setToast({ message: '✅ Експорт завършен успешно!', type: 'success' });
+                    }}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 justify-center"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Изтегли CSV
+                  </button>
+                </div>
               </div>
             </div>
           ) : (

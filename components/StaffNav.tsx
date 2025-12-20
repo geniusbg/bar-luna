@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 
@@ -37,14 +36,11 @@ export default function StaffNav({ locale }: StaffNavProps) {
           {/* Logo/Title */}
           <Link href={`/${locale}/staff`} className="flex items-center gap-3">
             <div className="h-16 flex items-center">
-              <Image 
+              <img 
                 src="/bg/logo_luna2.svg" 
                 alt="L.U.N.A." 
-                width={224}
-                height={64}
-                className="h-[64px]"
-                priority
-                style={{ width: 'auto', height: '64px', aspectRatio: '3.5/1' }}
+                className="h-[64px] w-auto"
+                style={{ aspectRatio: '3.5/1' }}
               />
             </div>
             <span className="text-xl font-bold text-white hidden sm:inline">Staff Dashboard</span>

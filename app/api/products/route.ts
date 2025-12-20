@@ -72,7 +72,14 @@ export async function GET(request: Request) {
       return a.order - b.order;
     });
 
-    return NextResponse.json({ products: sortedProducts }, { status: 200 });
+    // Convert Decimal to Number for proper JSON serialization
+    const productsWithNumbers = sortedProducts.map(product => ({
+      ...product,
+      priceBgn: Number(product.priceBgn),
+      priceEur: Number(product.priceEur)
+    }));
+
+    return NextResponse.json({ products: productsWithNumbers }, { status: 200 });
   } catch (error) {
     console.error('Get products error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

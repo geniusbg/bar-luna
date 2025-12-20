@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 
@@ -57,14 +56,11 @@ export default function AdminNav({ locale }: AdminNavProps) {
           {/* Logo */}
           <Link href={`/${locale}/admin`} className="flex items-center flex-shrink-0">
             <div className="h-20 flex items-center">
-              <Image 
+              <img 
                 src="/bg/logo_luna2.svg" 
                 alt="L.U.N.A." 
-                width={280}
-                height={80}
-                className="h-[80px]"
-                priority
-                style={{ width: 'auto', height: '80px', aspectRatio: '3.5/1' }}
+                className="h-[80px] w-auto"
+                style={{ aspectRatio: '3.5/1' }}
               />
             </div>
           </Link>

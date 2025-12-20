@@ -237,6 +237,11 @@ export default function QRCodesPage() {
   const [editTableName, setEditTableName] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
   const [redirectsToast, setRedirectsToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  
+  // Filter and sort state
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [sortBy, setSortBy] = useState<'tableNumber' | 'scanCount' | 'lastScanned'>('tableNumber');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Load settings from API on mount
   useEffect(() => {
@@ -425,11 +430,23 @@ export default function QRCodesPage() {
         setRedirectsToast({ message: '✅ Успешно запазено', type: 'success' });
         await loadRedirectTables();
         cancelEditingRedirect();
+        // Auto-close toast after 3 seconds
+        setTimeout(() => {
+          setRedirectsToast(null);
+        }, 3000);
       } else {
         setRedirectsToast({ message: 'Грешка при запазване', type: 'error' });
+        // Auto-close error toast after 5 seconds
+        setTimeout(() => {
+          setRedirectsToast(null);
+        }, 5000);
       }
     } catch (error) {
       setRedirectsToast({ message: 'Грешка при запазване', type: 'error' });
+      // Auto-close error toast after 5 seconds
+      setTimeout(() => {
+        setRedirectsToast(null);
+      }, 5000);
     }
   };
 
@@ -444,6 +461,39 @@ export default function QRCodesPage() {
       minute: '2-digit'
     });
   };
+
+  // Filter and sort tables
+  const getFilteredAndSortedTables = () => {
+    let filtered = [...redirectTables];
+
+    // Apply status filter
+    if (filterStatus === 'active') {
+      filtered = filtered.filter(t => t.isActive);
+    } else if (filterStatus === 'inactive') {
+      filtered = filtered.filter(t => !t.isActive);
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      if (sortBy === 'tableNumber') {
+        comparison = a.tableNumber - b.tableNumber;
+      } else if (sortBy === 'scanCount') {
+        comparison = a.scanCount - b.scanCount;
+      } else if (sortBy === 'lastScanned') {
+        const aDate = a.lastScannedAt ? new Date(a.lastScannedAt).getTime() : 0;
+        const bDate = b.lastScannedAt ? new Date(b.lastScannedAt).getTime() : 0;
+        comparison = aDate - bDate;
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  };
+
+  const filteredTables = getFilteredAndSortedTables();
 
   const downloadAllQRCodes = async () => {
     try {
@@ -1319,10 +1369,10 @@ export default function QRCodesPage() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-slate-800 rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Modal Header */}
-            <div className="p-6 border-b border-slate-700 flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-white">🔗 Пренасочвания</h2>
-                <p className="text-gray-400 text-sm mt-1">
+            <div className="p-4 md:p-6 border-b border-slate-700 flex justify-between items-start md:items-center gap-4">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl md:text-2xl font-bold text-white">🔗 Пренасочвания</h2>
+                <p className="text-gray-400 text-xs md:text-sm mt-1">
                   Управление на URL адресите на QR кодовете. Промените се прилагат веднага без да принтирате нови кодове.
                 </p>
               </div>
@@ -1331,7 +1381,8 @@ export default function QRCodesPage() {
                   setShowRedirectsModal(false);
                   cancelEditingRedirect();
                 }}
-                className="text-white text-3xl hover:text-gray-300 transition-colors"
+                className="text-white text-2xl md:text-3xl hover:text-gray-300 transition-colors flex-shrink-0"
+                aria-label="Затвори"
               >
                 ×
               </button>
@@ -1339,62 +1390,133 @@ export default function QRCodesPage() {
 
             {/* Toast Notification */}
             {redirectsToast && (
-              <div className={`px-6 py-3 ${redirectsToast.type === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                {redirectsToast.message}
+              <div className={`px-6 py-3 flex items-center justify-between ${redirectsToast.type === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                <span>{redirectsToast.message}</span>
+                <button
+                  onClick={() => setRedirectsToast(null)}
+                  className="ml-4 text-white/70 hover:text-white transition-colors text-xl font-bold"
+                  aria-label="Затвори"
+                >
+                  ×
+                </button>
               </div>
             )}
 
             {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6">
               {redirectsLoading ? (
                 <div className="text-center py-12">
                   <p className="text-white">Зареждане...</p>
                 </div>
               ) : (
                 <>
-                  {/* Stats Summary */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                      <div className="text-gray-400 text-sm mb-1">Всички маси</div>
-                      <div className="text-3xl font-bold text-white">{redirectTables.length}</div>
-                    </div>
-                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                      <div className="text-gray-400 text-sm mb-1">Активни</div>
-                      <div className="text-3xl font-bold text-green-500">
-                        {redirectTables.filter(t => t.isActive).length}
+                  {/* Filters and Sort */}
+                  <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 md:p-6 mb-4 md:mb-6">
+                    <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+                      <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                        {/* Status Filter */}
+                        <div className="flex-1">
+                          <label className="block text-xs md:text-sm text-gray-400 mb-2">Филтър по статус</label>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setFilterStatus('all')}
+                              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                                filterStatus === 'all'
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                              }`}
+                            >
+                              Всички
+                            </button>
+                            <button
+                              onClick={() => setFilterStatus('active')}
+                              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                                filterStatus === 'active'
+                                  ? 'bg-green-600 text-white'
+                                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                              }`}
+                            >
+                              Активни
+                            </button>
+                            <button
+                              onClick={() => setFilterStatus('inactive')}
+                              className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                                filterStatus === 'inactive'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                              }`}
+                            >
+                              Деактивирани
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Sort By */}
+                        <div className="flex-1">
+                          <label className="block text-xs md:text-sm text-gray-400 mb-2">Сортиране по</label>
+                          <div className="flex gap-2">
+                            <select
+                              value={sortBy}
+                              onChange={(e) => setSortBy(e.target.value as 'tableNumber' | 'scanCount' | 'lastScanned')}
+                              className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
+                            >
+                              <option value="tableNumber">Номер на маса</option>
+                              <option value="scanCount">Брой сканирания</option>
+                              <option value="lastScanned">Последно сканиране</option>
+                            </select>
+                            <button
+                              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-white text-sm transition-colors"
+                              title={sortOrder === 'asc' ? 'Възходящо' : 'Низходящо'}
+                            >
+                              {sortOrder === 'asc' ? '↑' : '↓'}
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                      <div className="text-gray-400 text-sm mb-1">Деактивирани</div>
-                      <div className="text-3xl font-bold text-red-500">
-                        {redirectTables.filter(t => !t.isActive).length}
-                      </div>
-                    </div>
-                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                      <div className="text-gray-400 text-sm mb-1">Общо сканирания</div>
-                      <div className="text-3xl font-bold text-blue-500">
-                        {redirectTables.reduce((sum, t) => sum + t.scanCount, 0)}
+
+                      {/* Results count */}
+                      <div className="text-right">
+                        <div className="text-xs md:text-sm text-gray-400">
+                          Показва се {filteredTables.length} от {redirectTables.length} маси
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Tables List */}
                   <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-                    <div className="overflow-x-auto">
+                    {/* Desktop Table View - hidden on mobile */}
+                    <div className="hidden md:block overflow-x-auto">
                       <table className="w-full">
                         <thead className="bg-gray-950 border-b border-gray-800">
                           <tr>
-                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Маса</th>
+                            <th 
+                              className="text-left px-4 py-3 text-gray-400 font-semibold cursor-pointer hover:text-white transition-colors" 
+                              onClick={() => { setSortBy('tableNumber'); setSortOrder(sortBy === 'tableNumber' && sortOrder === 'asc' ? 'desc' : 'asc'); }}
+                            >
+                              Маса {sortBy === 'tableNumber' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </th>
                             <th className="text-left px-4 py-3 text-gray-400 font-semibold">Статус</th>
                             <th className="text-left px-4 py-3 text-gray-400 font-semibold">QR Link</th>
                             <th className="text-left px-4 py-3 text-gray-400 font-semibold">Redirect URL</th>
-                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Сканирания</th>
-                            <th className="text-left px-4 py-3 text-gray-400 font-semibold">Последно</th>
+                            <th 
+                              className="text-left px-4 py-3 text-gray-400 font-semibold cursor-pointer hover:text-white transition-colors" 
+                              onClick={() => { setSortBy('scanCount'); setSortOrder(sortBy === 'scanCount' && sortOrder === 'asc' ? 'desc' : 'asc'); }}
+                            >
+                              Сканирания {sortBy === 'scanCount' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </th>
+                            <th 
+                              className="text-left px-4 py-3 text-gray-400 font-semibold cursor-pointer hover:text-white transition-colors" 
+                              onClick={() => { setSortBy('lastScanned'); setSortOrder(sortBy === 'lastScanned' && sortOrder === 'asc' ? 'desc' : 'asc'); }}
+                            >
+                              Последно {sortBy === 'lastScanned' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </th>
                             <th className="text-left px-4 py-3 text-gray-400 font-semibold">Действия</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-800">
-                          {redirectTables.map((table) => (
+                          {filteredTables.map((table) => (
                             <tr key={table.id} className={!table.isActive ? 'opacity-50' : ''}>
                               <td className="px-4 py-3">
                                 {editingTable === table.tableNumber ? (
@@ -1440,7 +1562,7 @@ export default function QRCodesPage() {
                                 )}
                               </td>
                               <td className="px-4 py-3">
-                                <code className="text-sm text-blue-400 bg-blue-500/10 px-2 py-1 rounded">
+                                <code className="text-sm text-blue-400 bg-blue-500/10 px-2 py-1 rounded break-all">
                                   /t/{table.tableNumber}
                                 </code>
                               </td>
@@ -1454,7 +1576,7 @@ export default function QRCodesPage() {
                                     placeholder="/order?table=1"
                                   />
                                 ) : (
-                                  <code className="text-sm text-gray-300">
+                                  <code className="text-sm text-gray-300 break-all">
                                     {table.redirectUrl || `/order?table=${table.tableNumber}`}
                                   </code>
                                 )}
@@ -1495,12 +1617,134 @@ export default function QRCodesPage() {
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Mobile Card View - visible only on mobile */}
+                    <div className="md:hidden space-y-4 p-4">
+                      {filteredTables.map((table) => (
+                        <div
+                          key={table.id}
+                          className={`bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-3 ${!table.isActive ? 'opacity-50' : ''}`}
+                        >
+                          {/* Header: Table Number & Status */}
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              {editingTable === table.tableNumber ? (
+                                <input
+                                  type="text"
+                                  value={editTableName}
+                                  onChange={(e) => setEditTableName(e.target.value)}
+                                  placeholder={`Маса ${table.tableNumber}`}
+                                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:border-white focus:outline-none"
+                                />
+                              ) : (
+                                <>
+                                  <div className="font-semibold text-white text-lg">
+                                    Маса {table.tableNumber}
+                                  </div>
+                                  {table.tableName && (
+                                    <div className="text-sm text-gray-400 mt-1">{table.tableName}</div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                            <div>
+                              {editingTable === table.tableNumber ? (
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={editIsActive}
+                                    onChange={(e) => setEditIsActive(e.target.checked)}
+                                    className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-green-600"
+                                  />
+                                  <span className="text-white text-sm">
+                                    {editIsActive ? 'Активна' : 'Спряна'}
+                                  </span>
+                                </label>
+                              ) : (
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                  table.isActive
+                                    ? 'bg-green-500/20 text-green-400'
+                                    : 'bg-red-500/20 text-red-400'
+                                }`}>
+                                  {table.isActive ? '✓ Активна' : '✗ Спряна'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* QR Link */}
+                          <div>
+                            <div className="text-xs text-gray-400 mb-1">QR Link</div>
+                            <code className="text-sm text-blue-400 bg-blue-500/10 px-2 py-1 rounded break-all block">
+                              /t/{table.tableNumber}
+                            </code>
+                          </div>
+
+                          {/* Redirect URL */}
+                          <div>
+                            <div className="text-xs text-gray-400 mb-1">Redirect URL</div>
+                            {editingTable === table.tableNumber ? (
+                              <input
+                                type="text"
+                                value={editUrl}
+                                onChange={(e) => setEditUrl(e.target.value)}
+                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:border-white focus:outline-none"
+                                placeholder="/order?table=1"
+                              />
+                            ) : (
+                              <code className="text-sm text-gray-300 break-all block bg-gray-700/50 px-2 py-1 rounded">
+                                {table.redirectUrl || `/order?table=${table.tableNumber}`}
+                              </code>
+                            )}
+                          </div>
+
+                          {/* Stats Row */}
+                          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-700">
+                            <div>
+                              <div className="text-xs text-gray-400 mb-1">Сканирания</div>
+                              <div className="text-white font-semibold">{table.scanCount}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-400 mb-1">Последно</div>
+                              <div className="text-sm text-gray-300">{formatDate(table.lastScannedAt)}</div>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="pt-2">
+                            {editingTable === table.tableNumber ? (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => saveRedirect(table.tableNumber)}
+                                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors font-semibold"
+                                >
+                                  ✓ Запази
+                                </button>
+                                <button
+                                  onClick={cancelEditingRedirect}
+                                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors font-semibold"
+                                >
+                                  ✗ Откажи
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => startEditingRedirect(table)}
+                                className="w-full px-4 py-2 bg-white hover:bg-gray-200 text-black text-sm rounded transition-colors font-semibold"
+                              >
+                                ✎ Редактирай
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Info Box */}
-                  <div className="mt-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-6">
-                    <h3 className="text-blue-400 font-semibold mb-2">💡 Как работят динамичните QR кодове?</h3>
-                    <ul className="text-gray-300 space-y-2 text-sm">
+                  <div className="mt-4 md:mt-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 md:p-6">
+                    <h3 className="text-blue-400 font-semibold mb-2 text-sm md:text-base">💡 Как работят динамичните QR кодове?</h3>
+                    <ul className="text-gray-300 space-y-2 text-xs md:text-sm">
                       <li>• QR кодът винаги води към <code className="bg-blue-500/20 px-1 rounded">/t/[номер]</code> (кратък линк)</li>
                       <li>• Кратият линк redirect-ва към URL-а който сте настроили тук</li>
                       <li>• Можете да сменяте URL-а по всяко време без да принтирате нови кодове</li>
