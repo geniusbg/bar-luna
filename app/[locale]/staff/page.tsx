@@ -60,12 +60,67 @@ export default function StaffDashboard() {
     };
     checkPWA();
 
-    // Check push subscription status
+    // Check push subscription status and auto-subscribe if permission already granted
     const checkPush = async () => {
-      const subscribed = await isSubscribed();
-      setPushEnabled(subscribed);
+      try {
+        // First, ensure Service Worker is ready (critical for Android)
+        if ('serviceWorker' in navigator) {
+          try {
+            await navigator.serviceWorker.ready;
+            console.log('✅ Service Worker is ready');
+          } catch (swError) {
+            console.warn('⚠️ Service Worker not ready yet:', swError);
+            // Wait a bit and try again
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await navigator.serviceWorker.ready;
+            console.log('✅ Service Worker ready after retry');
+          }
+        }
+        
+        const subscribed = await isSubscribed();
+        console.log('📊 Push subscription status:', subscribed ? 'Subscribed' : 'Not subscribed');
+        setPushEnabled(subscribed);
+        
+        // If not subscribed but push is supported, try to auto-subscribe
+        // (only if permission was already granted previously)
+        if (!subscribed && isPushSupported()) {
+          // Check if permission was previously granted
+          if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+              console.log('🔔 Permission already granted, auto-subscribing to push...');
+              console.log('📱 Device:', navigator.userAgent.includes('Android') ? 'Android' : 'Other');
+              
+              // Double-check Service Worker is ready before subscribing (especially important for Android)
+              if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                console.log('✅ Service Worker registration ready:', registration.scope);
+              }
+              
+              await subscribeToPush();
+              setPushEnabled(true);
+              console.log('✅✅✅ Auto-subscribed to push notifications successfully!');
+            } catch (error: any) {
+              console.error('❌ Auto-subscribe failed:', error);
+              console.error('Error details:', error.message, error.stack);
+              // Don't show error to user - they can manually subscribe if needed
+              // But log it for debugging
+            }
+          } else {
+            console.log('ℹ️ Permission not granted yet:', Notification.permission);
+          }
+        } else if (!isPushSupported()) {
+          console.log('ℹ️ Push notifications not supported on this device');
+        }
+      } catch (error: any) {
+        console.error('❌ Check push error:', error);
+        console.error('Error details:', error.message);
+      }
     };
-    checkPush();
+    
+    // Delay checkPush slightly to ensure page is fully loaded (helps on Android)
+    setTimeout(() => {
+      checkPush();
+    }, 500);
 
 
     // Listen for PWA install prompt

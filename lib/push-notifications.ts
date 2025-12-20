@@ -89,32 +89,71 @@ export async function requestNotificationPermission() {
 // Subscribe to push notifications
 export async function subscribeToPush() {
   try {
+    console.log('🚀 Starting push subscription process...');
+    
     // Check support
     if (!isPushSupported()) {
       throw new Error('Push notifications not supported');
     }
+    console.log('✅ Push notifications are supported');
 
     // Request permission
     const permission = await requestNotificationPermission();
     if (permission !== 'granted') {
-      throw new Error('Notification permission denied');
+      throw new Error(`Notification permission denied (status: ${permission})`);
+    }
+    console.log('✅ Notification permission granted');
+
+    // Ensure Service Worker is registered and ready (critical for Android)
+    let registration;
+    if ('serviceWorker' in navigator) {
+      // Check if already registered
+      const existingReg = await navigator.serviceWorker.getRegistration();
+      if (existingReg) {
+        registration = existingReg;
+        console.log('✅ Using existing Service Worker registration');
+      } else {
+        // Register service worker
+        registration = await navigator.serviceWorker.register('/sw.js');
+        console.log('✅ Service Worker registered:', registration.scope);
+      }
+      
+      // Wait for Service Worker to be ready (critical for Android)
+      await navigator.serviceWorker.ready;
+      console.log('✅ Service Worker is ready');
+      
+      // Double-check we have the registration
+      if (!registration) {
+        registration = await navigator.serviceWorker.ready;
+      }
+    } else {
+      throw new Error('Service Worker not supported');
     }
 
-    // Register service worker
-    const registration = await navigator.serviceWorker.register('/sw.js');
-    await navigator.serviceWorker.ready;
+    // Check if already subscribed (avoid duplicate subscriptions)
+    const existingSubscription = await registration.pushManager.getSubscription();
+    if (existingSubscription) {
+      console.log('ℹ️ Already subscribed to push, returning existing subscription');
+      return { success: true, subscription: existingSubscription };
+    }
 
     // Subscribe to push
+    console.log('📝 Subscribing to push manager...');
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
+    console.log('✅ Push subscription created');
+    console.log('📍 Endpoint:', subscription.endpoint.substring(0, 50) + '...');
 
     // Get device info
     const deviceName = getDeviceName();
     const userAgent = navigator.userAgent;
+    console.log('📱 Device:', deviceName);
+    console.log('🌐 User Agent:', userAgent.substring(0, 100) + '...');
 
     // Send subscription to server
+    console.log('📤 Sending subscription to server...');
     const response = await fetch('/api/push/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -126,16 +165,21 @@ export async function subscribeToPush() {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to save subscription');
+      const errorText = await response.text();
+      console.error('❌ Server response error:', response.status, errorText);
+      throw new Error(`Failed to save subscription: ${response.status} ${errorText}`);
     }
 
     const result = await response.json();
-    console.log('✅ Push subscription saved:', result.subscriptionId);
+    console.log('✅✅✅ Push subscription saved to server:', result.subscriptionId);
 
     return { success: true, subscription };
 
-  } catch (error) {
-    console.error('Subscribe to push error:', error);
+  } catch (error: any) {
+    console.error('❌❌❌ Subscribe to push error:', error);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     throw error;
   }
 }

@@ -64,3 +64,8 @@ seed-products.js
 
 # Documentation files that may contain sensitive info
 IMPLEMENTATION_SUMMARY.md
+
+# Security - XMRig malware protection
+**/xmrig*
+**/x86_32
+**/build-new

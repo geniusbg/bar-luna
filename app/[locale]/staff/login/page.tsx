@@ -39,7 +39,13 @@ export default function StaffLoginPage() {
       });
 
       if (result?.error) {
-        setError('Невалидни данни за вход');
+        // Проверка за rate limit грешка
+        if (result.error.includes('RATE_LIMIT_EXCEEDED:')) {
+          const rateLimitMessage = result.error.replace('RATE_LIMIT_EXCEEDED:', '');
+          setError(rateLimitMessage);
+        } else {
+          setError('Невалидни данни за вход');
+        }
       } else if (result?.ok) {
         router.push(`/${pathLocale}/staff`);
         router.refresh();

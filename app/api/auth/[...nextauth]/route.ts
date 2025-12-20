@@ -42,8 +42,10 @@ export const authOptions = {
         
         if (!rateLimitResult.allowed) {
           console.warn(`Rate limit exceeded for email: ${credentials.email}`);
+          const minutesLeft = Math.ceil((rateLimitResult.resetTime - Date.now()) / 60000);
+          // Използваме специален error code който NextAuth ще предаде на клиента
           throw new Error(
-            `Too many login attempts. Please try again after ${Math.ceil((rateLimitResult.resetTime - Date.now()) / 60000)} minutes.`
+            `RATE_LIMIT_EXCEEDED:Твърде много опити за вход. Моля опитайте отново след ${minutesLeft} ${minutesLeft === 1 ? 'минута' : 'минути'}.`
           );
         }
 
