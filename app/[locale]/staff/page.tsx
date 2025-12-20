@@ -582,7 +582,7 @@ export default function StaffDashboard() {
   const pathname = usePathname();
   const locale = pathname.split('/')[1] || 'bg';
 
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleLogout = async () => {
@@ -621,7 +621,7 @@ export default function StaffDashboard() {
       return;
     }
     
-    if (!initialLoading && !session) {
+    if (status === 'unauthenticated') {
       // Small delay to allow SW offline message to arrive
       const timer = setTimeout(() => {
         // Check again if still not offline (race condition with SW message)
@@ -631,10 +631,10 @@ export default function StaffDashboard() {
       }, 100); // 100ms delay
       return () => clearTimeout(timer);
     }
-  }, [session, initialLoading, locale]);
+  }, [status, locale]);
 
   // Show loading screen
-  if (initialLoading || !session) {
+  if (status === 'loading' || initialLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
