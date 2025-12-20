@@ -1,7 +1,7 @@
 // Luna Bar - Service Worker for PWA & Push Notifications
 
 // ⚠️ SW VERSION - Single source of truth (no duplicates)
-const CACHE_VERSION = 'v3.3.22';
+const CACHE_VERSION = 'v3.3.23';
 const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
@@ -173,12 +173,14 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        // Check if response is an error AND is for API route
-        // Apache returns HTML 503, we need to convert to JSON for API routes
-        if (!response.ok && url.pathname.startsWith('/api/')) {
-          console.log('🔴 SW: API route returned error status:', response.status, url.pathname);
+        // Check if response is a SERVER error (5xx) AND is for API route
+        // 4xx errors (401, 403, 404) are client errors - server is working, just no access/permission
+        // Only 5xx errors indicate server problems (503, 500, etc.)
+        const isServerError = response.status >= 500 && response.status < 600;
+        if (!response.ok && isServerError && url.pathname.startsWith('/api/')) {
+          console.log('🔴 SW: API route returned server error status:', response.status, url.pathname);
           
-          // Notify ALL clients immediately (including for auth routes)
+          // Notify ALL clients immediately (only for server errors, not client errors)
           // This sets window.__isOffline to prevent NextAuth redirect
           self.clients.matchAll().then(clients => {
             clients.forEach(client => {
@@ -201,6 +203,14 @@ self.addEventListener('fetch', (event) => {
               'Cache-Control': 'no-cache'
             }
           });
+        }
+        
+        // For 4xx errors (401, 403, 404, etc.) - server is working, just return the error
+        // Don't treat as offline - these are permission/not found errors
+        if (!response.ok && response.status >= 400 && response.status < 500 && url.pathname.startsWith('/api/')) {
+          console.log('ℹ️ SW: API route returned client error (not offline):', response.status, url.pathname);
+          // Return the original response - don't convert to JSON or notify as offline
+          return response;
         }
         
         // Only cache successful responses (but not /api/auth/session - handled above)

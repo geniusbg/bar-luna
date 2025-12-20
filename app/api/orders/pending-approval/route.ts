@@ -11,12 +11,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is ADMIN or SUPER_ADMIN
+    // Check if user is ADMIN, SUPER_ADMIN, or STAFF (staff can also approve orders)
     const user = await prisma.user.findUnique({
       where: { id: session.user.id }
     });
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN')) {
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN' && user.role !== 'STAFF')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

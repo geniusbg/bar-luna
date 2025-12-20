@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 interface OfflineBannerProps {
   onStatusChange?: (isBlocked: boolean) => void;
@@ -11,69 +11,13 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
   const [isOffline, setIsOffline] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [isServerDown, setIsServerDown] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false); // Prevent false positives on first load
-  const initializedRef = useRef(false); // Use ref for immediate access in handlers
 
   // Detect iOS
   const isIOS = typeof window !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent);
 
   useEffect(() => {
-    // Initialize by checking server health immediately (prevents false positives)
-    // This is faster and more accurate than waiting fixed time
-    const initializeHealthCheck = async () => {
-      try {
-        const response = await fetch('/api/health', {
-          method: 'GET',
-          cache: 'no-cache',
-          signal: AbortSignal.timeout(1500) // 1.5 second timeout
-        });
-        
-        if (response.ok) {
-          // Server is online - we're initialized immediately
-          console.log('✅ Initial health check: Server is online');
-          initializedRef.current = true;
-          setIsInitialized(true);
-          return;
-        }
-      } catch (error) {
-        // Network error - could be SW not ready or real offline
-        console.log('⚠️ Initial health check failed, will retry once');
-      }
-      
-      // If first check failed, retry once after brief delay (SW might not be ready)
-      setTimeout(async () => {
-        try {
-          const retryResponse = await fetch('/api/health', {
-            method: 'GET',
-            cache: 'no-cache',
-            signal: AbortSignal.timeout(1500)
-          });
-          
-          if (retryResponse.ok) {
-            console.log('✅ Retry health check: Server is online');
-          } else {
-            console.log('⚠️ Retry health check: Server returned error');
-          }
-        } catch (error) {
-          console.log('⚠️ Retry health check: Still failed (server may be offline)');
-        }
-        
-        // Initialize anyway after retry (ready to detect real offline state)
-        initializedRef.current = true;
-        setIsInitialized(true);
-      }, 800); // Retry after 800ms
-    };
-    
-    initializeHealthCheck();
-
     // Listen for SW messages (server offline detection)
     const handleMessage = (event: MessageEvent) => {
-      // Ignore offline messages until we've confirmed server state
-      if (!initializedRef.current) {
-        console.log('⏳ Ignoring offline message during initialization');
-        return;
-      }
-      
       if (event.data?.type === 'SERVER_OFFLINE') {
         setIsOffline(true);
         // Check if it's network offline or server down
@@ -142,13 +86,12 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitialized]);
+  }, []);
 
   // Periodic health check when offline
   useEffect(() => {
-    // Don't start health checks until initialized (prevent false positives)
-    if (!isInitialized || !isOffline) {
-      // Clear any existing interval if going online or not initialized
+    if (!isOffline) {
+      // Clear any existing interval if going online
       return;
     }
 
@@ -202,7 +145,7 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
       console.log('🛑 Stopping periodic health check');
       clearInterval(interval);
     };
-  }, [isOffline, onStatusChange, isIOS, isInitialized]);
+  }, [isOffline, onStatusChange, isIOS]);
 
   // Check initial online state on mount
   useEffect(() => {
