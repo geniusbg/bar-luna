@@ -10,6 +10,7 @@ import Toast from '@/components/Toast';
 import Price from '@/components/Price';
 import ServiceWorkerUpdater from '@/components/ServiceWorkerUpdater';
 import PendingApprovalsBanner from '@/components/PendingApprovalsBanner';
+import LoadingScreen from '@/components/LoadingScreen';
 import { 
   isPushSupported, 
   isSubscribed, 
@@ -635,23 +636,7 @@ export default function StaffDashboard() {
 
   // Show loading screen
   if (status === 'loading' || initialLoading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
-            <Image 
-              src="/bg/luna-logo.svg"
-              alt="LUNA Logo" 
-              width={384}
-              height={384}
-              className="h-64 w-64 md:h-96 md:w-96"
-              priority
-            />
-          </div>
-          <p className="text-white text-3xl font-medium">Зареждане...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen locale={locale} />;
   }
 
   return (

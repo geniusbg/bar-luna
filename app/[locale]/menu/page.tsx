@@ -380,24 +380,11 @@ function MenuPageContent() {
 }
 
 export default function MenuPage() {
+  const pathname = usePathname();
+  const locale = pathname.split('/')[1] || 'bg';
+  
   return (
-    <Suspense fallback={
-      <main className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="logo-container h-80 w-80 md:h-[28rem] md:w-[28rem] mx-auto mb-10 animate-pulse-glow">
-            <Image
-              src="/bg/luna-logo.svg"
-              alt="LUNA Logo"
-              width={448}
-              height={448}
-              className="h-80 w-80 md:h-[28rem] md:w-[28rem]"
-              priority
-            />
-          </div>
-          <p className="text-white text-3xl font-medium">Зареждане...</p>
-        </div>
-      </main>
-    }>
+    <Suspense fallback={<LoadingScreen locale={locale} />}>
       <MenuPageContent />
     </Suspense>
   );
