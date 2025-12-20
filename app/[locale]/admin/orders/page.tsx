@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import Price from '@/components/Price';
 import Toast from '@/components/Toast';
 import { getPusherClient } from '@/lib/pusher-client';
@@ -1121,19 +1120,12 @@ function AdminOrdersPageContent() {
           <div className="bg-gray-800 rounded-xl overflow-hidden">
             {historyLoading ? (
               <div className="min-h-[60vh] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="logo-container h-32 w-32 md:h-48 md:w-48 mx-auto mb-6 animate-pulse-glow">
-                    <Image 
-                      src="/bg/luna-logo.svg"
-                      alt="LUNA Logo" 
-                      width={192}
-                      height={192}
-                      className="h-32 w-32 md:h-48 md:w-48"
-                      priority
-                    />
-                  </div>
-                  <p className="text-white text-2xl font-medium">Зареждане на история...</p>
-                </div>
+                <LoadingScreen 
+                  locale={locale} 
+                  inline={true}
+                  message="Зареждане на история..."
+                  logoSize="small"
+                />
               </div>
             ) : historyOrders.length === 0 ? (
               <div className="text-center py-20">
@@ -1364,19 +1356,12 @@ function AdminOrdersPageContent() {
           
           {statsLoading ? (
             <div className="min-h-[60vh] flex items-center justify-center">
-              <div className="text-center">
-                <div className="logo-container h-32 w-32 md:h-48 md:w-48 mx-auto mb-6 animate-pulse-glow">
-                  <Image 
-                    src="/bg/luna-logo.svg"
-                    alt="LUNA Logo" 
-                    width={192}
-                    height={192}
-                    className="h-32 w-32 md:h-48 md:w-48"
-                    priority
-                  />
-                </div>
-                <p className="text-white text-2xl font-medium">Зареждане на статистики...</p>
-              </div>
+              <LoadingScreen 
+                locale={locale} 
+                inline={true}
+                message="Зареждане на статистики..."
+                logoSize="small"
+              />
             </div>
           ) : revenueStats ? (
             <div className="space-y-8">
@@ -1868,19 +1853,12 @@ function AdminOrdersPageContent() {
 
           {approvalsLoading ? (
             <div className="min-h-[60vh] flex items-center justify-center">
-              <div className="text-center">
-                <div className="logo-container h-32 w-32 md:h-48 md:w-48 mx-auto mb-6 animate-pulse-glow">
-                  <Image 
-                    src="/bg/luna-logo.svg"
-                    alt="LUNA Logo" 
-                    width={192}
-                    height={192}
-                    className="h-32 w-32 md:h-48 md:w-48"
-                    priority
-                  />
-                </div>
-                <p className="text-white text-2xl font-medium">Зареждане на одобрения...</p>
-              </div>
+              <LoadingScreen 
+                locale={locale} 
+                inline={true}
+                message="Зареждане на одобрения..."
+                logoSize="small"
+              />
             </div>
           ) : pendingApprovals.length === 0 ? (
             <div className="text-center py-20 bg-gray-800 rounded-xl">
