@@ -827,8 +827,8 @@ function OrderPageContent() {
         </div>
       </div>
 
-      {/* Category Filter - Sticky */}
-      <div className="sticky top-[5rem] z-30 bg-black/95 backdrop-blur-lg border-b border-gray-800 py-4">
+      {/* Category Filter */}
+      <div className="bg-black/95 backdrop-blur-lg border-b border-gray-800 py-4">
         <div className="container mx-auto px-4">
           {/* Get parent categories and subcategories */}
           {(() => {
