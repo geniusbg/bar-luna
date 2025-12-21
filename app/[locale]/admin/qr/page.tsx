@@ -1410,6 +1410,32 @@ export default function QRCodesPage() {
                 </div>
               ) : (
                 <>
+                  {/* Statistics Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 md:mb-6">
+                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+                      <div className="text-gray-400 text-sm mb-1">Всички маси</div>
+                      <div className="text-3xl font-bold text-white">{redirectTables.length}</div>
+                    </div>
+                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+                      <div className="text-gray-400 text-sm mb-1">Активни</div>
+                      <div className="text-3xl font-bold text-green-500">
+                        {redirectTables.filter(t => t.isActive).length}
+                      </div>
+                    </div>
+                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+                      <div className="text-gray-400 text-sm mb-1">Деактивирани</div>
+                      <div className="text-3xl font-bold text-red-500">
+                        {redirectTables.filter(t => !t.isActive).length}
+                      </div>
+                    </div>
+                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+                      <div className="text-gray-400 text-sm mb-1">Общо сканирания</div>
+                      <div className="text-3xl font-bold text-blue-500">
+                        {redirectTables.reduce((sum, t) => sum + t.scanCount, 0)}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Filters and Sort */}
                   <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 md:p-6 mb-4 md:mb-6">
                     <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">

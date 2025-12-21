@@ -708,7 +708,7 @@ function OrderPageContent() {
   }
 
   return (
-    <main className="min-h-screen bg-black pb-32">
+    <main className="min-h-screen bg-black pb-8">
       {/* Toast Notifications - hidden when server is offline */}
       {toast && !isOffline && (
         <Toast
@@ -853,8 +853,8 @@ function OrderPageContent() {
             
             return (
               <>
-                {/* Parent Categories - Mobile */}
-                <div className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar mb-3">
+                {/* Parent Categories - Mobile (horizontal scroll on all mobile orientations, including landscape) */}
+                <div className="lg:hidden overflow-x-auto overflow-y-hidden hide-scrollbar mb-3 -mx-4 px-4">
                   <div className="flex gap-3 min-w-max">
                     {parentCategories.map((category: any) => {
                       const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameDe;
@@ -877,7 +877,7 @@ function OrderPageContent() {
                 </div>
                 
                 {/* Parent Categories - Desktop */}
-                <div className="hidden md:block mb-3">
+                <div className="hidden lg:block mb-3">
                   <div className="flex flex-wrap gap-3 justify-center max-w-6xl mx-auto">
                     {parentCategories.map((category: any) => {
                       const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameDe;
@@ -902,8 +902,8 @@ function OrderPageContent() {
                 {/* Subcategories - Only show if parent has subcategories */}
                 {subCategories.length > 0 && (
                   <>
-                    {/* Mobile */}
-                    <div className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar">
+                    {/* Mobile (horizontal scroll on all mobile orientations, including landscape) */}
+                    <div className="lg:hidden overflow-x-auto overflow-y-hidden hide-scrollbar -mx-4 px-4">
                       <div className="flex gap-2 min-w-max">
                         {subCategories.map((subCategory: any) => {
                           const subCategoryName = locale === 'bg' ? subCategory.nameBg : locale === 'en' ? subCategory.nameEn : subCategory.nameDe;
@@ -981,9 +981,9 @@ function OrderPageContent() {
             : '';
           
           return (
-            <div className="mb-16">
+            <div className="mb-8">
               {/* Category Header */}
-              <div className="flex items-center gap-3 mb-8">
+              <div className="flex items-center gap-3 mb-6">
                 <div className="h-1 w-8 bg-white rounded-full"></div>
                 <h2 className="text-3xl md:text-4xl font-bold text-white">{categoryName}</h2>
                 <div className="flex-1 h-px bg-gray-800"></div>
