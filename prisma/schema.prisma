@@ -15,18 +15,18 @@ datasource db {
 // ============================================
 
 model Category {
-  id              String     @id @default(uuid())
-  nameBg          String     @map("name_bg")
-  nameEn          String     @map("name_en")
-  nameDe          String     @map("name_de")
-  slug            String     @unique
-  order           Int        @default(0)
-  parentCategoryId String?  @map("parent_category_id")
-  parentCategory  Category?  @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: Cascade)
-  subCategories   Category[] @relation("CategoryHierarchy")
-  products        Product[]
-  createdAt       DateTime   @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  id               String     @id @default(uuid())
+  nameBg           String     @map("name_bg")
+  nameEn           String     @map("name_en")
+  nameDe           String     @map("name_de")
+  slug             String     @unique
+  order            Int        @default(0)
+  parentCategoryId String?    @map("parent_category_id")
+  parentCategory   Category?  @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: Cascade)
+  subCategories    Category[] @relation("CategoryHierarchy")
+  products         Product[]
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
 
   @@index([parentCategoryId])
   @@map("categories")
@@ -72,7 +72,7 @@ model Event {
   descriptionEn String   @map("description_en")
   descriptionDe String   @map("description_de")
   eventDate     DateTime @map("event_date")
-  location      String   // Primary location (used for display)
+  location      String // Primary location (used for display)
   locationBg    String?  @map("location_bg") // Bulgarian location name
   locationEn    String?  @map("location_en") // English location name
   locationDe    String?  @map("location_de") // German location name
@@ -94,44 +94,58 @@ model Event {
 // ============================================
 
 model BarTable {
-  id             String       @id @default(uuid())
-  tableNumber    Int          @unique @map("table_number")
-  tableName      String?      @map("table_name")
-  capacity       Int          @default(4)
-  location       String       @default("indoor") // indoor, terrace, bar
-  qrCodeUrl      String?      @map("qr_code_url") // URL to QR code page
-  qrCodeData     String?      @map("qr_code_data") @db.Text // Base64 QR image for printing
-  isActive       Boolean      @default(true) @map("is_active")
-  redirectUrl    String?      @map("redirect_url") // Dynamic redirect URL (default: /order?table=X)
-  scanCount      Int          @default(0) @map("scan_count") // Track QR code scans
-  lastScannedAt  DateTime?    @map("last_scanned_at") // Last scan timestamp
-  orders         Order[]
-  waiterCalls    WaiterCall[]
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  id            String       @id @default(uuid())
+  tableNumber   Int          @unique @map("table_number")
+  tableName     String?      @map("table_name")
+  capacity      Int          @default(4)
+  location      String       @default("indoor") // indoor, terrace, bar
+  qrCodeUrl     String?      @map("qr_code_url") // URL to QR code page
+  qrCodeData    String?      @map("qr_code_data") @db.Text // Base64 QR image for printing
+  isActive      Boolean      @default(true) @map("is_active")
+  redirectUrl   String?      @map("redirect_url") // Dynamic redirect URL (default: /order?table=X)
+  scanCount     Int          @default(0) @map("scan_count") // Track QR code scans
+  lastScannedAt DateTime?    @map("last_scanned_at") // Last scan timestamp
+  orders        Order[]
+  waiterCalls   WaiterCall[]
+  qrScans       QrScan[] // History of QR scans
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
 
   @@map("bar_tables")
 }
 
+model QrScan {
+  id          String   @id @default(uuid())
+  tableId     String   @map("table_id")
+  table       BarTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  tableNumber Int      @map("table_number")
+  scannedAt   DateTime @default(now()) @map("scanned_at")
+
+  @@index([tableId])
+  @@index([scannedAt])
+  @@index([tableNumber])
+  @@map("qr_scans")
+}
+
 model Order {
-  id            String      @id @default(uuid())
-  tableId       String?     @map("table_id")
-  table         BarTable?   @relation(fields: [tableId], references: [id])
-  tableNumber   Int         @map("table_number")
-  orderNumber   Int         @map("order_number") // Daily sequential number
-  status        String      @default("pending") @map("status") // pending, pending_approval, preparing, ready, completed, cancelled
-  paymentMethod String?     @map("payment_method") // cash, card, null
-  totalBgn      Decimal     @map("total_bgn") @db.Decimal(10, 2)
-  totalEur      Decimal     @map("total_eur") @db.Decimal(10, 2)
-  notes         String?
-  customerName  String?     @map("customer_name")
-  isPaid        Boolean     @default(false) @map("is_paid")
-  cancellationReason String? @map("cancellation_reason") // Reason for cancellation
-  items         OrderItem[]
-  approval      PendingOrderApproval?
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  completedAt   DateTime?   @map("completed_at")
+  id                 String                @id @default(uuid())
+  tableId            String?               @map("table_id")
+  table              BarTable?             @relation(fields: [tableId], references: [id])
+  tableNumber        Int                   @map("table_number")
+  orderNumber        Int                   @map("order_number") // Daily sequential number
+  status             String                @default("pending") @map("status") // pending, pending_approval, preparing, ready, completed, cancelled
+  paymentMethod      String?               @map("payment_method") // cash, card, null
+  totalBgn           Decimal               @map("total_bgn") @db.Decimal(10, 2)
+  totalEur           Decimal               @map("total_eur") @db.Decimal(10, 2)
+  notes              String?
+  customerName       String?               @map("customer_name")
+  isPaid             Boolean               @default(false) @map("is_paid")
+  cancellationReason String?               @map("cancellation_reason") // Reason for cancellation
+  items              OrderItem[]
+  approval           PendingOrderApproval?
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+  completedAt        DateTime?             @map("completed_at")
 
   @@index([status])
   @@index([createdAt(sort: Desc)])
@@ -140,18 +154,18 @@ model Order {
 }
 
 model PendingOrderApproval {
-  id            String   @id @default(uuid())
-  orderId       String   @unique @map("order_id")
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  tableNumber   Int      @map("table_number")
-  orderCount    Int      @map("order_count") // Number of orders in last 5 minutes
-  reason        String   @default("rate_limit_exceeded") // "rate_limit_exceeded"
-  status        String   @default("pending") // "pending", "approved", "rejected"
-  requestedAt   DateTime @default(now()) @map("requested_at")
-  reviewedAt    DateTime? @map("reviewed_at")
-  reviewedBy    String?   @map("reviewed_by") // Admin user ID
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id          String    @id @default(uuid())
+  orderId     String    @unique @map("order_id")
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  tableNumber Int       @map("table_number")
+  orderCount  Int       @map("order_count") // Number of orders in last 5 minutes
+  reason      String    @default("rate_limit_exceeded") // "rate_limit_exceeded"
+  status      String    @default("pending") // "pending", "approved", "rejected"
+  requestedAt DateTime  @default(now()) @map("requested_at")
+  reviewedAt  DateTime? @map("reviewed_at")
+  reviewedBy  String?   @map("reviewed_by") // Admin user ID
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@index([status, requestedAt])
   @@map("pending_order_approvals")
@@ -192,12 +206,12 @@ model WaiterCall {
 }
 
 model TableSession {
-  id          String   @id @default(uuid())
-  tableNumber Int      @map("table_number")
-  tokenHash   String   @unique @map("token_hash")
-  expiresAt   DateTime @map("expires_at")
+  id          String    @id @default(uuid())
+  tableNumber Int       @map("table_number")
+  tokenHash   String    @unique @map("token_hash")
+  expiresAt   DateTime  @map("expires_at")
   revokedAt   DateTime? @map("revoked_at")
-  createdAt   DateTime @default(now()) @map("created_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   @@index([tableNumber])
   @@map("table_sessions")
@@ -212,18 +226,18 @@ enum UserRole {
 
 // User model with role hierarchy
 model User {
-  id               String             @id @default(uuid())
-  email            String             @unique
-  passwordHash     String             @map("password_hash")
-  name             String
-  role             UserRole           @default(STAFF)
-  isActive         Boolean            @default(true) @map("is_active")
-  createdBy        String?            @map("created_by") // Admin who created this user
-  creator          User?              @relation("UserCreator", fields: [createdBy], references: [id])
-  createdUsers     User[]             @relation("UserCreator") // Users created by this admin
+  id                String             @id @default(uuid())
+  email             String             @unique
+  passwordHash      String             @map("password_hash")
+  name              String
+  role              UserRole           @default(STAFF)
+  isActive          Boolean            @default(true) @map("is_active")
+  createdBy         String?            @map("created_by") // Admin who created this user
+  creator           User?              @relation("UserCreator", fields: [createdBy], references: [id])
+  createdUsers      User[]             @relation("UserCreator") // Users created by this admin
   pushSubscriptions PushSubscription[]
-  createdAt        DateTime           @default(now()) @map("created_at")
-  updatedAt        DateTime           @updatedAt @map("updated_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
 
   @@index([role])
   @@index([isActive])
@@ -232,15 +246,15 @@ model User {
 
 // Staff model (legacy - keep for backwards compatibility)
 model Staff {
-  id               String             @id @default(uuid())
-  email            String             @unique
-  passwordHash     String             @map("password_hash")
-  name             String
-  role             String             @default("staff") // staff, manager, admin
-  isActive         Boolean            @default(true) @map("is_active")
+  id                String             @id @default(uuid())
+  email             String             @unique
+  passwordHash      String             @map("password_hash")
+  name              String
+  role              String             @default("staff") // staff, manager, admin
+  isActive          Boolean            @default(true) @map("is_active")
   pushSubscriptions PushSubscription[]
-  createdAt        DateTime           @default(now()) @map("created_at")
-  updatedAt        DateTime           @updatedAt @map("updated_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
 
   @@map("staff")
 }
@@ -260,19 +274,19 @@ model HypeSyncLog {
 
 // Web Push Subscriptions for PWA notifications
 model PushSubscription {
-  id           String   @id @default(uuid())
-  userId       String?  @map("user_id")
-  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  staffId      String?  @map("staff_id") // Legacy - keep for migration
-  staff        Staff?   @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  endpoint     String   @unique // Browser push endpoint
-  p256dh       String   // Encryption key
-  auth         String   // Auth secret
-  deviceName   String?  @map("device_name")
-  userAgent    String?  @map("user_agent")
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  lastUsed     DateTime @default(now()) @map("last_used")
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  staffId    String?  @map("staff_id") // Legacy - keep for migration
+  staff      Staff?   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  endpoint   String   @unique // Browser push endpoint
+  p256dh     String // Encryption key
+  auth       String // Auth secret
+  deviceName String?  @map("device_name")
+  userAgent  String?  @map("user_agent")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastUsed   DateTime @default(now()) @map("last_used")
 
   @@index([userId])
   @@index([staffId])
@@ -283,7 +297,7 @@ model PushSubscription {
 // QR Code Settings - Global settings for QR code generation
 model QRCodeSettings {
   id        String   @id @default(uuid())
-  settings  Json     // JSON object with all QR code settings
+  settings  Json // JSON object with all QR code settings
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -306,10 +320,10 @@ model WorkingHours {
 // Security & Rate Limit Settings
 model SecuritySettings {
   id                        String   @id @default(uuid())
-  approvalOrderThreshold    Int      @default(5)  @map("approval_order_threshold")      // number of orders before requiring approval
-  approvalTimeWindowMinutes Int      @default(5)  @map("approval_time_window_minutes")  // time window in minutes
-  sessionDurationHours      Int      @default(3)  @map("session_duration_hours")        // QR session duration
-  autoRejectMinutes         Int      @default(30) @map("auto_reject_minutes")           // pending approval auto-reject window
+  approvalOrderThreshold    Int      @default(5) @map("approval_order_threshold") // number of orders before requiring approval
+  approvalTimeWindowMinutes Int      @default(5) @map("approval_time_window_minutes") // time window in minutes
+  sessionDurationHours      Int      @default(3) @map("session_duration_hours") // QR session duration
+  autoRejectMinutes         Int      @default(30) @map("auto_reject_minutes") // pending approval auto-reject window
   createdAt                 DateTime @default(now()) @map("created_at")
   updatedAt                 DateTime @updatedAt @map("updated_at")
 
@@ -330,7 +344,7 @@ model LocationSettings {
 
 // Homepage Settings - Store all homepage content (offerings section)
 model HomepageSettings {
-  id        String   @id @default(uuid())
+  id             String   @id @default(uuid())
   // Section header
   sectionLabelBg String   @map("section_label_bg")
   sectionLabelEn String   @map("section_label_en")
@@ -348,7 +362,7 @@ model HomepageSettings {
   moodTextEn     String   @map("mood_text_en")
   moodTextDe     String   @map("mood_text_de")
   // Stats (JSON array)
-  stats          Json     // [{ label: string, value: string }] for each locale
+  stats          Json // [{ label: string, value: string }] for each locale
   // CTA buttons
   ctaPrimaryBg   String   @map("cta_primary_bg")
   ctaPrimaryEn   String   @map("cta_primary_en")
@@ -364,40 +378,38 @@ model HomepageSettings {
 
 // Homepage Offering Cards - Dynamic cards for offerings section
 model HomepageOfferingCard {
-  id          String   @id @default(uuid())
-  order       Int      @default(0) // Display order
-  icon        String   // Emoji or icon identifier
-  titleBg     String   @map("title_bg")
-  titleEn     String   @map("title_en")
-  titleDe     String   @map("title_de")
-  descriptionBg String @map("description_bg") @db.Text
-  descriptionEn String @map("description_en") @db.Text
-  descriptionDe String @map("description_de") @db.Text
-  badgeBg     String   @map("badge_bg")
-  badgeEn     String   @map("badge_en")
-  badgeDe     String   @map("badge_de")
-  highlights  Json     // Array of strings for each locale: { bg: string[], en: string[], de: string[] }
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid())
+  order         Int      @default(0) // Display order
+  icon          String // Emoji or icon identifier
+  titleBg       String   @map("title_bg")
+  titleEn       String   @map("title_en")
+  titleDe       String   @map("title_de")
+  descriptionBg String   @map("description_bg") @db.Text
+  descriptionEn String   @map("description_en") @db.Text
+  descriptionDe String   @map("description_de") @db.Text
+  badgeBg       String   @map("badge_bg")
+  badgeEn       String   @map("badge_en")
+  badgeDe       String   @map("badge_de")
+  highlights    Json // Array of strings for each locale: { bg: string[], en: string[], de: string[] }
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@map("homepage_offering_cards")
 }
 
 // Menu Settings - Store menu page content (title, subtitle, background image)
 model MenuSettings {
-  id           String   @id @default(uuid())
-  titleBg      String   @map("title_bg")
-  titleEn      String   @map("title_en")
-  titleDe      String   @map("title_de")
-  subtitleBg   String   @map("subtitle_bg")
-  subtitleEn   String   @map("subtitle_en")
-  subtitleDe  String   @map("subtitle_de")
-  backgroundImageUrl String? @map("background_image_url")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id                 String   @id @default(uuid())
+  titleBg            String   @map("title_bg")
+  titleEn            String   @map("title_en")
+  titleDe            String   @map("title_de")
+  subtitleBg         String   @map("subtitle_bg")
+  subtitleEn         String   @map("subtitle_en")
+  subtitleDe         String   @map("subtitle_de")
+  backgroundImageUrl String?  @map("background_image_url")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@map("menu_settings")
 }
-
-

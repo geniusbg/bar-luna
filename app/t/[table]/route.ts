@@ -42,13 +42,23 @@ export async function GET(
     }
 
     // Increment scan count and update last scanned timestamp
-    await prisma.barTable.update({
-      where: { id: barTable.id },
-      data: {
-        scanCount: { increment: 1 },
-        lastScannedAt: new Date()
-      }
-    });
+    const scanDate = new Date();
+    await prisma.$transaction([
+      prisma.barTable.update({
+        where: { id: barTable.id },
+        data: {
+          scanCount: { increment: 1 },
+          lastScannedAt: scanDate
+        }
+      }),
+      prisma.qrScan.create({
+        data: {
+          tableId: barTable.id,
+          tableNumber: barTable.tableNumber,
+          scannedAt: scanDate
+        }
+      })
+    ]);
 
     const securitySettings = await getSecuritySettings();
     const sessionDurationHours = securitySettings.sessionDurationHours || 3;

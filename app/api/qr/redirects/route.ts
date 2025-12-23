@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 // Get all QR redirect configurations
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
+
+    // Get all tables
     const tables = await prisma.barTable.findMany({
       orderBy: { tableNumber: 'asc' },
       select: {
@@ -17,6 +22,81 @@ export async function GET() {
         qrCodeUrl: true
       }
     });
+
+    // If date filters are provided, calculate scan counts from history
+    if (dateFrom || dateTo) {
+      const fromDate = dateFrom ? new Date(dateFrom) : null;
+      if (fromDate) fromDate.setHours(0, 0, 0, 0);
+      
+      const toDate = dateTo ? new Date(dateTo) : null;
+      if (toDate) toDate.setHours(23, 59, 59, 999);
+
+      // Get scan counts for each table in the date range
+      const scanCounts = await prisma.qrScan.groupBy({
+        by: ['tableId'],
+        where: {
+          ...(fromDate && toDate ? {
+            scannedAt: {
+              gte: fromDate,
+              lte: toDate
+            }
+          } : fromDate ? {
+            scannedAt: { gte: fromDate }
+          } : toDate ? {
+            scannedAt: { lte: toDate }
+          } : {}),
+        },
+        _count: {
+          id: true
+        }
+      });
+
+      // Get last scanned date for each table in the date range
+      const lastScans = await prisma.qrScan.findMany({
+        where: {
+          ...(fromDate && toDate ? {
+            scannedAt: {
+              gte: fromDate,
+              lte: toDate
+            }
+          } : fromDate ? {
+            scannedAt: { gte: fromDate }
+          } : toDate ? {
+            scannedAt: { lte: toDate }
+          } : {}),
+        },
+        select: {
+          tableId: true,
+          scannedAt: true
+        },
+        orderBy: {
+          scannedAt: 'desc'
+        }
+      });
+
+      // Create maps for quick lookup
+      const scanCountMap = new Map(scanCounts.map(s => [s.tableId, s._count.id]));
+      const lastScanMap = new Map<string, Date>();
+      lastScans.forEach(scan => {
+        if (!lastScanMap.has(scan.tableId) || scan.scannedAt > lastScanMap.get(scan.tableId)!) {
+          lastScanMap.set(scan.tableId, scan.scannedAt);
+        }
+      });
+
+      // Update tables with filtered scan counts and last scanned dates
+      const filteredTables = tables.map(table => {
+        const periodScanCount = scanCountMap.get(table.id) || 0;
+        const periodLastScanned = lastScanMap.get(table.id) || null;
+        
+        return {
+          ...table,
+          scanCount: periodScanCount,
+          lastScannedAt: periodLastScanned
+        };
+      });
+
+      return NextResponse.json({ tables: filteredTables });
+    }
 
     return NextResponse.json({ tables });
   } catch (error) {

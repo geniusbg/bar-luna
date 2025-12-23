@@ -147,3 +147,5 @@ echo "5. Избягвай eval(), Function(), exec(), spawn() с user input"
 
 
 
+
+

@@ -47,32 +47,85 @@ function AdminOrdersPageContent() {
   const autoRejectMinutes = securitySettings?.autoRejectMinutes ?? 30;
   
   // CSV Export functions
-  const generateCSVExport = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const todayOrders = orders.filter(o => {
-      const orderDate = new Date(o.createdAt).toISOString().split('T')[0];
-      return orderDate === today && o.status === 'completed';
-    });
-    
-    const headers = ['Поръчка #', 'Маса', 'Дата/Час', 'Продукт', 'Количество', 'Цена', 'Общо поръчка', 'Статус'];
-    const rows = todayOrders.flatMap(order => 
-      order.items.map((item: any, idx: number) => [
-        order.orderNumber,
-        order.tableNumber,
-        new Date(order.createdAt).toLocaleString('bg-BG'),
-        item.productName,
-        item.quantity,
-        Number(item.priceBgn).toFixed(2),
-        idx === 0 ? Number(order.totalBgn).toFixed(2) : '',
-        idx === 0 ? order.status : ''
-      ])
-    );
-    
-    return [headers, ...rows];
+  const generateCSVExport = async () => {
+    try {
+      // Fetch orders directly from API for the selected date range
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '10000', // Large limit to get all orders
+        status: 'completed',
+        ...(statsFilters.dateFrom && { dateFrom: statsFilters.dateFrom }),
+        ...(statsFilters.dateTo && { dateTo: statsFilters.dateTo }),
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
+      });
+
+      const response = await fetch(`/api/orders/history?${params}`);
+      const data = await response.json();
+      const filteredOrders = data.orders || [];
+      
+      const headers = ['Поръчка #', 'Маса', 'Дата/Час', 'Продукт', 'Количество', 'Цена', 'Общо поръчка', 'Статус'];
+      const rows = filteredOrders.flatMap((order: any) => {
+        const orderDate = new Date(order.createdAt);
+        const formattedDate = orderDate.toLocaleDateString('bg-BG', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+        const formattedTime = orderDate.toLocaleTimeString('bg-BG', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+        const dateTime = `${formattedDate} ${formattedTime}`;
+        
+        // Format prices with dot as decimal separator (e.g., 2.55)
+        const formatPrice = (price: number) => {
+          return Number(price || 0).toFixed(2).replace(',', '.');
+        };
+        
+        const orderTotal = formatPrice(order.totalBgn);
+        const orderStatus = String(order.status || 'completed');
+        
+        return order.items.map((item: any) => {
+          // Ensure all fields have values
+          const productName = String(item.productName || item.product?.nameBg || '');
+          const quantity = String(item.quantity || '1');
+          const price = formatPrice(item.priceBgn);
+          
+          return [
+            String(order.orderNumber || ''),
+            String(order.tableNumber || ''),
+            dateTime,
+            productName,
+            quantity,
+            price,
+            orderTotal, // Show total on every row for easier reading
+            orderStatus // Show status on every row
+          ];
+        });
+      });
+      
+      return [headers, ...rows];
+    } catch (error) {
+      console.error('CSV export error:', error);
+      return [['Грешка при експорт на данни']];
+    }
   };
   
   const downloadCSV = (data: any[][], filename: string) => {
-    const csvContent = data.map(row => row.join(',')).join('\n');
+    // Escape CSV values (handle commas, quotes, newlines)
+    const escapeCSV = (value: any): string => {
+      if (value === null || value === undefined) return '';
+      const str = String(value);
+      // If contains comma, quote, or newline, wrap in quotes and escape quotes
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+    
+    const csvContent = data.map(row => row.map(escapeCSV).join(',')).join('\n');
     const BOM = '\uFEFF'; // UTF-8 BOM for Excel
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -127,6 +180,7 @@ function AdminOrdersPageContent() {
   const [statsLoading, setStatsLoading] = useState(false);
   const [qrScanStats, setQrScanStats] = useState<any[]>([]);
   const [qrScanStatsLoading, setQrScanStatsLoading] = useState(false);
+  const [qrScanChartData, setQrScanChartData] = useState<any>(null);
   
   // Stats filters - temporary (before applying)
   const [tempStatsFilters, setTempStatsFilters] = useState({
@@ -140,6 +194,14 @@ function AdminOrdersPageContent() {
     dateTo: new Date().toISOString().split('T')[0]
   });
 
+  // Helper function to format date as YYYY-MM-DD in local timezone
+  const formatLocalDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Quick filter presets
   const setQuickFilter = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
     const today = new Date();
@@ -152,6 +214,8 @@ function AdminOrdersPageContent() {
     switch (preset) {
       case 'today':
         dateFrom = new Date(today);
+        dateTo = new Date(today);
+        dateTo.setHours(23, 59, 59, 999);
         break;
       case 'yesterday':
         dateFrom = new Date(today);
@@ -162,18 +226,24 @@ function AdminOrdersPageContent() {
       case 'week':
         dateFrom = new Date(today);
         dateFrom.setDate(dateFrom.getDate() - 7);
+        dateTo = new Date(today);
+        dateTo.setHours(23, 59, 59, 999);
         break;
       case 'month':
         dateFrom = new Date(today);
         dateFrom.setMonth(dateFrom.getMonth() - 1);
+        dateTo = new Date(today);
+        dateTo.setHours(23, 59, 59, 999);
         break;
       default:
         dateFrom = new Date(today);
+        dateTo = new Date(today);
+        dateTo.setHours(23, 59, 59, 999);
     }
     
     const newFilters = {
-      dateFrom: dateFrom.toISOString().split('T')[0],
-      dateTo: dateTo.toISOString().split('T')[0]
+      dateFrom: formatLocalDate(dateFrom),
+      dateTo: formatLocalDate(dateTo)
     };
     
     setTempStatsFilters(newFilters);
@@ -424,7 +494,11 @@ function AdminOrdersPageContent() {
   async function loadQrScanStats() {
     setQrScanStatsLoading(true);
     try {
-      const response = await fetch('/api/qr/redirects');
+      const params = new URLSearchParams();
+      if (statsFilters.dateFrom) params.append('dateFrom', statsFilters.dateFrom);
+      if (statsFilters.dateTo) params.append('dateTo', statsFilters.dateTo);
+      
+      const response = await fetch(`/api/qr/redirects?${params.toString()}`);
       const data = await response.json();
       setQrScanStats(data.tables || []);
       setQrScanStatsLoading(false);
@@ -1576,10 +1650,53 @@ function AdminOrdersPageContent() {
                 </div>
               )}
 
+              {/* Export Section */}
+              <div className="mt-8 bg-gray-800 rounded-xl p-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Експорт на данни</h3>
+                    <p className="text-sm text-gray-400">
+                      Изтегли поръчките за избрания период в CSV формат за по-нататъшна обработка
+                    </p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const csvData = await generateCSVExport();
+                        if (csvData.length > 1) {
+                          downloadCSV(csvData, `luna-orders-${statsFilters.dateFrom || new Date().toISOString().split('T')[0]}.csv`);
+                          setToast({ message: '✅ Експорт завършен успешно!', type: 'success' });
+                        } else {
+                          setToast({ message: '⚠️ Няма данни за експорт за избрания период', type: 'error' });
+                        }
+                      } catch (error) {
+                        setToast({ message: '❌ Грешка при експорт на данни', type: 'error' });
+                      }
+                    }}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 justify-center"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Изтегли CSV
+                  </button>
+                </div>
+              </div>
+
               {/* QR Code Scan Statistics */}
-              {qrScanStats.length > 0 && (
-                <div className="mt-8">
-                  <h2 className="text-2xl font-bold text-white mb-4">📱 QR Сканирания</h2>
+              <div className="mt-8">
+                <h2 className="text-2xl font-bold text-white mb-4">📱 QR Сканирания</h2>
+                
+                {qrScanStatsLoading ? (
+                  <div className="text-center py-8">
+                    <LoadingScreen inline={true} message="Зареждане на статистика..." />
+                  </div>
+                ) : qrScanStats.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-400">Няма сканирания за избрания период</p>
+                  </div>
+                ) : (
+                  <>
                   
                   {/* Stats Summary */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
@@ -1606,6 +1723,51 @@ function AdminOrdersPageContent() {
                       </div>
                     </div>
                   </div>
+
+                  {/* QR Scans Chart */}
+                  {qrScanChartData && qrScanChartData.daily && qrScanChartData.daily.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-xl font-bold text-white mb-4">📊 Сканирания по дни</h3>
+                      <div className="bg-gray-800 rounded-xl p-6">
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart
+                            data={qrScanChartData.daily.map((day: any) => ({
+                              date: new Date(day.date).toLocaleDateString('bg-BG', { 
+                                day: '2-digit', 
+                                month: '2-digit' 
+                              }),
+                              scans: day.scans
+                            }))}
+                            margin={{ top: 20, right: 10, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                            <XAxis 
+                              dataKey="date" 
+                              stroke="#9CA3AF"
+                              tick={{ fill: '#9CA3AF' }}
+                            />
+                            <YAxis 
+                              stroke="#9CA3AF"
+                              tick={{ fill: '#9CA3AF' }}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: '#1F2937',
+                                border: '1px solid #374151',
+                                borderRadius: '8px',
+                                color: '#F3F4F6'
+                              }}
+                            />
+                            <Bar dataKey="scans" radius={[8, 8, 0, 0]}>
+                              {qrScanChartData.daily.map((entry: any, index: number) => (
+                                <Cell key={`cell-${index}`} fill="#3B82F6" />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Scan Statistics Table - Desktop */}
                   <div className="bg-gray-800 rounded-xl overflow-hidden mb-4 hidden md:block">
@@ -1712,32 +1874,8 @@ function AdminOrdersPageContent() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {/* Export Section */}
-              <div className="mt-8 bg-gray-800 rounded-xl p-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Експорт на данни</h3>
-                    <p className="text-sm text-gray-400">
-                      Изтегли поръчките за днес в CSV формат за по-нататъшна обработка
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      const csvData = generateCSVExport();
-                      downloadCSV(csvData, `luna-orders-${new Date().toISOString().split('T')[0]}.csv`);
-                      setToast({ message: '✅ Експорт завършен успешно!', type: 'success' });
-                    }}
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 justify-center"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Изтегли CSV
-                  </button>
-                </div>
+                  </>
+                )}
               </div>
             </div>
           ) : (
