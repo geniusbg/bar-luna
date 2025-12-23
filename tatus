@@ -1,0 +1,4 @@
+[33ma68bdc3[m config: Move APP_NAME and PORT configuration to .env
+[33m5fddcd3[m[33m ([m[1;32mluna-v2.2[m[33m)[m feat: Admin improvements - working hours, QR redirects modal, UI updates
+[33m4862799[m Fix QR code generation: Remove Sharp, use pure SVG approach
+[33m8507782[m v2.2: QR settings in DB, manual save button, SW v3.3.14, footer with version, NextAuth optimization

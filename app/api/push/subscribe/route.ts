@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function POST(request: Request) {
   try {
+    // Get current user session
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = (session.user as any).id;
+
     const data = await request.json();
     const { subscription, deviceName, userAgent } = data;
 
@@ -19,14 +30,17 @@ export async function POST(request: Request) {
     });
 
     if (existing) {
-      // Update last used
+      // Update last used and ensure userId is set
       await prisma.pushSubscription.update({
         where: { id: existing.id },
         data: {
+          userId: userId, // Ensure user is linked
           lastUsed: new Date(),
           isActive: true
         }
       });
+      
+      console.log('✅ Push subscription updated for user:', userId);
       
       return NextResponse.json({ 
         success: true, 
@@ -35,9 +49,10 @@ export async function POST(request: Request) {
       });
     }
 
-    // Create new subscription
+    // Create new subscription with userId
     const newSubscription = await prisma.pushSubscription.create({
       data: {
+        userId: userId,
         endpoint: subscription.endpoint,
         p256dh: keys.p256dh,
         auth: keys.auth,
@@ -47,7 +62,7 @@ export async function POST(request: Request) {
       }
     });
 
-    console.log('✅ New push subscription created:', newSubscription.id);
+    console.log('✅ New push subscription created for user:', userId, 'subscription:', newSubscription.id);
 
     return NextResponse.json({ 
       success: true,

@@ -549,6 +549,13 @@ export default function StaffDashboard() {
     setDeferredPrompt(null);
   };
 
+  // Check if device is MIUI (Xiaomi/Redmi)
+  const isMIUI = () => {
+    if (typeof window === 'undefined') return false;
+    const ua = navigator.userAgent.toLowerCase();
+    return ua.includes('miui') || ua.includes('xiaomi') || ua.includes('redmi');
+  };
+
   // Enable Push Notifications
   const handleEnablePush = async () => {
     try {
@@ -570,13 +577,29 @@ export default function StaffDashboard() {
 
       await subscribeToPush();
       setPushEnabled(true);
-      setToast({ message: 'Push notifications активирани! 🔔', type: 'success' });
+      
+      // Show MIUI-specific warning
+      if (isMIUI()) {
+        setToast({ 
+          message: '✅ Push активиран! ⚠️ За Redmi/Xiaomi: Разреши Автозапуск и Нотификации в Настройки → Приложения → Chrome', 
+          type: 'info' 
+        });
+      } else {
+        setToast({ message: 'Push notifications активирани! 🔔', type: 'success' });
+      }
       
       // Show test notification
       setTimeout(() => showTestNotification(), 1000);
     } catch (error: any) {
       console.error('Enable push error:', error);
-      setToast({ message: `Грешка: ${error.message}`, type: 'error' });
+      if (isMIUI()) {
+        setToast({ 
+          message: `Грешка: ${error.message}. За Redmi/Xiaomi провери: Настройки → Приложения → Chrome → Автозапуск и Нотификации`, 
+          type: 'error' 
+        });
+      } else {
+        setToast({ message: `Грешка: ${error.message}`, type: 'error' });
+      }
     }
   };
 
@@ -837,12 +860,27 @@ export default function StaffDashboard() {
 
               {/* Status Indicators */}
               {isPWA && pushEnabled && (
-                <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span className="text-gray-200">PWA & Push Active</span>
+                <>
+                  <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span className="text-gray-200">PWA & Push Active</span>
+                    </div>
                   </div>
-                </div>
+                  {isMIUI() && (
+                    <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-xl px-4 py-3">
+                      <div className="flex items-start gap-2 text-sm">
+                        <span className="text-yellow-400">⚠️</span>
+                        <div className="flex-1">
+                          <p className="text-yellow-200 font-semibold mb-1">Redmi/Xiaomi настройки</p>
+                          <p className="text-yellow-300/80 text-xs">
+                            За да работи push: Настройки → Приложения → Chrome → Автозапуск и Нотификации
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* User Menu */}
@@ -909,12 +947,27 @@ export default function StaffDashboard() {
           )}
           
           {isPWA && pushEnabled && (
-            <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="text-gray-200">PWA & Push Active</span>
+            <>
+              <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-gray-200">PWA & Push Active</span>
+                </div>
               </div>
-            </div>
+              {isMIUI() && (
+                <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-xl px-4 py-3">
+                  <div className="flex items-start gap-2 text-sm">
+                    <span className="text-yellow-400">⚠️</span>
+                    <div className="flex-1">
+                      <p className="text-yellow-200 font-semibold mb-1">Redmi/Xiaomi настройки</p>
+                      <p className="text-yellow-300/80 text-xs">
+                        За да работи push: Настройки → Приложения → Chrome → Автозапуск и Нотификации
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* Mobile User Menu */}
