@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import LoadingScreen from '@/components/LoadingScreen';
 import Toast from '@/components/Toast';
+import { formatBulgarianDateWithMonth } from '@/lib/date-utils';
 
 export default function AdminEventsPage() {
   const pathname = usePathname();
@@ -127,13 +128,7 @@ export default function AdminEventsPage() {
                 </h3>
                 
                 <p className="text-gray-200 text-sm mb-3">
-                  {eventDate.toLocaleDateString('bg-BG', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  {formatBulgarianDateWithMonth(eventDate)}
                 </p>
                 
                 <p className="text-gray-200 text-sm mb-4 line-clamp-2">

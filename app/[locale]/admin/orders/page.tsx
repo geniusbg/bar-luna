@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import PendingApprovalsBanner from '@/components/PendingApprovalsBanner';
 import { useLockScroll } from '@/lib/use-lock-scroll';
 import LoadingScreen from '@/components/LoadingScreen';
+import { formatBulgarianDateTime, formatBulgarianDate, formatBulgarianDateRange, formatBulgarianTime } from '@/lib/date-utils';
 
 type OrderTab = 'active' | 'history' | 'stats' | 'approvals';
 
@@ -67,16 +68,9 @@ function AdminOrdersPageContent() {
       const headers = ['Поръчка #', 'Маса', 'Дата/Час', 'Продукт', 'Количество', 'Цена', 'Общо поръчка', 'Статус'];
       const rows = filteredOrders.flatMap((order: any) => {
         const orderDate = new Date(order.createdAt);
-        const formattedDate = orderDate.toLocaleDateString('bg-BG', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        });
-        const formattedTime = orderDate.toLocaleTimeString('bg-BG', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
+        const formattedDateTime = formatBulgarianDateTime(orderDate);
+        // formatBulgarianDateTime returns "23.12.2025 г., 17:51", split by comma to get date and time
+        const [formattedDate, formattedTime] = formattedDateTime.split(', ');
         const dateTime = `${formattedDate} ${formattedTime}`;
         
         // Format prices with dot as decimal separator (e.g., 2.55)
@@ -204,46 +198,48 @@ function AdminOrdersPageContent() {
 
   // Quick filter presets
   const setQuickFilter = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Get current date in Bulgarian timezone as YYYY-MM-DD string
+    const now = new Date();
+    const bgTodayStr = now.toLocaleDateString('en-CA', { timeZone: 'Europe/Sofia' }); // YYYY-MM-DD format
+    const [year, month, day] = bgTodayStr.split('-').map(Number);
     
-    let dateFrom: Date;
-    let dateTo: Date = new Date(today);
-    dateTo.setHours(23, 59, 59, 999);
+    let dateFromStr: string;
+    let dateToStr: string;
     
     switch (preset) {
       case 'today':
-        dateFrom = new Date(today);
-        dateTo = new Date(today);
-        dateTo.setHours(23, 59, 59, 999);
+        dateFromStr = bgTodayStr;
+        dateToStr = bgTodayStr;
         break;
-      case 'yesterday':
-        dateFrom = new Date(today);
-        dateFrom.setDate(dateFrom.getDate() - 1);
-        dateTo = new Date(dateFrom);
-        dateTo.setHours(23, 59, 59, 999);
+      case 'yesterday': {
+        const yesterday = new Date(year, month - 1, day);
+        yesterday.setDate(yesterday.getDate() - 1);
+        dateFromStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+        dateToStr = dateFromStr;
         break;
-      case 'week':
-        dateFrom = new Date(today);
-        dateFrom.setDate(dateFrom.getDate() - 7);
-        dateTo = new Date(today);
-        dateTo.setHours(23, 59, 59, 999);
+      }
+      case 'week': {
+        const weekAgo = new Date(year, month - 1, day);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        dateFromStr = `${weekAgo.getFullYear()}-${String(weekAgo.getMonth() + 1).padStart(2, '0')}-${String(weekAgo.getDate()).padStart(2, '0')}`;
+        dateToStr = bgTodayStr;
         break;
-      case 'month':
-        dateFrom = new Date(today);
-        dateFrom.setMonth(dateFrom.getMonth() - 1);
-        dateTo = new Date(today);
-        dateTo.setHours(23, 59, 59, 999);
+      }
+      case 'month': {
+        const monthAgo = new Date(year, month - 1, day);
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        dateFromStr = `${monthAgo.getFullYear()}-${String(monthAgo.getMonth() + 1).padStart(2, '0')}-${String(monthAgo.getDate()).padStart(2, '0')}`;
+        dateToStr = bgTodayStr;
         break;
+      }
       default:
-        dateFrom = new Date(today);
-        dateTo = new Date(today);
-        dateTo.setHours(23, 59, 59, 999);
+        dateFromStr = bgTodayStr;
+        dateToStr = bgTodayStr;
     }
     
     const newFilters = {
-      dateFrom: formatLocalDate(dateFrom),
-      dateTo: formatLocalDate(dateTo)
+      dateFrom: dateFromStr,
+      dateTo: dateToStr
     };
     
     setTempStatsFilters(newFilters);
@@ -605,13 +601,7 @@ function AdminOrdersPageContent() {
       const fromDate = new Date(parseInt(fromParts[0]), parseInt(fromParts[1]) - 1, parseInt(fromParts[2]));
       const toDate = new Date(parseInt(toParts[0]), parseInt(toParts[1]) - 1, parseInt(toParts[2]));
       
-      const fromStr = fromDate.toLocaleDateString('bg-BG', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const toStr = toDate.toLocaleDateString('bg-BG', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      
-      if (fromStr === toStr) {
-        return fromStr;
-      }
-      return `${fromStr} - ${toStr}`;
+      return formatBulgarianDateRange(fromDate, toDate);
     }
     return 'днес';
   };
@@ -916,12 +906,7 @@ function AdminOrdersPageContent() {
                       </div>
                       {order.createdAt && (
                         <div className="text-sm text-gray-400 mt-1">
-                          {new Date(order.createdAt).toLocaleString('bg-BG', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          {formatBulgarianDateTime(order.createdAt)}
                         </div>
                       )}
                     </div>
@@ -1067,7 +1052,7 @@ function AdminOrdersPageContent() {
                     </div>
                     {order.completedAt && (
                       <p className="text-sm text-gray-400 mt-2">
-                        {new Date(order.completedAt).toLocaleTimeString('bg-BG')}
+                        {formatBulgarianTime(order.completedAt)}
                       </p>
                     )}
                   </div>
@@ -1284,13 +1269,7 @@ function AdminOrdersPageContent() {
                             setShowOrderModal(true);
                           }}
                         >
-                          {new Date(order.createdAt).toLocaleString('bg-BG', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          {formatBulgarianDateTime(order.createdAt)}
                         </td>
                         <td 
                           className="px-6 py-4 text-gray-200 cursor-pointer"
@@ -1489,10 +1468,7 @@ function AdminOrdersPageContent() {
                     <ResponsiveContainer width="100%" height={400}>
                       <BarChart
                         data={revenueStats.last7Days.map((day: any) => ({
-                          date: new Date(day.date).toLocaleDateString('bg-BG', { 
-                            day: '2-digit', 
-                            month: '2-digit' 
-                          }),
+                          date: formatBulgarianDate(day.date).replace(/ г\./g, '').trim(), // Get just date part without "г."
                           revenue: Number(day.revenue || 0),
                           orders: day.orders
                         }))}
@@ -1732,10 +1708,7 @@ function AdminOrdersPageContent() {
                         <ResponsiveContainer width="100%" height={300}>
                           <BarChart
                             data={qrScanChartData.daily.map((day: any) => ({
-                              date: new Date(day.date).toLocaleDateString('bg-BG', { 
-                                day: '2-digit', 
-                                month: '2-digit' 
-                              }),
+                              date: formatBulgarianDate(day.date).replace(/ г\./g, '').trim(), // Get just date part without "г."
                               scans: day.scans
                             }))}
                             margin={{ top: 20, right: 10, left: 20, bottom: 5 }}
@@ -1814,13 +1787,7 @@ function AdminOrdersPageContent() {
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-400">
                                 {table.lastScannedAt 
-                                  ? new Date(table.lastScannedAt).toLocaleString('bg-BG', {
-                                      day: '2-digit',
-                                      month: '2-digit',
-                                      year: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })
+                                  ? formatBulgarianDateTime(table.lastScannedAt)
                                   : 'Никога'}
                               </td>
                             </tr>
@@ -1860,13 +1827,7 @@ function AdminOrdersPageContent() {
                             <span className="text-gray-400 text-sm">Последно:</span>
                             <span className="text-gray-300 text-sm">
                               {table.lastScannedAt 
-                                ? new Date(table.lastScannedAt).toLocaleString('bg-BG', {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })
+                                ? formatBulgarianDateTime(table.lastScannedAt)
                                 : 'Никога'}
                             </span>
                           </div>
@@ -1939,11 +1900,11 @@ function AdminOrdersPageContent() {
                 {/* Timestamps */}
                 <div className="bg-gray-800 rounded-lg p-4 space-y-2">
                   <p className="text-gray-300 text-sm">
-                    Създадена: {new Date(selectedOrder.createdAt).toLocaleString('bg-BG')}
+                    Създадена: {formatBulgarianDateTime(selectedOrder.createdAt)}
                   </p>
                   {selectedOrder.completedAt && (
                     <p className="text-gray-300 text-sm">
-                      Завършена: {new Date(selectedOrder.completedAt).toLocaleString('bg-BG')}
+                      Завършена: {formatBulgarianDateTime(selectedOrder.completedAt)}
                     </p>
                   )}
                   <p className="text-gray-300 text-sm">
@@ -2022,7 +1983,7 @@ function AdminOrdersPageContent() {
                         {approval.orderCount} поръчки за последните {approvalWindowMinutes} минути
                       </p>
                       <p className="text-gray-300 text-sm mt-1">
-                        Заявена: {new Date(approval.requestedAt).toLocaleString('bg-BG')}
+                        Заявена: {formatBulgarianDateTime(approval.requestedAt)}
                       </p>
                     </div>
                     <div className="text-right">
@@ -2088,7 +2049,7 @@ function AdminOrdersPageContent() {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-300">Дата/Час:</span>
                     <span className="text-white font-semibold">
-                      {new Date(selectedApproval.order.createdAt).toLocaleString('bg-BG')}
+                      {formatBulgarianDateTime(selectedApproval.order.createdAt)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getLocationSettings } from '@/lib/location-settings';
 import { getHomepageSettings, getHomepageOfferingCards } from '@/lib/homepage-settings';
 import ChefsPicksCarousel from '@/components/ChefsPicksCarousel';
+import { formatDateForLocale } from '@/lib/date-utils';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -519,11 +520,7 @@ export default async function HomePage({
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         <span className="text-white text-sm font-medium">
-                          {eventDate.toLocaleDateString(locale === 'bg' ? 'bg-BG' : locale === 'en' ? 'en-US' : 'de-DE', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric'
-                          })}
+                          {formatDateForLocale(eventDate, locale as 'bg' | 'en' | 'de')}
                         </span>
                       </div>
 

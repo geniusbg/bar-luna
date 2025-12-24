@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { formatDateForLocale } from '@/lib/date-utils';
 
 export const revalidate = 0;
 
@@ -85,13 +86,7 @@ export default async function EventDetailPage({
                 <div>
                   <p className="text-sm text-gray-400">{locale === 'bg' ? 'Дата и час' : locale === 'en' ? 'Date & Time' : 'Datum & Uhrzeit'}</p>
                   <p className="font-semibold text-white">
-                    {eventDate.toLocaleDateString(locale === 'bg' ? 'bg-BG' : locale === 'en' ? 'en-US' : 'de-DE', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {formatDateForLocale(eventDate, locale as 'bg' | 'en' | 'de')}
                   </p>
                 </div>
               </div>

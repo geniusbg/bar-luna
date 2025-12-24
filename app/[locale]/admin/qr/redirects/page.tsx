@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Toast from '@/components/Toast';
 import LoadingScreen from '@/components/LoadingScreen';
+import { formatBulgarianDateTime } from '@/lib/date-utils';
 
 interface QRTable {
   id: string;
@@ -101,17 +102,8 @@ export default function QRRedirectsPage() {
     }
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Никога';
-    const date = new Date(dateString);
-    return date.toLocaleString('bg-BG', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // Use global date formatter from lib/date-utils
+  const formatDate = formatBulgarianDateTime;
 
   if (loading) {
     return <LoadingScreen locale="bg" />;

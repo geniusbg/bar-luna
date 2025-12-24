@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSecuritySettings } from '@/lib/security-settings';
 import { createTableSession } from '@/lib/table-sessions';
+import { getBulgarianDateTime } from '@/lib/date-utils';
 
 export async function GET(
   request: NextRequest,
@@ -42,7 +43,8 @@ export async function GET(
     }
 
     // Increment scan count and update last scanned timestamp
-    const scanDate = new Date();
+    // Use Bulgarian timezone for consistent timestamps
+    const scanDate = getBulgarianDateTime();
     await prisma.$transaction([
       prisma.barTable.update({
         where: { id: barTable.id },

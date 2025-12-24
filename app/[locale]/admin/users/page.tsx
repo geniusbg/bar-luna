@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import LoadingScreen from '@/components/LoadingScreen';
+import { formatBulgarianDate } from '@/lib/date-utils';
 
 interface User {
   id: string;
@@ -139,7 +140,7 @@ export default function UsersPage({ params }: { params: Promise<{ locale: string
                     </span>
                   </div>
                   <p className="text-gray-400 text-sm">
-                    Създаден: {new Date(user.createdAt).toLocaleDateString('bg-BG')}
+                    Създаден: {formatBulgarianDate(user.createdAt)}
                   </p>
                   <div className="flex gap-2 pt-2 border-t border-gray-700">
                     <button
@@ -200,7 +201,7 @@ export default function UsersPage({ params }: { params: Promise<{ locale: string
                         </span>
                       </td>
                       <td className="px-4 py-4 text-gray-400 text-sm">
-                        {new Date(user.createdAt).toLocaleDateString('bg-BG')}
+                        {formatBulgarianDate(user.createdAt)}
                       </td>
                       <td className="px-4 py-4 flex gap-2">
                         <button

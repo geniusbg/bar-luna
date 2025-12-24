@@ -18,6 +18,7 @@ import {
   showTestNotification,
   getPushSupportDetails
 } from '@/lib/push-notifications';
+import { formatBulgarianDateTime, formatBulgarianTime } from '@/lib/date-utils';
 
 export default function StaffDashboard() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -1074,12 +1075,7 @@ export default function StaffDashboard() {
                     </p>
                     {call.createdAt && (
                       <p className="text-xs md:text-sm text-gray-400 mt-1">
-                        {new Date(call.createdAt).toLocaleString('bg-BG', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {formatBulgarianDateTime(call.createdAt)}
                       </p>
                     )}
                   </div>
@@ -1161,12 +1157,7 @@ export default function StaffDashboard() {
                     </p>
                     {call.createdAt && (
                       <p className="text-sm text-gray-400 mt-1">
-                        Заявено: {new Date(call.createdAt).toLocaleString('bg-BG', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        Заявено: {formatBulgarianDateTime(call.createdAt)}
                       </p>
                     )}
                   </div>
@@ -1179,12 +1170,7 @@ export default function StaffDashboard() {
                 </div>
                 {call.completedAt && (
                   <p className="text-sm text-gray-400 mt-2 text-center">
-                    Завършено: {new Date(call.completedAt).toLocaleString('bg-BG', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    Завършено: {formatBulgarianDateTime(call.completedAt)}
                   </p>
                 )}
               </div>
@@ -1250,12 +1236,7 @@ export default function StaffDashboard() {
                       </div>
                       {order.createdAt && (
                         <div className="text-xs md:text-sm text-gray-400 mt-1">
-                          {new Date(order.createdAt).toLocaleString('bg-BG', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          {formatBulgarianDateTime(order.createdAt)}
                         </div>
                       )}
                     </div>
@@ -1410,7 +1391,7 @@ export default function StaffDashboard() {
                     </div>
                     {order.completedAt && (
                       <p className="text-sm text-gray-400 mt-2">
-                        Завършена: {new Date(order.completedAt).toLocaleTimeString('bg-BG')}
+                        Завършена: {formatBulgarianTime(order.completedAt)}
                       </p>
                     )}
                   </div>
@@ -1448,7 +1429,7 @@ export default function StaffDashboard() {
                   <span className="text-gray-300">Дата/Час:</span>
                   <span className="text-white font-semibold">
                     {selectedApproval.order?.createdAt 
-                      ? new Date(selectedApproval.order.createdAt).toLocaleString('bg-BG')
+                      ? formatBulgarianDateTime(selectedApproval.order.createdAt)
                       : 'N/A'}
                   </span>
                 </div>
