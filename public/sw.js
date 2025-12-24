@@ -180,27 +180,35 @@ self.addEventListener('fetch', (event) => {
         if (!response.ok && isServerError && url.pathname.startsWith('/api/')) {
           console.log('🔴 SW: API route returned server error status:', response.status, url.pathname);
           
+          // Check for database error indicator in response headers
+          const errorTypeHeader = response.headers.get('X-Error-Type') || 'server';
+          const isDatabaseError = errorTypeHeader === 'database';
+          const messageType = isDatabaseError ? 'DATABASE_ERROR' : 'SERVER_OFFLINE';
+          
           // Notify ALL clients immediately (only for server errors, not client errors)
           // This sets window.__isOffline to prevent NextAuth redirect
           self.clients.matchAll().then(clients => {
             clients.forEach(client => {
               client.postMessage({
-                type: 'SERVER_OFFLINE',
-                message: 'Сървърът е недостъпен'
+                type: messageType,
+                message: isDatabaseError ? 'Проблем с базата данни' : 'Сървърът е недостъпен',
+                errorType: isDatabaseError ? 'database' : 'server'
               });
             });
           });
           
           // Return JSON error instead of HTML error page
           return new Response(JSON.stringify({ 
-            error: 'Server offline',
-            message: 'The server is temporarily unavailable'
+            error: isDatabaseError ? 'Database unavailable' : 'Server offline',
+            message: isDatabaseError ? 'The database is temporarily unavailable' : 'The server is temporarily unavailable',
+            errorType: isDatabaseError ? 'database' : 'server'
           }), {
             status: response.status || 503,
             statusText: 'Service Unavailable',
             headers: { 
               'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache'
+              'Cache-Control': 'no-cache',
+              'X-Error-Type': isDatabaseError ? 'database' : 'server'
             }
           });
         }
@@ -232,7 +240,8 @@ self.addEventListener('fetch', (event) => {
             clients.forEach(client => {
               client.postMessage({
                 type: 'SERVER_OFFLINE',
-                message: 'Сървърът е недостъпен'
+                message: 'Сървърът е недостъпен',
+                errorType: 'network'
               });
             });
           });
@@ -240,13 +249,15 @@ self.addEventListener('fetch', (event) => {
           // Return JSON error for API routes (including NextAuth)
           return new Response(JSON.stringify({ 
             error: 'Server offline',
-            message: 'The server is temporarily unavailable'
+            message: 'The server is temporarily unavailable',
+            errorType: 'network'
           }), {
             status: 503,
             statusText: 'Service Unavailable',
             headers: { 
               'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache'
+              'Cache-Control': 'no-cache',
+              'X-Error-Type': 'network'
             }
           });
         }

@@ -15,17 +15,25 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
   // Detect iOS
   const isIOS = typeof window !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent);
 
+  const [errorType, setErrorType] = useState<'server' | 'database' | 'network'>('server');
+
   useEffect(() => {
     // Listen for SW messages (server offline detection)
     const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'SERVER_OFFLINE') {
+      if (event.data?.type === 'SERVER_OFFLINE' || event.data?.type === 'DATABASE_ERROR') {
         setIsOffline(true);
+        
+        // Determine error type
+        const type = event.data?.errorType || (event.data?.type === 'DATABASE_ERROR' ? 'database' : 'server');
+        setErrorType(type);
+        
         // Check if it's network offline or server down
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
           // Network is offline, not server issue
           setIsServerDown(false);
+          setErrorType('network');
         } else {
-          // Network is online but server is down
+          // Network is online but server/database is down
           setIsServerDown(true);
         }
         setIsChecking(false);
@@ -116,6 +124,7 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
           console.log('✅ Server is back online!');
           setIsChecking(true);
           setIsServerDown(false);
+          setErrorType('server');
           onStatusChange?.(false);
           
           // Close modal after 1 second, data will be refreshed on next fetch
@@ -126,13 +135,29 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
           return;
         }
         
-        // If we get 503 or other error status, server is still down
-        console.log('❌ Server still offline (status:', response.status, ')');
+        // If we get 503 or other error status, check error type
+        const errorTypeHeader = response.headers.get('X-Error-Type');
+        const errorTypeFromHeader = errorTypeHeader === 'database' ? 'database' : 'server';
+        
+        // Try to parse response body for error type
+        try {
+          const data = await response.clone().json();
+          if (data?.errorType === 'database') {
+            setErrorType('database');
+          } else {
+            setErrorType(errorTypeFromHeader);
+          }
+        } catch {
+          setErrorType(errorTypeFromHeader);
+        }
+        
+        console.log('❌ Server still offline (status:', response.status, ', type:', errorTypeFromHeader, ')');
         setIsServerDown(true);
       } catch (error) {
         // Network error or timeout - server is still offline
         // This is expected when server is down, so we just continue checking
         console.log('❌ Server still offline (network error)');
+        setErrorType('network');
         setIsServerDown(true);
       }
     };
@@ -205,7 +230,9 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
             {isChecking 
               ? 'Връзката е възстановена!' 
               : isServerDown 
-                ? 'Временен проблем със сървъра' 
+                ? (errorType === 'database' 
+                    ? 'Проблем с базата данни'
+                    : 'Временен проблем със сървъра')
                 : 'Няма интернет връзка'}
           </h2>
 
@@ -214,7 +241,9 @@ export default function OfflineBanner({ onStatusChange, onBackOnline }: OfflineB
             {isChecking 
               ? 'Вече имате интернет връзка. Приложението е готово за използване.'
               : isServerDown
-                ? `Сървърът е временно недостъпен. Приложението проверява автоматично на всеки ${isIOS ? '5' : '10'} секунди дали сървърът е отново онлайн.`
+                ? (errorType === 'database'
+                    ? `Базата данни е временно недостъпна. Приложението проверява автоматично на всеки ${isIOS ? '5' : '10'} секунди дали базата данни е отново достъпна.`
+                    : `Сървърът е временно недостъпен. Приложението проверява автоматично на всеки ${isIOS ? '5' : '10'} секунди дали сървърът е отново онлайн.`)
                 : 'Моля, проверете интернет връзката си и опитайте отново.'
             }
           </p>
