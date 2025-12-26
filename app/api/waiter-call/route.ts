@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
                       callType === 'payment_card' ? 'Плащане с карта' : 
                       'Нужна помощ';
       
-      await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/push/send`, {
+      const { buildAppUrl } = await import('@/lib/app-url');
+      await fetch(buildAppUrl('/api/push/send'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

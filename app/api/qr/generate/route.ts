@@ -178,7 +178,8 @@ export async function POST(request: Request) {
     }
 
     // Generate SHORT QR code URL (dynamic redirect)
-    const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/t/${tableNumber}`;
+    const { getAppUrl } = await import('@/lib/app-url');
+    const qrUrl = `${getAppUrl()}/t/${tableNumber}`;
 
     // Generate QR code with embedded table number in center
     const qrCodeSize = settings?.qrCodeSize || 400;
@@ -221,7 +222,8 @@ export async function PUT(request: Request) {
 
     for (const table of tables) {
       // Generate SHORT QR code URL (dynamic redirect)
-      const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/t/${table.tableNumber}`;
+      const { getAppUrl } = await import('@/lib/app-url');
+      const qrUrl = `${getAppUrl()}/t/${table.tableNumber}`;
       
       // Generate QR code with embedded table number in center
       const qrCodeSize = settings?.qrCodeSize || 400;
@@ -267,7 +269,8 @@ export async function GET() {
 
     for (const table of tables) {
       // Generate SHORT QR code URL (dynamic redirect)
-      const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/t/${table.tableNumber}`;
+      const { getAppUrl } = await import('@/lib/app-url');
+      const qrUrl = `${getAppUrl()}/t/${table.tableNumber}`;
       
       // Generate QR code with embedded table number in center
       const qrCodeSize = settings.qrCodeSize || 400;

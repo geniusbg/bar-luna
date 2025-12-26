@@ -27,9 +27,9 @@ cp .env.bar-luna bar-luna/.env
 
 cd bar-luna
 
-# Install dependencies
+# Install dependencies (use npm ci for reproducible builds and security audit)
 echo "📦 Installing dependencies..."
-npm install
+npm ci --audit || npm install
 
 # Regenerate Prisma Client
 echo "🔧 Generating Prisma Client..."
@@ -43,9 +43,9 @@ npx prisma migrate deploy || npx prisma db push || echo "⚠️ No migrations to
 echo "🏗️ Building application..."
 npm run build
 
-# Restart PM2
+# Restart PM2 (use process name instead of hardcoded ID)
 echo "🔄 Restarting PM2..."
-pm2 restart 6
+pm2 restart bar-luna || pm2 start ecosystem.config.js
 
 # SECURITY: Final cleanup check after deployment
 echo "🔒 Final security check..."

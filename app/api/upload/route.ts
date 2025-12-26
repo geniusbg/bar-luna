@@ -4,6 +4,7 @@ import { join } from 'path';
 import { existsSync } from 'fs';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { fileTypeFromBuffer } from 'file-type';
 
 export async function POST(request: Request) {
   try {
@@ -57,12 +58,55 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'File too large. Max 5MB' }, { status: 400 });
     }
 
-    // Generate unique filename (already validated fileExt above)
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
     // Convert File to Buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+
+    // SECURITY: Verify file signature (magic numbers) - prevents fake file types
+    // This checks the actual file content, not just MIME type or extension
+    const detectedType = await fileTypeFromBuffer(buffer);
+    
+    if (!detectedType) {
+      return NextResponse.json({ 
+        error: 'Cannot detect file type. File may be corrupted or invalid.' 
+      }, { status: 400 });
+    }
+
+    // Only allow image types
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedMimes.includes(detectedType.mime)) {
+      return NextResponse.json({ 
+        error: `Invalid file type detected: ${detectedType.mime}. Only JPEG, PNG, and WebP images are allowed.` 
+      }, { status: 400 });
+    }
+
+    // SECURITY: Verify that browser-reported MIME type matches actual file content
+    // This prevents MIME type spoofing attacks
+    if (file.type !== detectedType.mime) {
+      return NextResponse.json({ 
+        error: 'File type mismatch: MIME type does not match actual file content. Possible file type spoofing detected.' 
+      }, { status: 400 });
+    }
+
+    // SECURITY: Verify that file extension matches detected type
+    const detectedExt = detectedType.ext;
+    const validExtensionMap: Record<string, string[]> = {
+      'image/jpeg': ['jpg', 'jpeg'],
+      'image/png': ['png'],
+      'image/webp': ['webp'],
+    };
+    const validExts = validExtensionMap[detectedType.mime];
+    if (!validExts || !validExts.includes(detectedExt)) {
+      return NextResponse.json({ 
+        error: `File extension mismatch: detected type is ${detectedType.mime} but extension is ${detectedExt}` 
+      }, { status: 400 });
+    }
+
+    // Use the detected extension (more secure than trusting user-provided extension)
+    const safeFileExt = detectedExt;
+
+    // Generate unique filename using detected extension (not user-provided)
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${safeFileExt}`;
 
     // Use external directory (protected from deploy)
     // Try production path first, fallback to local

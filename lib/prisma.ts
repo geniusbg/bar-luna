@@ -1,4 +1,19 @@
 import { PrismaClient } from '@prisma/client';
+import { validateDatabaseUrl } from './env-validation';
+
+// Validate DATABASE_URL on import (runs once per server startup)
+if (typeof window === 'undefined') {
+  // Server-side only - validate database URL
+  try {
+    validateDatabaseUrl(process.env.DATABASE_URL);
+  } catch (error) {
+    console.error('❌ DATABASE_URL validation failed:', error);
+    // Don't throw in development to allow easier setup
+    if (process.env.NODE_ENV === 'production') {
+      throw error;
+    }
+  }
+}
 
 // PrismaClient is attached to the `global` object in development to prevent
 // exhausting your database connection limit.

@@ -198,7 +198,8 @@ export async function POST(request: NextRequest) {
 
         // Send push notification to admins
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/push/send`, {
+          const { buildAppUrl } = await import('@/lib/app-url');
+          const response = await fetch(buildAppUrl('/api/push/send'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -219,7 +220,8 @@ export async function POST(request: NextRequest) {
 
         // Send push notification to staff (informational)
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/push/send`, {
+          const { buildAppUrl } = await import('@/lib/app-url');
+          const response = await fetch(buildAppUrl('/api/push/send'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -301,7 +303,8 @@ export async function POST(request: NextRequest) {
 
       // Send Web Push notification (works even when app closed!)
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/push/send`, {
+        const { buildAppUrl } = await import('@/lib/app-url');
+        const response = await fetch(buildAppUrl('/api/push/send'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

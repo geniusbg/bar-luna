@@ -1,3 +1,6 @@
+// Validate environment variables early (server-side only)
+import './middleware-env-validation';
+
 import createMiddleware from 'next-intl/middleware';
 import { locales, defaultLocale } from './i18n';
 import { NextRequest, NextResponse } from 'next/server';
