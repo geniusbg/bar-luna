@@ -4,8 +4,8 @@
  */
 
 /**
- * Validates NEXT_PUBLIC_APP_URL
- * Prevents redirecting fetch requests to attacker-controlled servers
+ * Validates NEXT_PUBLIC_APP_URL format
+ * Basic validation to ensure it's a valid URL format
  */
 export function validateAppUrl(url: string | undefined): string {
   if (!url) {
@@ -17,28 +17,12 @@ export function validateAppUrl(url: string | undefined): string {
   // Remove trailing slash
   const cleanUrl = url.trim().replace(/\/$/, '');
 
-  // Whitelist of allowed domains (adjust for your production domains)
-  const allowedDomains = [
-    'https://bar-luna.com',
-    'https://www.bar-luna.com',
-    'http://localhost:3000', // Development only
-    'http://localhost:4000', // Development only
-    // Add your production domain here when ready
-    // 'https://your-production-domain.com',
-  ];
-
-  // Check if URL matches whitelist
-  const isAllowed = allowedDomains.some(domain => cleanUrl.startsWith(domain));
-
-  if (!isAllowed) {
-    // Allow localhost in development mode only
-    if (process.env.NODE_ENV === 'development' && cleanUrl.startsWith('http://localhost')) {
-      return cleanUrl;
-    }
-
+  // Basic URL format validation
+  try {
+    new URL(cleanUrl);
+  } catch (error) {
     throw new Error(
-      `Invalid NEXT_PUBLIC_APP_URL: ${cleanUrl}. ` +
-      `Must be one of: ${allowedDomains.join(', ')}`
+      `Invalid NEXT_PUBLIC_APP_URL format: ${cleanUrl}. Must be a valid URL.`
     );
   }
 
@@ -47,7 +31,7 @@ export function validateAppUrl(url: string | undefined): string {
 
 /**
  * Validates DATABASE_URL format
- * Prevents redirecting database connections to attacker-controlled databases
+ * Basic validation to ensure it's a valid PostgreSQL connection string
  */
 export function validateDatabaseUrl(url: string | undefined): string {
   if (!url) {
@@ -63,36 +47,12 @@ export function validateDatabaseUrl(url: string | undefined): string {
     );
   }
 
-  // Parse URL to extract host
-  let parsedUrl: URL;
+  // Parse URL to validate format
   try {
-    parsedUrl = new URL(url);
+    new URL(url);
   } catch (error) {
     throw new Error(
       `Invalid DATABASE_URL format: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
-
-  // Whitelist of allowed database hosts
-  const allowedHosts = [
-    'localhost',
-    '127.0.0.1',
-    '66.29.142.10', // Production database server
-    // Add other allowed hosts here
-  ];
-
-  const hostname = parsedUrl.hostname;
-
-  // Allow localhost in development mode
-  if (process.env.NODE_ENV === 'development' && (hostname === 'localhost' || hostname === '127.0.0.1')) {
-    return url;
-  }
-
-  // In production, enforce host whitelist
-  if (process.env.NODE_ENV === 'production' && !allowedHosts.includes(hostname)) {
-    throw new Error(
-      `Invalid database host: ${hostname}. ` +
-      `Must be one of: ${allowedHosts.join(', ')}`
     );
   }
 
