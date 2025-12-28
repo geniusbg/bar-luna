@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "start": "next start",
+    "start": "next start -H 127.0.0.1",
     "lint": "next lint",
     "setup": "node setup-database.js",
     "db:generate": "prisma generate",
@@ -24,7 +24,7 @@
     "file-type": "^21.2.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.4",
-    "next": "15.5.4",
+    "next": "15.5.9",
     "next-auth": "^4.24.11",
     "next-intl": "^4.3.12",
     "pg": "^8.16.3",
