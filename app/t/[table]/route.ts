@@ -12,14 +12,20 @@ export async function GET(
     const { table: tableParam } = await params;
     const tableNumber = parseInt(tableParam);
 
-    // Get base URL from request headers (preferred for reverse proxy)
-    // This ensures correct URL even if NEXT_PUBLIC_APP_URL is misconfigured
-    const getBaseUrl = () => {
-      const { getAppUrlFromRequest } = require('@/lib/app-url');
-      return getAppUrlFromRequest(request);
+    // Get base URL from environment or request
+    const getBaseUrl = async () => {
+      try {
+        const { getAppUrl } = await import('@/lib/app-url');
+        return getAppUrl();
+      } catch {
+        // Fallback to request-based detection if validation fails
+        const protocol = request.headers.get('x-forwarded-proto') === 'https' ? 'https://' : 'http://';
+        const host = request.headers.get('host') || request.url.split('/')[2];
+        return protocol + host;
+      }
     };
     
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
 
     if (isNaN(tableNumber)) {
       return NextResponse.redirect(new URL('/bg/menu', baseUrl));
@@ -101,8 +107,18 @@ export async function GET(
 
   } catch (error) {
     console.error('QR redirect error:', error);
-    const { getAppUrlFromRequest } = require('@/lib/app-url');
-    const baseUrl = getAppUrlFromRequest(request);
+    const getBaseUrl = async () => {
+      try {
+        const { getAppUrl } = await import('@/lib/app-url');
+        return getAppUrl();
+      } catch {
+        // Fallback to request-based detection if validation fails
+        const protocol = request.headers.get('x-forwarded-proto') === 'https' ? 'https://' : 'http://';
+        const host = request.headers.get('host') || request.url.split('/')[2];
+        return protocol + host;
+      }
+    };
+    const baseUrl = await getBaseUrl();
     return NextResponse.redirect(new URL('/bg/menu', baseUrl));
   }
 }
