@@ -101,9 +101,8 @@ export const authOptions = {
     }
     return secret;
   })(),
-  // Set NEXTAUTH_URL explicitly to prevent localhost redirects in production
-  // Use environment variable if set, otherwise fallback to NEXT_PUBLIC_APP_URL
-  url: process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || undefined
+  // Use dynamic URL detection instead of hardcoded NEXTAUTH_URL
+  // NextAuth will automatically detect the current host
 };
 
 const handler = NextAuth(authOptions);

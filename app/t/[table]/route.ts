@@ -12,20 +12,23 @@ export async function GET(
     const { table: tableParam } = await params;
     const tableNumber = parseInt(tableParam);
 
-    // Get base URL from environment or request
-    const getBaseUrl = async () => {
-      try {
-        const { getAppUrl } = await import('@/lib/app-url');
-        return getAppUrl();
-      } catch {
-        // Fallback to request-based detection if validation fails
-        const protocol = request.headers.get('x-forwarded-proto') === 'https' ? 'https://' : 'http://';
-        const host = request.headers.get('host') || request.url.split('/')[2];
+    // Get base URL from request headers (preferred) or environment
+    // In reverse proxy setup, request headers are more reliable
+    const getBaseUrl = () => {
+      // Prefer request headers first (for reverse proxy)
+      const protocol = request.headers.get('x-forwarded-proto') === 'https' ? 'https://' : 'http://';
+      const host = request.headers.get('host');
+      if (host) {
         return protocol + host;
       }
+      // Fallback to environment variable if no host header
+      const envUrl = process.env.NEXT_PUBLIC_APP_URL;
+      if (envUrl) return envUrl;
+      // Last resort: parse from request URL
+      return protocol + request.url.split('/')[2];
     };
     
-    const baseUrl = await getBaseUrl();
+    const baseUrl = getBaseUrl();
 
     if (isNaN(tableNumber)) {
       return NextResponse.redirect(new URL('/bg/menu', baseUrl));
@@ -107,18 +110,17 @@ export async function GET(
 
   } catch (error) {
     console.error('QR redirect error:', error);
-    const getBaseUrl = async () => {
-      try {
-        const { getAppUrl } = await import('@/lib/app-url');
-        return getAppUrl();
-      } catch {
-        // Fallback to request-based detection if validation fails
-        const protocol = request.headers.get('x-forwarded-proto') === 'https' ? 'https://' : 'http://';
-        const host = request.headers.get('host') || request.url.split('/')[2];
+    const getBaseUrl = () => {
+      const protocol = request.headers.get('x-forwarded-proto') === 'https' ? 'https://' : 'http://';
+      const host = request.headers.get('host');
+      if (host) {
         return protocol + host;
       }
+      const envUrl = process.env.NEXT_PUBLIC_APP_URL;
+      if (envUrl) return envUrl;
+      return protocol + request.url.split('/')[2];
     };
-    const baseUrl = await getBaseUrl();
+    const baseUrl = getBaseUrl();
     return NextResponse.redirect(new URL('/bg/menu', baseUrl));
   }
 }
