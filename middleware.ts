@@ -16,6 +16,14 @@ const intlMiddleware = createMiddleware({
 export default async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
+  // Handle root path - use headers to get correct URL for reverse proxy
+  if (pathname === '/') {
+    const protocol = request.headers.get('x-forwarded-proto') || (request.nextUrl.protocol === 'https:' ? 'https' : 'http');
+    const host = request.headers.get('host') || request.nextUrl.host;
+    const baseUrl = `${protocol}://${host}`;
+    return NextResponse.redirect(new URL(`/${defaultLocale}`, baseUrl));
+  }
+  
   // Handle routes without locale prefix (e.g., /staff, /admin)
   // Redirect them to default locale
   if (pathname.startsWith('/staff') || pathname.startsWith('/admin')) {
