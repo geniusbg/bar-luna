@@ -22,7 +22,15 @@ module.exports = {
       log_file: './logs/pm2-combined.log',
       time: true,
       merge_logs: true,
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      disable_logs: false,
+      // Ensure logs are written immediately
+      output: './logs/pm2-out.log',
+      error: './logs/pm2-error.log',
+      log: './logs/pm2-combined.log',
+      // Don't buffer output
+      autorestart_delay: 0,
+      min_uptime: '10s'
     }
   ]
 };
