@@ -330,7 +330,7 @@ function MenuPageContent() {
                   
                   {/* Product Image */}
                   {product.imageUrl && (
-                    <div className={`relative h-56 overflow-hidden bg-black ${
+                    <div className={`relative h-56 overflow-hidden ${
                       !product.isAvailable ? 'grayscale' : ''
                     }`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}

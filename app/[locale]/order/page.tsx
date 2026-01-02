@@ -996,34 +996,51 @@ function OrderPageContent() {
                   return (
                     <div
                       key={product.id}
-                      className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-4 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300"
+                      className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl overflow-hidden hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300"
                     >
-                      <h3 className="text-lg md:text-xl font-bold text-white mb-3 group-hover:text-gray-200 transition-colors">
-                        {productName}
-                      </h3>
+                      {/* Product Image */}
+                      {product.imageUrl && (
+                        <div className="relative h-48 overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={product.imageUrl}
+                            alt={productName}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                          />
+                        </div>
+                      )}
                       
-                      {product.descriptionBg || product.descriptionEn || product.descriptionDe ? (
-                        <p className="text-gray-400 text-sm mb-4 leading-relaxed break-words whitespace-pre-wrap">
-                          {locale === 'bg' && product.descriptionBg ? product.descriptionBg :
-                           locale === 'en' && product.descriptionEn ? product.descriptionEn :
-                           locale === 'de' && product.descriptionDe ? product.descriptionDe :
-                           product.descriptionBg || product.descriptionEn || product.descriptionDe}
-                        </p>
-                      ) : null}
+                      {/* Product Info */}
+                      <div className="p-4">
+                        <h3 className="text-lg md:text-xl font-bold text-white mb-3 group-hover:text-gray-200 transition-colors">
+                          {productName}
+                        </h3>
+                        
+                        {product.descriptionBg || product.descriptionEn || product.descriptionDe ? (
+                          <p className="text-gray-400 text-sm mb-4 leading-relaxed break-words whitespace-pre-wrap">
+                            {locale === 'bg' && product.descriptionBg ? product.descriptionBg :
+                             locale === 'en' && product.descriptionEn ? product.descriptionEn :
+                             locale === 'de' && product.descriptionDe ? product.descriptionDe :
+                             product.descriptionBg || product.descriptionEn || product.descriptionDe}
+                          </p>
+                        ) : null}
                       
-                      <div className="flex justify-between items-center pt-4 border-t border-gray-700/50">
-                        <Price
-                          priceBgn={Number(product.priceBgn)}
-                          className="text-2xl font-bold text-white"
-                          showBoth={true}
-                          inline={true}
-                        />
-                        <button
-                          onClick={() => addToCart(product)}
-                          className="px-6 py-2 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all text-sm md:text-base"
-                        >
-                          {locale === 'bg' ? '+ Добави' : locale === 'en' ? '+ Add' : '+ Hinzufügen'}
-                        </button>
+                        <div className="flex justify-between items-center pt-4 border-t border-gray-700/50">
+                          <Price
+                            priceBgn={Number(product.priceBgn)}
+                            className="text-2xl font-bold text-white"
+                            showBoth={true}
+                            inline={true}
+                          />
+                          <button
+                            onClick={() => addToCart(product)}
+                            className="px-6 py-2 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all text-sm md:text-base"
+                          >
+                            {locale === 'bg' ? '+ Добави' : locale === 'en' ? '+ Add' : '+ Hinzufügen'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );

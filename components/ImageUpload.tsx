@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import imageCompression from 'browser-image-compression';
 
 interface ImageUploadProps {
   currentImageUrl?: string;
@@ -17,11 +18,35 @@ export default function ImageUpload({ currentImageUrl, onImageUploaded, bucket, 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Upload to server first
     setUploading(true);
     try {
+      // CLIENT-SIDE COMPRESSION: Compress image before upload
+      // - Resize to max 1200px (larger dimension)
+      // - Compress with quality 85%
+      // - Convert to WebP if browser supports it (fallback to original format)
+      const options = {
+        maxSizeMB: 2, // Maximum file size (MB) - compress if larger
+        maxWidthOrHeight: 1200, // Maximum width or height (pixels)
+        useWebWorker: true, // Use web worker for better performance
+        fileType: 'image/webp', // Try to convert to WebP (will fallback to original if not supported)
+      };
+
+      let compressedFile: File;
+      try {
+        compressedFile = await imageCompression(file, options);
+        const originalSize = (file.size / 1024 / 1024).toFixed(2);
+        const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+        const reduction = (((file.size - compressedFile.size) / file.size) * 100).toFixed(1);
+        console.log(`✅ Image compressed: ${originalSize}MB → ${compressedSize}MB (${reduction}% reduction)`);
+      } catch (compressionError) {
+        // If compression fails, use original file
+        console.warn('⚠️ Compression failed, using original file:', compressionError);
+        compressedFile = file;
+      }
+
+      // Upload compressed/original file to server
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressedFile);
       formData.append('bucket', bucket);
 
       const response = await fetch('/api/upload', {
@@ -31,8 +56,8 @@ export default function ImageUpload({ currentImageUrl, onImageUploaded, bucket, 
 
       if (response.ok) {
         const { url } = await response.json();
-        console.log('✅ Uploaded file to:', url); // Debug log
-        setPreview(url); // Use the uploaded URL for preview
+        console.log('✅ Uploaded file to:', url);
+        setPreview(url);
         onImageUploaded(url);
       } else {
         const error = await response.json();
