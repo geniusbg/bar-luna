@@ -337,6 +337,8 @@ function MenuPageContent() {
                       <img
                         src={product.imageUrl}
                         alt={productName}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                       />
                     </div>

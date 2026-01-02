@@ -7,7 +7,6 @@
     "build": "next build --turbopack",
     "start": "next start -H 127.0.0.1",
     "lint": "next lint",
-    "setup": "node setup-database.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
@@ -35,6 +34,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "recharts": "^3.4.1",
+    "sharp": "^0.34.5",
     "web-push": "^3.6.7",
     "zod": "^4.1.12"
   },
@@ -46,6 +46,7 @@
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/sharp": "^0.31.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.545.0",

@@ -56,6 +56,8 @@ export default async function EventsPage({
                       <img
                         src={event.imageUrl}
                         alt={eventTitle}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-contain"
                       />
                     </div>

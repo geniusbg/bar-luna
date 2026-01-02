@@ -13,14 +13,19 @@ const intlMiddleware = createMiddleware({
   localeDetection: false // Винаги използвай defaultLocale (bg) вместо browser detection
 });
 
+// Helper to get correct base URL from request headers (for reverse proxy)
+function getBaseUrl(request: NextRequest): string {
+  const protocol = request.headers.get('x-forwarded-proto') || (request.nextUrl.protocol === 'https:' ? 'https' : 'http');
+  const host = request.headers.get('host') || request.nextUrl.host;
+  return `${protocol}://${host}`;
+}
+
 export default async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const baseUrl = getBaseUrl(request);
   
-  // Handle root path - use headers to get correct URL for reverse proxy
+  // Handle root path - redirect to default locale
   if (pathname === '/') {
-    const protocol = request.headers.get('x-forwarded-proto') || (request.nextUrl.protocol === 'https:' ? 'https' : 'http');
-    const host = request.headers.get('host') || request.nextUrl.host;
-    const baseUrl = `${protocol}://${host}`;
     return NextResponse.redirect(new URL(`/${defaultLocale}`, baseUrl));
   }
   
@@ -34,7 +39,7 @@ export default async function middleware(request: NextRequest) {
     if (!hasLocalePrefix) {
       // No locale prefix, redirect to default locale
       const newPath = `/${defaultLocale}${pathname}`;
-      return NextResponse.redirect(new URL(newPath, request.url));
+      return NextResponse.redirect(new URL(newPath, baseUrl));
     }
   }
   
@@ -47,10 +52,10 @@ export default async function middleware(request: NextRequest) {
   if (pathname.includes('/staff/staff/login') || pathname.includes('/admin/admin/login')) {
     const locale = pathname.split('/')[1] || 'bg';
     if (pathname.includes('/staff')) {
-      return NextResponse.redirect(new URL(`/${locale}/staff/login`, request.url));
+      return NextResponse.redirect(new URL(`/${locale}/staff/login`, baseUrl));
     }
     if (pathname.includes('/admin')) {
-      return NextResponse.redirect(new URL(`/${locale}/admin/login`, request.url));
+      return NextResponse.redirect(new URL(`/${locale}/admin/login`, baseUrl));
     }
   }
   
@@ -68,7 +73,7 @@ export default async function middleware(request: NextRequest) {
       console.error('NEXTAUTH_SECRET is not set in environment variables');
       // Redirect to login instead of throwing to avoid breaking the app
       const locale = pathname.split('/')[1] || 'bg';
-      return NextResponse.redirect(new URL(`/${locale}/admin/login`, request.url));
+      return NextResponse.redirect(new URL(`/${locale}/admin/login`, baseUrl));
     }
     
     const token = await getToken({ 
@@ -80,11 +85,11 @@ export default async function middleware(request: NextRequest) {
       // No token, redirect to appropriate login
       const locale = pathname.split('/')[1] || 'bg';
       if (isAdminRoute) {
-        const loginUrl = new URL(`/${locale}/admin/login`, request.url);
+        const loginUrl = new URL(`/${locale}/admin/login`, baseUrl);
         return NextResponse.redirect(loginUrl);
       }
       if (isStaffRoute) {
-        const loginUrl = new URL(`/${locale}/staff/login`, request.url);
+        const loginUrl = new URL(`/${locale}/staff/login`, baseUrl);
         return NextResponse.redirect(loginUrl);
       }
     } else {
@@ -95,11 +100,11 @@ export default async function middleware(request: NextRequest) {
         // Redirect STAFF to staff panel
         if (userRole === 'STAFF') {
           const locale = pathname.split('/')[1] || 'bg';
-          return NextResponse.redirect(new URL(`/${locale}/staff`, request.url));
+          return NextResponse.redirect(new URL(`/${locale}/staff`, baseUrl));
         }
         // Redirect others to admin login
         const locale = pathname.split('/')[1] || 'bg';
-        return NextResponse.redirect(new URL(`/${locale}/admin/login`, request.url));
+        return NextResponse.redirect(new URL(`/${locale}/admin/login`, baseUrl));
       }
       
       if (isStaffRoute && userRole !== 'STAFF') {
@@ -107,7 +112,7 @@ export default async function middleware(request: NextRequest) {
         // Only redirect non-authenticated users or users without proper roles
         if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
           const locale = pathname.split('/')[1] || 'bg';
-          return NextResponse.redirect(new URL(`/${locale}/staff/login`, request.url));
+          return NextResponse.redirect(new URL(`/${locale}/staff/login`, baseUrl));
         }
         // ADMIN/SUPER_ADMIN can access staff routes - don't redirect
       }

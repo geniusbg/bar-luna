@@ -96,11 +96,12 @@ PORT=4000
 
 ### 3. Setup Database
 ```bash
-# Run migration SQL
-node setup-database.js
+npx prisma generate
+npx prisma db push
+npm run db:seed  # Optional: add sample data
 ```
 
-Or manually run `SIMPLE_MIGRATION.sql` in your PostgreSQL client.
+**Note:** Database schema is managed by Prisma. See `DEPLOYMENT.md` for detailed instructions.
 
 ### 4. Start Development Server
 ```bash
@@ -340,14 +341,34 @@ See `DEPLOYMENT.md` for production deployment guide.
 
 ## 📚 Documentation
 
+### Main Documentation
 - **README.md** (this file) - Overview
-- **QUICK_START.md** - Setup instructions
-- **TESTING_GUIDE.md** - How to test features
-- **DEPLOYMENT.md** - Production deployment
+- **DEPLOYMENT.md** - Production deployment guide
 - **API_DOCUMENTATION.md** - API reference
-- **POSTGRES_SETUP.md** - Database setup
-- **PUSHER_SETUP_GUIDE.md** - Pusher configuration
+- **docs/QUICK_START.md** - Setup instructions
+
+### Setup Guides
+- **docs/SETUP_POSTGRES.md** - PostgreSQL database setup
+- **docs/SETUP_PUSHER.md** - Pusher real-time configuration
+- **docs/USER_AUTH.md** - User authentication system
+- **docs/TESTING.md** - Testing guide
+
+### Additional Documentation
+- **docs/QR_CODE_SETTINGS.md** - QR code configuration
+- **docs/ORDER_SECURITY_OPTIONS.md** - Order security settings
+- **docs/PUSH_NOTIFICATIONS_MULTI_APP.md** - Push notifications setup
+- **docs/OFFLINE_FUNCTIONALITY.md** - Offline mode & Service Worker
+- **docs/MOBILE_OPTIMIZATION.md** - Mobile optimization guide
+- **docs/REALTIME_SYNC.md** - Real-time synchronization
+- **docs/REALTIME_EXPLANATION.md** - Real-time system explanation
+- **docs/SECURITY_ANALYSIS.md** - Security analysis
+- **docs/QRMENU_APACHE_SETUP.md** - Apache configuration guide
+- **docs/BIOMETRIC_AUTH_GUIDE.md** - Biometric authentication
+- **docs/PWA_IOS_vs_ANDROID.md** - PWA platform differences
 - **public/sounds/README.md** - Sound files guide
+
+### Archived Documentation
+Historical and temporary fix documentation is stored in `docs/archive/` for reference.
 
 ---
 
