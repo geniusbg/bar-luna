@@ -27,7 +27,7 @@ export default function ImageUpload({ currentImageUrl, onImageUploaded, bucket, 
       const options = {
         maxSizeMB: 2, // Maximum file size (MB) - compress if larger
         maxWidthOrHeight: 1200, // Maximum width or height (pixels)
-        useWebWorker: true, // Use web worker for better performance
+        useWebWorker: false, // Disabled to avoid CSP issues with external scripts
         fileType: 'image/webp', // Try to convert to WebP (will fallback to original if not supported)
       };
 
