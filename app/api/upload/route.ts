@@ -81,15 +81,15 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Use external directory (protected from deploy)
-    // Try production path first, fallback to local
-    const productionUploadDir = '/var/www/uploads/bar-luna';
+    // Use configured upload directory or default to local
+    // UPLOAD_DIR environment variable should be set in production
+    const envUploadDir = process.env.UPLOAD_DIR;
     const localUploadDir = join(process.cwd(), 'public', 'uploads');
     
-    // Check if production directory exists
-    const uploadDir = existsSync(productionUploadDir) 
-      ? productionUploadDir 
-      : localUploadDir;
+    // Determine upload directory:
+    // 1. UPLOAD_DIR environment variable (if set)
+    // 2. Local directory (fallback for development)
+    const uploadDir = envUploadDir || localUploadDir;
     
     console.log('Using upload directory:', uploadDir);
     
