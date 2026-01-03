@@ -34,31 +34,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid file type. Use JPG, PNG or WebP' }, { status: 400 });
     }
 
-    // SECURITY: Validate file extension matches MIME type
-    const fileExt = file.name.split('.').pop()?.toLowerCase();
-    const validExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-    if (!fileExt || !validExtensions.includes(fileExt)) {
-      return NextResponse.json({ error: 'Invalid file extension' }, { status: 400 });
-    }
-
-    // SECURITY: Double-check MIME type matches extension
-    const mimeToExt: Record<string, string[]> = {
-      'image/jpeg': ['jpg', 'jpeg'],
-      'image/jpg': ['jpg', 'jpeg'],
-      'image/png': ['png'],
-      'image/webp': ['webp'],
-    };
-    const allowedExts = mimeToExt[file.type];
-    if (!allowedExts || !allowedExts.includes(fileExt)) {
-      return NextResponse.json({ error: 'File type mismatch' }, { status: 400 });
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large. Max 5MB' }, { status: 400 });
-    }
-
-    // Convert File to Buffer
+    // Convert File to Buffer first to detect actual file type
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
@@ -72,7 +48,7 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Only allow image types
+    // Only allow image types (validated from actual file content)
     const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedMimes.includes(detectedType.mime)) {
       return NextResponse.json({ 
@@ -80,12 +56,15 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // SECURITY: Verify that browser-reported MIME type matches actual file content
-    // This prevents MIME type spoofing attacks
-    if (file.type !== detectedType.mime) {
-      return NextResponse.json({ 
-        error: 'File type mismatch: MIME type does not match actual file content. Possible file type spoofing detected.' 
-      }, { status: 400 });
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large. Max 5MB' }, { status: 400 });
+    }
+
+    // Warn if MIME type doesn't match (client-side compression may have changed format)
+    // This is allowed - we trust the actual file content (magic numbers) over browser-reported type
+    if (file.type && file.type !== detectedType.mime) {
+      console.warn(`MIME type mismatch: browser reported ${file.type}, but file is actually ${detectedType.mime} (likely due to client-side compression)`);
     }
 
     // SECURITY: Verify that file extension matches detected type
