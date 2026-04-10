@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getLocationSettings } from '@/lib/location-settings';
 import { getHomepageSettings, getHomepageOfferingCards } from '@/lib/homepage-settings';
 import ChefsPicksCarousel from '@/components/ChefsPicksCarousel';
+import OfferingCardIcon from '@/components/OfferingCardIcon';
 import { formatDateForLocale } from '@/lib/date-utils';
 
 export const revalidate = 0;
@@ -342,7 +343,7 @@ export default async function HomePage({
             </div>
 
             <div className="relative flex flex-col items-center text-center max-w-4xl mx-auto">
-              <span className="inline-flex items-center px-4 py-1 rounded-full text-xs font-semibold uppercase tracking-[0.3em] text-[var(--malts-accent)] bg-[var(--malts-accent-tint)] border border-[var(--malts-accent-tint-border)] malts-section-label-font">
+              <span className="inline-flex items-center px-4 py-1.5 rounded-full text-sm md:text-base font-semibold uppercase tracking-[0.22em] md:tracking-[0.28em] text-[var(--malts-accent)] bg-[var(--malts-accent-tint)] border border-[var(--malts-accent-tint-border)] malts-section-label-font">
                 {sectionLabel}
               </span>
               <h2 className="mt-6 text-3xl md:text-5xl font-semibold tracking-tight malts-display">
@@ -382,8 +383,8 @@ export default async function HomePage({
                       {/* Icon circle with glow */}
                       <div className="absolute inset-0 w-16 h-16 rounded-full bg-[var(--malts-accent-tint)] blur-md transition-all duration-300 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2"></div>
                       <div className="relative w-16 h-16 rounded-full bg-[var(--malts-accent-tint)] border border-[var(--malts-accent-tint-border)] flex items-center justify-center transition-all duration-300">
-                        <div className="text-3xl md:text-4xl transform group-hover/icon:scale-110 transition-transform duration-300">
-                          {card.icon}
+                        <div className="flex items-center justify-center transform group-hover/icon:scale-110 transition-transform duration-300">
+                          <OfferingCardIcon icon={card.icon} />
                         </div>
                       </div>
                       {/* Micro interaction - hover tooltip with suggestions */}

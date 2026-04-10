@@ -47,8 +47,8 @@ export default function AdminLoginPage() {
           setError('Невалидни данни за вход');
         }
       } else if (result?.ok) {
-        router.push(`/${pathLocale}/admin`);
-        router.refresh();
+        // Full navigation so the session cookie is always sent on the next request (middleware JWT + soft nav race).
+        window.location.assign(`/${pathLocale}/admin`);
       }
     } catch (error) {
       setError('Грешка при вход');

@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import LoadingScreen from '@/components/LoadingScreen';
 import AutoTranslateButton from '@/components/AutoTranslateButton';
+import OfferingCardIcon from '@/components/OfferingCardIcon';
 
 interface HomepageSettings {
   id: string;
@@ -880,7 +881,7 @@ export default function HomepageSettingsPage({
                   setEditingCard({
                     id: '',
                     order: cards.length,
-                    icon: '🍽️',
+                    icon: '✨',
                     titleBg: '',
                     titleEn: '',
                     titleRo: '',
@@ -908,7 +909,9 @@ export default function HomepageSettingsPage({
                   className="malts-card rounded-2xl p-6"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className="text-4xl">{card.icon}</div>
+                    <div className="flex h-12 w-12 items-center justify-center text-4xl">
+                      <OfferingCardIcon icon={card.icon} />
+                    </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
@@ -961,12 +964,13 @@ export default function HomepageSettingsPage({
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="malts-label">Икона (емоджи)</label>
+                    <label className="malts-label">Икона (емоджи или път)</label>
                     <input
                       type="text"
                       value={editingCard.icon}
                       onChange={(e) => setEditingCard({ ...editingCard, icon: e.target.value })}
                       className="malts-field"
+                      placeholder="напр. ☕ или /nasheto-menu.webp"
                     />
                   </div>
                   <div>

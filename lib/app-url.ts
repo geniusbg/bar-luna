@@ -1,6 +1,8 @@
 /**
  * Safe App URL helper
  * Validates and provides safe access to NEXT_PUBLIC_APP_URL
+ *
+ * QR codes and absolute links use this base (see `getAppUrl()` / `buildAppUrl()`), e.g. `${getAppUrl()}/t/5`.
  */
 
 import { validateAppUrl } from './env-validation';

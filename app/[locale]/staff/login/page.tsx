@@ -47,8 +47,7 @@ export default function StaffLoginPage() {
           setError('Невалидни данни за вход');
         }
       } else if (result?.ok) {
-        router.push(`/${pathLocale}/staff`);
-        router.refresh();
+        window.location.assign(`/${pathLocale}/staff`);
       }
     } catch (error) {
       setError('Грешка при вход');

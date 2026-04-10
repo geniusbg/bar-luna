@@ -76,9 +76,17 @@ export default async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(`/${locale}/admin/login`, baseUrl));
     }
     
-    const token = await getToken({ 
+    // Must match the cookie name NextAuth set for *this* request (http vs https).
+    // If NEXTAUTH_URL is https://prod while dev runs on http://localhost, default
+    // secureCookie from NEXTAUTH_URL would look for __Secure-… and miss next-auth.session-token.
+    const forwardedProto = request.headers.get('x-forwarded-proto');
+    const requestIsHttps =
+      forwardedProto === 'https' ||
+      (!forwardedProto && request.nextUrl.protocol === 'https:');
+    const token = await getToken({
       req: request,
-      secret: secret
+      secret,
+      secureCookie: requestIsHttps,
     });
     
     if (!token) {

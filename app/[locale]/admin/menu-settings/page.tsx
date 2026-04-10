@@ -72,12 +72,12 @@ export default function MenuSettingsPage({
         // Initialize with defaults if no settings exist
         const defaultSettings: MenuSettings = {
           id: '',
-          titleBg: '🍽️ Нашето Меню',
-          titleEn: '🍽️ Our Menu',
-          titleRo: '🍸 Unser Menü',
+          titleBg: 'Нашето Меню',
+          titleEn: 'Our Menu',
+          titleRo: 'Meniul nostru',
           subtitleBg: 'Открийте нашата селекция от напитки и деликатеси',
           subtitleEn: 'Discover our selection of drinks and delicacies',
-          subtitleRo: 'Entdecken Sie unsere Auswahl an Getränken und Köstlichkeiten',
+          subtitleRo: 'Descoperă selecția noastră de băuturi și delicatese',
           backgroundImageUrl: null
         };
         setSettings(defaultSettings);
@@ -88,12 +88,12 @@ export default function MenuSettingsPage({
       // Set defaults on error
       const defaultSettings: MenuSettings = {
         id: '',
-        titleBg: '🍽️ Нашето Меню',
-        titleEn: '🍽️ Our Menu',
-        titleRo: '🍸 Unser Menü',
+        titleBg: 'Нашето Меню',
+        titleEn: 'Our Menu',
+        titleRo: 'Meniul nostru',
         subtitleBg: 'Открийте нашата селекция от напитки и деликатеси',
         subtitleEn: 'Discover our selection of drinks and delicacies',
-        subtitleRo: 'Entdecken Sie unsere Auswahl an Getränken und Köstlichkeiten',
+        subtitleRo: 'Descoperă selecția noastră de băuturi și delicatese',
         backgroundImageUrl: null
       };
       setSettings(defaultSettings);

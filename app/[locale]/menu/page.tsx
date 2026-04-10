@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Price from '@/components/Price';
 import LoadingScreen from '@/components/LoadingScreen';
 import { getChildrenOf, getCategoryName, resolveCategoryPath } from '@/lib/category-navigation';
+import { stripLeadingEmoji } from '@/lib/strip-leading-emoji';
 
 function MenuPageContent() {
   const pathname = usePathname();
@@ -51,9 +52,9 @@ function MenuPageContent() {
       } else {
         // Fallback to defaults
         setMenuSettings({
-          titleBg: '🍽️ Нашето Меню',
-          titleEn: '🍽️ Our Menu',
-          titleRo: '🍸 Meniul nostru',
+          titleBg: 'Нашето Меню',
+          titleEn: 'Our Menu',
+          titleRo: 'Meniul nostru',
           subtitleBg: 'Открийте нашата селекция от напитки и деликатеси',
           subtitleEn: 'Discover our selection of drinks and delicacies',
           subtitleRo: 'Descoperă selecția noastră de băuturi și delicatese',
@@ -163,11 +164,30 @@ function MenuPageContent() {
         
         <div className="relative container mx-auto px-4">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-[var(--malts-ink)] mb-4 malts-display">
-              {menuSettings 
-                ? (locale === 'bg' ? menuSettings.titleBg : locale === 'en' ? menuSettings.titleEn : menuSettings.titleRo)
-                : (locale === 'bg' ? '🍽️ Нашето Меню' : locale === 'en' ? '🍽️ Our Menu' : '🍸 Meniul nostru')
-              }
+            <h1 className="text-4xl md:text-6xl font-bold text-[var(--malts-ink)] mb-4 malts-display flex flex-wrap items-center justify-center gap-3 md:gap-4">
+              <Image
+                src="/nasheto-menu.webp"
+                alt=""
+                width={80}
+                height={80}
+                className="h-14 w-14 md:h-20 md:w-20 object-contain shrink-0 drop-shadow-sm"
+                priority
+              />
+              <span>
+                {menuSettings
+                  ? stripLeadingEmoji(
+                      locale === 'bg'
+                        ? menuSettings.titleBg
+                        : locale === 'en'
+                          ? menuSettings.titleEn
+                          : menuSettings.titleRo
+                    )
+                  : locale === 'bg'
+                    ? 'Нашето Меню'
+                    : locale === 'en'
+                      ? 'Our Menu'
+                      : 'Meniul nostru'}
+              </span>
             </h1>
             <p className="text-lg md:text-xl malts-muted mb-6">
               {menuSettings
