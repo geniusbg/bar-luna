@@ -189,8 +189,8 @@ export default function AdminProductsPage() {
                   <p className="text-gray-400 text-xs">{getCategoryName(product.categoryId)}</p>
                 </div>
                 <div className="text-right ml-3">
-                  <div className="text-xl font-bold text-white">{displayPrice(Number(product.priceBgn), 'BGN')}</div>
-                  <div className="text-xs text-gray-400">{displayPrice(Number(product.priceBgn), 'EUR')}</div>
+                  <div className="text-xl font-bold text-white">{displayPrice(Number(product.priceBgn), 'EUR')}</div>
+                  <div className="text-xs text-gray-400">{displayPrice(Number(product.priceBgn), 'BGN')}</div>
                   {product.unit && product.quantity && (
                     <div className="text-xs text-gray-500 mt-1">
                       {product.quantity} {product.unit === 'pcs' ? 'бр.' : product.unit}

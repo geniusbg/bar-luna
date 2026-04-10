@@ -44,9 +44,9 @@ export default function Price({
   if (inline) {
     return (
       <span className={className}>
-        <span className="font-semibold">{bgnPrice}</span>
+        <span className="font-semibold">{eurPrice}</span>
         <span className="opacity-70 mx-2">/</span>
-        <span className="opacity-90">{eurPrice}</span>
+        <span className="opacity-90">{bgnPrice}</span>
         {unitDisplay && <span className="text-sm opacity-70 ml-2">({unitDisplay})</span>}
       </span>
     );
@@ -55,8 +55,8 @@ export default function Price({
   // Stacked layout
   return (
     <span className={`flex flex-col ${className}`}>
-      <span className="font-semibold">{bgnPrice}</span>
-      <span className="text-sm opacity-70">{eurPrice}</span>
+      <span className="font-semibold">{eurPrice}</span>
+      <span className="text-sm opacity-70">{bgnPrice}</span>
       {unitDisplay && <span className="text-sm opacity-70 mt-1">({unitDisplay})</span>}
     </span>
   );
