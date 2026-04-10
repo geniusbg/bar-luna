@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import Price from '@/components/Price';
 
 interface Product {
   id: string;
@@ -156,9 +157,12 @@ export default function ChefsPicksCarousel({ products, locale }: ChefsPicksCarou
                         </p>
                       )}
                       <div className="mt-auto flex items-center justify-between">
-                        <div className="text-2xl font-bold text-white">
-                          {Number(product.priceBgn).toFixed(2)} лв.
-                        </div>
+                        <Price
+                          priceBgn={Number(product.priceBgn)}
+                          className="text-2xl font-bold text-white"
+                          showBoth={true}
+                          inline={true}
+                        />
                         <Link
                           href={`/${locale}/menu?category=${product.categoryId}&product=${product.id}`}
                           className="px-4 py-2 bg-white text-black rounded-lg font-semibold text-sm hover:bg-gray-200 transition-colors min-h-[48px] flex items-center justify-center"

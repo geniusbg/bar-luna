@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Category } from '@/lib/types';
-import { bgnToEur } from '@/lib/currency';
+import { bgnToEur, eurToBgn, displayPrice } from '@/lib/currency';
 import ImageUpload from './ImageUpload';
 
 interface ProductFormProps {
@@ -20,7 +20,8 @@ type ProductFormData = {
   description_en: string;
   description_de: string;
   category_id: string;
-  price_bgn: number | '';
+  /** Въвеждане в евро; BGN се изчислява при запис */
+  price_eur: number | '';
   unit: string;
   quantity: number;
   is_available: boolean;
@@ -38,7 +39,7 @@ const defaultProductFormData = (categories: Category[]): ProductFormData => ({
   description_en: '',
   description_de: '',
   category_id: categories[0]?.id || '',
-  price_bgn: 0,
+  price_eur: 0,
   unit: 'pcs',
   quantity: 1,
   is_available: true,
@@ -48,13 +49,29 @@ const defaultProductFormData = (categories: Category[]): ProductFormData => ({
   order: 0
 });
 
-export default function ProductForm({ categories, initialData, onSubmit, locale }: ProductFormProps) {
-  const [formData, setFormData] = useState<ProductFormData>({
-    ...defaultProductFormData(categories),
-    ...(initialData || {})
-  });
+function buildFormState(
+  categories: Category[],
+  initialData?: Partial<ProductFormData> & { price_bgn?: number }
+): ProductFormData {
+  const base = defaultProductFormData(categories);
+  if (!initialData) return base;
+  const { price_bgn, price_eur, ...rest } = initialData as Partial<ProductFormData> & { price_bgn?: number };
+  let pe: number | '' = base.price_eur;
+  if (price_eur !== undefined && price_eur !== '') {
+    pe = typeof price_eur === 'number' ? price_eur : parseFloat(String(price_eur)) || 0;
+  } else if (price_bgn !== undefined) {
+    const pb = typeof price_bgn === 'number' ? price_bgn : parseFloat(String(price_bgn)) || 0;
+    pe = bgnToEur(pb);
+  }
+  return { ...base, ...rest, price_eur: pe };
+}
 
-  const resolvePriceBgn = (price: number | ''): number =>
+export default function ProductForm({ categories, initialData, onSubmit, locale }: ProductFormProps) {
+  const [formData, setFormData] = useState<ProductFormData>(() =>
+    buildFormState(categories, initialData)
+  );
+
+  const resolvePriceEur = (price: number | ''): number =>
     typeof price === 'number' ? price : parseFloat(price || '0') || 0;
 
   const [loading, setLoading] = useState(false);
@@ -121,13 +138,14 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
     e.preventDefault();
     setLoading(true);
 
-    // Calculate EUR price
-    const priceBgnValue = resolvePriceBgn(formData.price_bgn);
+    const priceEurInput = resolvePriceEur(formData.price_eur);
+    const priceBgnValue = eurToBgn(priceEurInput);
+    const priceEurStored = bgnToEur(priceBgnValue);
 
     const dataToSubmit = {
       ...formData,
       price_bgn: priceBgnValue,
-      price_eur: bgnToEur(priceBgnValue)
+      price_eur: priceEurStored
     };
 
     try {
@@ -279,11 +297,11 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
       {/* Price and Order */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-gray-300 font-semibold mb-2">Цена (BGN) *</label>
+          <label className="block text-gray-300 font-semibold mb-2">Цена (EUR) *</label>
           <input
             type="number"
-            name="price_bgn"
-            value={formData.price_bgn || ''}
+            name="price_eur"
+            value={formData.price_eur || ''}
             onChange={handleChange}
             step="0.01"
             min="0"
@@ -292,7 +310,7 @@ export default function ProductForm({ categories, initialData, onSubmit, locale 
             required
           />
           <p className="text-gray-400 text-sm mt-1">
-            EUR: €{bgnToEur(resolvePriceBgn(formData.price_bgn)).toFixed(2)}
+            BGN: {displayPrice(eurToBgn(resolvePriceEur(formData.price_eur)), 'BGN')} (фикс. курс €1 = 1,95583 лв.)
           </p>
         </div>
         <div>

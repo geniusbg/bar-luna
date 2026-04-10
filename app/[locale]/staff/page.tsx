@@ -1435,10 +1435,17 @@ export default function StaffDashboard() {
                 </div>
                 <div className="flex justify-between text-sm mt-2">
                   <span className="text-gray-300">Общо:</span>
-                  <span className="text-white font-semibold text-lg">
-                    {selectedApproval.order?.totalBgn 
-                      ? Number(selectedApproval.order.totalBgn).toFixed(2) + ' лв.'
-                      : 'N/A'}
+                  <span className="text-white font-semibold text-lg text-right">
+                    {selectedApproval.order?.totalBgn != null ? (
+                      <Price
+                        priceBgn={Number(selectedApproval.order.totalBgn)}
+                        className="text-white font-semibold text-lg"
+                        showBoth={true}
+                        inline={true}
+                      />
+                    ) : (
+                      'N/A'
+                    )}
                   </span>
                 </div>
               </div>
@@ -1450,9 +1457,12 @@ export default function StaffDashboard() {
                     {selectedApproval.order.items.map((item: any, idx: number) => (
                       <div key={`${selectedApproval.orderId}-item-${item.id || idx}`} className="bg-gray-700/50 rounded-lg p-3 flex justify-between">
                         <span className="text-white">{item.productName} x {item.quantity}</span>
-                        <span className="text-white font-semibold">
-                          {(Number(item.priceBgn) * item.quantity).toFixed(2)} лв.
-                        </span>
+                        <Price
+                          priceBgn={Number(item.priceBgn) * item.quantity}
+                          className="text-white font-semibold whitespace-nowrap"
+                          showBoth={true}
+                          inline={true}
+                        />
                       </div>
                     ))}
                   </div>

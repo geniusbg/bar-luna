@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import ProductForm from '@/components/ProductForm';
 import LoadingScreen from '@/components/LoadingScreen';
+import { bgnToEur } from '@/lib/currency';
 
 export default function EditProductPage({
   params
@@ -46,8 +47,7 @@ export default function EditProductPage({
           description_bg: p.descriptionBg || '',
           description_en: p.descriptionEn || '',
           description_de: p.descriptionDe || '',
-          price_bgn: Number(p.priceBgn),
-          price_eur: Number(p.priceEur),
+          price_eur: bgnToEur(Number(p.priceBgn)),
           image_url: p.imageUrl || '',
           unit: p.unit || 'pcs',
           quantity: p.quantity || 1,

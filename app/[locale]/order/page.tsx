@@ -1138,7 +1138,12 @@ function OrderPageContent() {
                           )}
                         </div>
                         <div className="flex justify-between items-center">
-                          <p className="text-gray-300">{item.priceBgn.toFixed(2)} лв.</p>
+                          <Price
+                            priceBgn={item.priceBgn}
+                            className="text-gray-300"
+                            showBoth={true}
+                            inline={true}
+                          />
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => updateQuantity(item.productId, item.quantity - 1)}
