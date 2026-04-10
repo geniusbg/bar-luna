@@ -65,9 +65,9 @@ export default function NewProductPage() {
 
   return (
     <div>
-      <h1 className="text-4xl font-bold text-white mb-8">Добави продукт</h1>
+      <h1 className="text-4xl font-bold mb-8">Добави продукт</h1>
       
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-8">
+      <div className="malts-card p-8">
         <ProductForm
           categories={categories}
           onSubmit={handleSubmit}

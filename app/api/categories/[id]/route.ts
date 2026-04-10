@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureUniqueCategorySlug } from '@/lib/slug';
+import { assertCategoryDepthWithinLimit, isDescendantOf, type CategoryNode } from '@/lib/category-depth';
 
 // Update category
 export async function PUT(
@@ -11,41 +12,61 @@ export async function PUT(
     const data = await request.json();
     const { id } = await params;
 
+    const current = await prisma.category.findUnique({
+      where: { id },
+      select: { brandId: true },
+    });
+    if (!current) {
+      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+    }
+
     // Prevent circular reference - category cannot be its own parent
     if (data.parent_category_id === id) {
       return NextResponse.json({ error: 'Category cannot be its own parent' }, { status: 400 });
     }
 
+    const allFlat = await prisma.category.findMany({
+      where: { brandId: current.brandId },
+      select: { id: true, parentCategoryId: true },
+    });
+
     // Validate parent category if provided
     if (data.parent_category_id) {
-      const parentExists = await prisma.category.findUnique({
-        where: { id: data.parent_category_id }
+      const parentExists = await prisma.category.findFirst({
+        where: { id: data.parent_category_id, brandId: current.brandId },
       });
       if (!parentExists) {
         return NextResponse.json({ error: 'Parent category not found' }, { status: 400 });
       }
-      
-      // Prevent making a category a child of its own child (circular reference check)
-      const isDescendant = await prisma.category.findFirst({
-        where: {
-          id: data.parent_category_id,
-          parentCategoryId: id
-        }
-      });
-      if (isDescendant) {
-        return NextResponse.json({ error: 'Cannot create circular reference' }, { status: 400 });
+
+      if (isDescendantOf(allFlat, id, data.parent_category_id)) {
+        return NextResponse.json(
+          { error: 'Родителят не може да е подкатегория на тази категория' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (data.parent_category_id !== undefined) {
+      const newParentId = data.parent_category_id || null;
+      const proposed: CategoryNode[] = allFlat.map((c) =>
+        c.id === id ? { id: c.id, parentCategoryId: newParentId } : { id: c.id, parentCategoryId: c.parentCategoryId }
+      );
+      const depthCheck = assertCategoryDepthWithinLimit(proposed);
+      if (!depthCheck.ok) {
+        return NextResponse.json({ error: depthCheck.message }, { status: 400 });
       }
     }
 
     const slugSource = (data.name_bg ?? data.slug ?? '').toString().trim();
-    const slug = await ensureUniqueCategorySlug(slugSource, id);
+    const slug = await ensureUniqueCategorySlug(slugSource, current.brandId, id);
 
     const category = await prisma.category.update({
       where: { id },
       data: {
         nameBg: data.name_bg,
         nameEn: data.name_en,
-        nameDe: data.name_de,
+        nameRo: data.name_ro,
         slug,
         order: data.order || 0,
         parentCategoryId: data.parent_category_id || null
@@ -56,7 +77,7 @@ export async function PUT(
             id: true,
             nameBg: true,
             nameEn: true,
-            nameDe: true,
+            nameRo: true,
             slug: true
           }
         }

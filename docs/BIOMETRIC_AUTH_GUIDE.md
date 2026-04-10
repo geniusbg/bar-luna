@@ -114,7 +114,7 @@ These ensure proper PWA installation and biometric support.
 1. Open installed PWA
 2. Enter email and password
 3. Tap "Login"
-4. Browser asks: "Save password for Luna Bar?"
+4. Browser asks: "Save password for Malls?"
 5. Tap "Save"
 
 ### Step 3: Test Biometrics

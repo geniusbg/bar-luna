@@ -45,15 +45,15 @@ export default function EditEventPage() {
         const formData = {
           title_bg: data.event.titleBg,
           title_en: data.event.titleEn,
-          title_de: data.event.titleDe,
+          title_ro: data.event.titleRo,
           description_bg: data.event.descriptionBg,
           description_en: data.event.descriptionEn,
-          description_de: data.event.descriptionDe,
+          description_ro: data.event.descriptionRo,
           event_date: new Date(data.event.eventDate).toISOString().slice(0, 16),
           location: data.event.location,
           location_bg: data.event.locationBg || data.event.location,
           location_en: data.event.locationEn || data.event.location,
-          location_de: data.event.locationDe || data.event.location,
+          location_ro: data.event.locationRo || data.event.location,
           is_external: data.event.isExternal,
           external_url: data.event.externalUrl || '',
           contact_phone: contact_phone,
@@ -96,7 +96,7 @@ export default function EditEventPage() {
   }
 
   if (!event) {
-    return <div className="text-white text-2xl">Събитието не е намерено</div>;
+    return <div className="text-2xl">Събитието не е намерено</div>;
   }
 
   return (
@@ -110,11 +110,11 @@ export default function EditEventPage() {
         />
       )}
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Редактирай събитие</h1>
-        <p className="text-gray-400">Актуализирай информацията за събитието</p>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2">Редактирай събитие</h1>
+        <p className="malts-muted">Актуализирай информацията за събитието</p>
       </div>
 
-      <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 md:p-8">
+      <div className="malts-card p-4 md:p-8">
         <EventForm
           initialData={event}
           onSubmit={handleSubmit}

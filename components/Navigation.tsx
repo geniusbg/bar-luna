@@ -19,11 +19,11 @@ const translations: Record<string, Record<string, string>> = {
     events: 'Events',
     contact: 'Contact'
   },
-  de: {
-    home: 'Startseite',
-    menu: 'Speisekarte',
-    events: 'Veranstaltungen',
-    contact: 'Kontakt'
+  ro: {
+    home: 'Acasă',
+    menu: 'Meniu',
+    events: 'Evenimente',
+    contact: 'Contact'
   }
 };
 
@@ -49,31 +49,31 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-lg border-b border-gray-800">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--malts-paper)]/95 backdrop-blur-md border-b border-[var(--malts-hairline)] shadow-sm">
       <div className="container mx-auto px-4 py-1">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href={`/${locale}`}>
             <div className="h-20 flex items-center">
               <img 
-                src={locale === 'de' ? '/bg/logo_luna2.svg' : `/${locale}/logo_luna2.svg`} 
-                alt="L.U.N.A." 
-                className="h-[80px] w-auto"
-                style={{ aspectRatio: '3.5/1' }}
+                src="/malts-logo-landscape.svg" 
+                alt="Malt's" 
+                className="h-[72px] w-auto md:h-[80px]"
+                style={{ aspectRatio: '3.6/1' }}
               />
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-6 malts-nav-font malts-nav-links">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={`transition-colors font-medium ${
                   isActive(link.href, link.exact)
-                    ? 'text-white border-b-2 border-white'
-                    : 'text-gray-300 hover:text-white'
+                    ? 'text-[var(--malts-accent)] border-b-2 border-[var(--malts-accent)]'
+                    : 'text-[var(--malts-ink)] hover:text-[var(--malts-accent)]'
                 }`}
               >
                 {link.label}
@@ -90,7 +90,7 @@ export default function Navigation() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden text-gray-300 hover:text-white p-2"
+              className="md:hidden text-[var(--malts-ink)] hover:text-[var(--malts-accent)] p-2"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
@@ -110,7 +110,7 @@ export default function Navigation() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-800 mt-2">
+          <div className="md:hidden py-4 border-t border-[var(--malts-hairline)] mt-2 malts-nav-font malts-nav-links">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -118,8 +118,8 @@ export default function Navigation() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`block py-3 px-4 rounded-lg transition-colors font-medium ${
                   isActive(link.href, link.exact)
-                    ? 'text-white bg-white/10 border-l-4 border-white'
-                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                    ? 'text-[var(--malts-accent)] bg-[var(--malts-accent-tint)] border-l-4 border-[var(--malts-accent)]'
+                    : 'text-[var(--malts-ink)] hover:text-[var(--malts-accent)] hover:bg-[var(--malts-card-hover)]'
                 }`}
               >
                 {link.label}

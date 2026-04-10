@@ -62,7 +62,7 @@ export default function ServiceWorkerVersion() {
       {/* Toggle button - always visible */}
       <button
         onClick={() => setIsVisible(!isVisible)}
-        className="fixed bottom-4 right-4 z-[9999] bg-gray-800/90 backdrop-blur-sm text-gray-300 px-3 py-2 rounded-lg text-xs font-mono border border-gray-700 shadow-lg hover:bg-gray-700 transition-colors"
+        className="fixed bottom-4 right-4 z-[9999] bg-[var(--malts-card)]/92 backdrop-blur-md text-[var(--malts-ink)] px-3 py-2 rounded-lg text-xs font-mono border border-[var(--malts-hairline)] shadow-lg hover:bg-[var(--malts-card-hover)] transition-colors"
         aria-label="Toggle Service Worker version"
       >
         SW
@@ -70,27 +70,27 @@ export default function ServiceWorkerVersion() {
 
       {/* Version info - shown when toggled */}
       {isVisible && (
-        <div className="fixed bottom-16 right-4 z-[9999] bg-gray-900/95 backdrop-blur-sm text-gray-200 px-4 py-3 rounded-lg text-xs font-mono border border-gray-700 shadow-2xl">
+        <div className="fixed bottom-16 right-4 z-[9999] bg-[var(--malts-card)]/92 backdrop-blur-md text-[var(--malts-ink)] px-4 py-3 rounded-lg text-xs font-mono border border-[var(--malts-hairline)] shadow-2xl">
           <div className="flex items-center gap-2 mb-2">
             {swSupported ? (
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             ) : (
               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
             )}
-            <span className="text-gray-400">
+            <span className="malts-subtle">
               {swSupported ? 'Service Worker' : 'SW Limited'}
             </span>
           </div>
-          <div className="text-sm font-semibold text-white">
+          <div className="text-sm font-semibold">
             {version || 'Loading...'}
           </div>
           {!swSupported && (
-            <div className="text-[10px] text-orange-400 mt-2 border-t border-gray-700 pt-2">
+            <div className="text-[10px] text-[var(--malts-warning)] mt-2 border-t border-[var(--malts-hairline)] pt-2">
               ⚠️ iOS HTTP: SW не работи<br/>
               Offline mode: ограничен
             </div>
           )}
-          <div className="text-[10px] text-gray-500 mt-1">
+          <div className="text-[10px] malts-muted mt-1">
             Tap SW to hide
           </div>
         </div>

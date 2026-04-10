@@ -28,6 +28,7 @@ export function slugify(input: string): string {
 
 export async function ensureUniqueCategorySlug(
   slugInput: string,
+  brandId: string,
   excludeId?: string
 ): Promise<string> {
   const base = slugify(slugInput) || `category-${Date.now()}`;
@@ -38,6 +39,7 @@ export async function ensureUniqueCategorySlug(
   while (true) {
     const existing = await prisma.category.findFirst({
       where: {
+        brandId,
         slug,
         ...(excludeId ? { NOT: { id: excludeId } } : {})
       },

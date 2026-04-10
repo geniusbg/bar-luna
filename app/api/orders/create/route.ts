@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { bgnToEur } from '@/lib/currency';
 import { getSecuritySettings } from '@/lib/security-settings';
+import { getDefaultBrandId } from '@/lib/brand';
+import { expectedUnitPriceBgn, indexActivePromotionsByProductId } from '@/lib/pricing';
 import { TABLE_SESSION_COOKIE_NAME, TableSessionInvalidReason, validateTableSession } from '@/lib/table-sessions';
 
 // In-memory rate limiting storage (per table)
@@ -60,6 +62,74 @@ export async function POST(request: NextRequest) {
       return buildInvalidSessionResponse(sessionValidation.reason);
     }
     const tableNumber = sessionValidation.session.tableNumber;
+
+    const brandId = await getDefaultBrandId();
+    const ops = await prisma.operationalSettings.findUnique({ where: { brandId } });
+    if (ops && !ops.ordersEnabled) {
+      return NextResponse.json(
+        { error: 'Поръчките са временно изключени.' },
+        { status: 403 }
+      );
+    }
+    const maxTables = ops?.maxQrTables ?? 30;
+    if (tableNumber < 1 || tableNumber > maxTables) {
+      return NextResponse.json({ error: 'Невалидна маса' }, { status: 400 });
+    }
+
+    const barTable = await prisma.barTable.findFirst({
+      where: { brandId, tableNumber, isActive: true },
+    });
+    if (!barTable) {
+      return NextResponse.json({ error: 'Невалидна маса' }, { status: 400 });
+    }
+
+    const productIds = [...new Set(items.map((i: { productId?: string }) => i.productId).filter(Boolean))] as string[];
+    if (productIds.length === 0) {
+      return NextResponse.json({ error: 'Invalid order data' }, { status: 400 });
+    }
+
+    const priceCheckNow = new Date();
+    const [dbProducts, activePromos] = await Promise.all([
+      prisma.product.findMany({
+        where: {
+          id: { in: productIds },
+          category: { brandId },
+        },
+      }),
+      prisma.productPromotion.findMany({
+        where: {
+          brandId,
+          productId: { in: productIds },
+          startsAt: { lte: priceCheckNow },
+          endsAt: { gte: priceCheckNow },
+        },
+      }),
+    ]);
+
+    if (dbProducts.length !== productIds.length) {
+      return NextResponse.json({ error: 'Невалидни продукти' }, { status: 400 });
+    }
+
+    const promoMap = indexActivePromotionsByProductId(activePromos, priceCheckNow);
+    let serverTotalBgn = 0;
+    for (const item of items as { productId: string; priceBgn: number; quantity: number }[]) {
+      const prod = dbProducts.find((p) => p.id === item.productId);
+      if (!prod) {
+        return NextResponse.json({ error: 'Невалидни продукти' }, { status: 400 });
+      }
+      const expected = expectedUnitPriceBgn(prod, promoMap.get(item.productId));
+      const got = Number(item.priceBgn);
+      if (!Number.isFinite(got) || Math.abs(got - expected) > 0.02) {
+        return NextResponse.json(
+          { error: 'Невалидна цена. Моля, презаредете менюто.' },
+          { status: 400 }
+        );
+      }
+      const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
+      serverTotalBgn += expected * qty;
+    }
+    serverTotalBgn = Number(serverTotalBgn.toFixed(2));
+
     if (requestedTableNumber && requestedTableNumber !== tableNumber) {
       console.warn(
         `Order create: table mismatch detected (cookie: ${tableNumber}, body: ${requestedTableNumber})`
@@ -115,9 +185,10 @@ export async function POST(request: NextRequest) {
     const windowStart = new Date(Date.now() - approvalWindowMs);
     const recentOrderCount = await prisma.order.count({
       where: {
+        brandId,
         tableNumber,
-        createdAt: { gte: windowStart }
-      }
+        createdAt: { gte: windowStart },
+      },
     });
 
     // If >= threshold existing orders in last window, the current one will require approval
@@ -138,42 +209,45 @@ export async function POST(request: NextRequest) {
 
     const todayOrderCount = await prisma.order.count({
       where: {
-        createdAt: { gte: today }
-      }
+        brandId,
+        createdAt: { gte: today },
+      },
     });
 
     const orderNumber = todayOrderCount + 1;
 
-    // Calculate total
-    const totalBgn = items.reduce((sum: number, item: any) => 
-      sum + (item.priceBgn * item.quantity), 0
-    );
+    const totalBgn = serverTotalBgn;
 
     // Create order (status will be 'pending_approval' if requires approval, otherwise 'pending')
     const orderStatus = requiresApproval ? 'pending_approval' : 'pending';
     const order = await prisma.order.create({
       data: {
+        brandId,
+        tableId: barTable.id,
         tableNumber,
         orderNumber,
         status: orderStatus,
         totalBgn,
         totalEur: bgnToEur(totalBgn),
-        isPaid: false
-      }
+        isPaid: false,
+      },
     });
 
-    // Create order items
+    // Create order items (server-side unit prices)
     try {
-      for (const item of items) {
+      for (const item of items as { productId: string; productName?: string; name?: string; quantity: number; priceBgn: number }[]) {
+        const prod = dbProducts.find((p) => p.id === item.productId)!;
+        const unitBgn = expectedUnitPriceBgn(prod, promoMap.get(item.productId));
+        const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
         await prisma.orderItem.create({
           data: {
             orderId: order.id,
             productId: item.productId,
-            productName: item.productName || item.name, // Support both formats
-            quantity: item.quantity,
-            priceBgn: item.priceBgn,
-            priceEur: bgnToEur(item.priceBgn),
-          }
+            productName: item.productName || item.name || '',
+            quantity: qty,
+            priceBgn: unitBgn,
+            priceEur: bgnToEur(unitBgn),
+          },
         });
       }
     } catch (itemsError: any) {

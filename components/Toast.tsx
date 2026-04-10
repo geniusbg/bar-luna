@@ -20,9 +20,9 @@ export default function Toast({ message, type = 'success', onClose, duration = 4
   }, [onClose, duration, persistent]);
 
   const colors = {
-    success: 'bg-green-500 border-green-400',
-    error: 'bg-red-500 border-red-400',
-    info: 'bg-blue-500 border-blue-400'
+    success: 'bg-green-50 border-green-300 text-green-900',
+    error: 'bg-red-50 border-red-300 text-red-900',
+    info: 'bg-blue-50 border-blue-300 text-blue-900',
   };
 
   const icons = {
@@ -33,19 +33,19 @@ export default function Toast({ message, type = 'success', onClose, duration = 4
 
   return (
     <div className="fixed top-24 right-8 z-[100] animate-slide-in">
-      <div className={`${colors[type]} border-4 rounded-2xl p-6 shadow-2xl min-w-[300px] max-w-md`}>
+      <div className={`${colors[type]} border rounded-2xl p-6 shadow-2xl min-w-[300px] max-w-md`}>
         <div className="flex items-center gap-4">
-          <div className="text-4xl text-white font-bold">
+          <div className="text-4xl font-bold">
             {icons[type]}
           </div>
           <div className="flex-1">
-            <p className="text-xl font-semibold text-white whitespace-pre-line leading-relaxed">{message}</p>
+            <p className="text-xl font-semibold whitespace-pre-line leading-relaxed">{message}</p>
           </div>
           <button
             onClick={onClose}
-            className={`text-white hover:text-white/70 font-bold transition-colors ${
+            className={`font-bold transition-colors ${
               persistent 
-                ? 'px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-base' 
+                ? 'px-4 py-2 bg-black/5 hover:bg-black/10 rounded-lg text-base' 
                 : 'text-2xl'
             }`}
           >
@@ -57,9 +57,9 @@ export default function Toast({ message, type = 'success', onClose, duration = 4
         
         {/* Progress bar - only show if not persistent */}
         {!persistent && (
-          <div className="mt-3 h-1 bg-white/20 rounded-full overflow-hidden">
+          <div className="mt-3 h-1 bg-black/10 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-white animate-progress"
+              className="h-full bg-black/25 animate-progress"
               style={{ animationDuration: `${duration}ms` }}
             />
           </div>

@@ -1,4 +1,4 @@
-# Luna Bar - Deployment Guide
+# Malts — Deployment Guide
 
 ## 🚀 PM2 Production Deployment (VPS/Server)
 
@@ -11,19 +11,20 @@
 
 1. **Clone and setup:**
 ```bash
-git clone https://github.com/geniusbg/bar-luna.git
-cd bar-luna
+git clone <your-repo-url>
+cd Malls
 npm install
 ```
 
 2. **Configure environment:**
 ```bash
 cp env.example .env
-# Edit .env with your settings:
-# - PORT=4000
-# - DATABASE_URL=your_postgres_connection
+# Edit .env with your settings (no secrets in git):
+# - PORT=4000 (or your port)
+# - DATABASE_URL=your_postgres_connection (db name: malts)
 # - PUSHER credentials
 # - VAPID keys
+# - APP_NAME=malts-web
 ```
 
 3. **Setup database:**
@@ -44,18 +45,18 @@ pm2 start ecosystem.config.js
 5. **Manage PM2:**
 ```bash
 pm2 status           # Check status
-pm2 logs bar-luna    # View logs
-pm2 restart bar-luna # Restart app
-pm2 stop bar-luna    # Stop app
+pm2 logs malts-web    # View logs
+pm2 restart malts-web # Restart app
+pm2 stop malts-web    # Stop app
 pm2 save             # Save PM2 list
 pm2 startup          # Auto-start on server reboot
 ```
 
-**App will run on:** `http://localhost:4000`
+**App will run on:** `http://localhost:4000` (or your configured port)
 
 ---
 
-## 🌐 Vercel Deployment (Recommended for Easy Deploy)
+## 🌐 Vercel Deployment
 
 ### Prerequisites
 - [ ] GitHub account
@@ -69,7 +70,7 @@ pm2 startup          # Auto-start on server reboot
 1. Go to [https://supabase.com](https://supabase.com)
 2. Click "New Project"
 3. Fill in:
-   - **Name:** Luna Bar
+   - **Name:** Malts
    - **Database Password:** (create strong password - save it!)
    - **Region:** Europe Central (Germany) - closest to Bulgaria
 4. Click "Create new project"
@@ -205,7 +206,7 @@ NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
 ### 4.1 Get Domain
 
 Buy domain from:
-- [Namecheap](https://www.namecheap.com) - `lunabar.bg`
+- [Namecheap](https://www.namecheap.com) - `malts-ruse.com`
 - [Cloudflare](https://www.cloudflare.com/products/registrar/)
 - [GoDaddy](https://www.godaddy.com)
 
@@ -213,11 +214,11 @@ Buy domain from:
 
 1. In Vercel dashboard → Settings → Domains
 2. Click "Add Domain"
-3. Enter your domain: `lunabar.bg`
+3. Enter your domain: `malts-ruse.com`
 4. Vercel will provide DNS records
 5. Add records to your domain provider:
 
-**For apex domain (lunabar.bg):**
+**For apex domain (malts-ruse.com):**
 ```
 Type: A
 Name: @
@@ -250,10 +251,10 @@ In Supabase **SQL Editor**, run:
 ```sql
 UPDATE auth.users 
 SET raw_app_meta_data = raw_app_meta_data || '{"role": "admin"}'::jsonb
-WHERE email = 'admin@lunabar.bg';
+WHERE email = '<your-admin-email>';
 ```
 
-Replace `admin@lunabar.bg` with actual admin email.
+Replace `<your-admin-email>` with actual admin email.
 
 ## Step 6: Initial Content
 

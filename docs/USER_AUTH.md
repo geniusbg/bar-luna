@@ -2,7 +2,7 @@
 
 ## 📋 Overview
 
-Complete 3-tier role-based authentication system for Luna Bar admin panel with biometric support for PWA installations.
+Complete 3-tier role-based authentication system for the Malls admin panel with biometric support for PWA installations.
 
 ---
 
@@ -153,7 +153,7 @@ npm run db:seed
 ```
 
 ### 2. Default Admin User
-- **Email:** admin@lunabar.bg
+- **Email:** (set `ADMIN_EMAIL` in `.env`)
 - **Password:** admin123
 - **Role:** SUPER_ADMIN
 - **⚠️ Change password after first login!**
@@ -248,7 +248,7 @@ prisma/
 ## 🧪 Testing
 
 ### Test Credentials
-- **SUPER_ADMIN:** admin@lunabar.bg / admin123
+- **SUPER_ADMIN:** created from `ADMIN_EMAIL` / `ADMIN_PASSWORD` (set in `.env`; change after first login)
 - Create test users for ADMIN and STAFF roles
 
 ### Test Scenarios

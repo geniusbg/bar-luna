@@ -29,10 +29,10 @@ export async function PUT(request: Request) {
     }
 
     const data = await request.json();
-    
-    if (!data.addressBg || !data.addressEn || !data.addressDe) {
+
+    if (!data.addressBg || !data.addressEn || !data.addressRo) {
       return NextResponse.json(
-        { error: 'Всички адреси (BG, EN, DE) са задължителни' },
+        { error: 'Всички адреси (BG, EN, RO) са задължителни' },
         { status: 400 }
       );
     }
@@ -40,7 +40,7 @@ export async function PUT(request: Request) {
     const settings = await updateLocationSettings({
       addressBg: data.addressBg,
       addressEn: data.addressEn,
-      addressDe: data.addressDe
+      addressRo: data.addressRo,
     });
 
     return NextResponse.json({ settings });

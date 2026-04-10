@@ -61,8 +61,8 @@ if (!allowedDomains.includes(requestDomain)) {
 
 1. **Провери VAPID keys в .env файловете:**
    ```bash
-   # На luna сървъра
-   grep VAPID /var/www/html/bar-luna/.env
+   # На malts-web сървъра
+   grep VAPID /var/www/html/malts-web/.env
    
    # На qrmenu сървъра
    grep VAPID /var/www/html/qrmenu/.env

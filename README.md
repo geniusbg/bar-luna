@@ -1,13 +1,15 @@
-# 𝐋.𝐔.𝐍.𝐀 🌙 Bar & Coffee - QR Ordering System
+# Malts — QR ordering (malts-ruse.com)
 
-Modern QR-based ordering system for Luna Bar in Ruse, Bulgaria.
+QR table ordering for **Malts** (Ruse, Bulgaria). Forked from the Luna Bar stack; PostgreSQL DB/user **`malts`**, default brand slug **`malts`** (`DEFAULT_BRAND_SLUG`).
+
+Legacy title in some docs: „Luna Bar“ — production intent is Malts.
 
 ## 🌟 Features
 
 ### For Customers
 - 📱 **QR Code Ordering** - Scan table QR, browse menu, order
 - 🔐 **Session Security** - 3-hour session tokens for secure ordering
-- 🌍 **3 Languages** - Bulgarian, English, German
+- 🌍 **3 Languages** - Bulgarian, English, Romanian
 - 💰 **Dual Currency** - BGN & EUR with real-time toggle
 - 🛒 **Shopping Cart** - Add items, adjust quantities
 - 🔔 **Call Waiter** - Request payment (cash/card) or assistance
@@ -26,7 +28,7 @@ Modern QR-based ordering system for Luna Bar in Ruse, Bulgaria.
 
 ### For Admins
 - 🍸 **Product Management** - Add/edit menu items in 3 languages
-- 🎉 **Event Management** - Luna events + partner promotions
+- 🎉 **Event Management** - Venue events + partner promotions
 - 📱 **QR Generation** - Generate & print QR codes for all tables
 - 🔗 **QR Redirects** - Manage dynamic redirect URLs for QR codes (no need to reprint when changing URLs)
 - 🕐 **Working Hours** - Set working hours for each day of the week
@@ -81,7 +83,7 @@ npm install
 ### 2. Configure Environment
 Create `.env` file (copy from `env.example`):
 ```env
-DATABASE_URL="postgresql://user:password@host:5432/luna_bar"
+DATABASE_URL="postgresql://malts:password@host:5432/malts"
 PUSHER_APP_ID=your_app_id
 NEXT_PUBLIC_PUSHER_KEY=your_key
 PUSHER_SECRET=your_secret
@@ -90,7 +92,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXTAUTH_SECRET=random_secret_string
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_vapid_public_key
 VAPID_PRIVATE_KEY=your_vapid_private_key
-APP_NAME=bar-luna
+APP_NAME=malts-web
 PORT=4000
 ```
 
@@ -335,7 +337,7 @@ See `DEPLOYMENT.md` for production deployment guide.
 - **Hosting:** Vercel (free tier)
 - **Database:** Your current PostgreSQL server
 - **Real-time:** Pusher (free tier - 200k msgs/day)
-- **Domain:** lunabar.bg (suggested)
+- **Domain:** malts-ruse.com
 
 ---
 
@@ -368,7 +370,7 @@ See `DEPLOYMENT.md` for production deployment guide.
 - **public/sounds/README.md** - Sound files guide
 
 ### Archived Documentation
-Historical and temporary fix documentation is stored in `docs/archive/` for reference.
+Historical and temporary fix documentation was removed during cleanup.
 
 ---
 
@@ -379,7 +381,7 @@ Historical and temporary fix documentation is stored in `docs/archive/` for refe
 ✅ **Rate limiting** - Prevents spam orders (5 orders per table per 5 minutes)  
 ✅ **Approval system** - Admin/staff can approve/reject suspicious orders  
 ✅ **Real-time notifications** - Instant, no refresh  
-✅ **Multi-language** - BG/EN/DE support  
+✅ **Multi-language** - BG/EN/RO support  
 ✅ **Dual currency** - BGN/EUR toggle  
 ✅ **Staff dashboard** - Live order management  
 ✅ **Waiter calls** - Urgent payment requests  
@@ -423,10 +425,10 @@ Historical and temporary fix documentation is stored in `docs/archive/` for refe
 
 ## 🏆 Credits
 
-**Client:** Luna Bar & Coffee, Русе  
+**Client:** Malts, Русе  
 **Location:** ул. "Александровска" 97  
 **Phone:** 089 853 6542  
-**Instagram:** @luna2224  
+**Instagram:** (TBD)  
 
 **Built with:** Next.js, PostgreSQL, Prisma, Pusher, TypeScript
 
@@ -434,10 +436,10 @@ Historical and temporary fix documentation is stored in `docs/archive/` for refe
 
 ## 📝 License
 
-Proprietary - Luna Bar & Coffee © 2024
+Proprietary - Malts © 2026
 
 ---
 
-**🎉 Ready to revolutionize your bar service! 🌙**
+**🎉 Ready to revolutionize your service!**
 
 For questions or support, check the documentation files listed above.

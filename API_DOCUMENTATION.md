@@ -1,8 +1,8 @@
-# Luna Bar - API Documentation
+# Malts - API Documentation
 
 ## Overview
 
-This API provides endpoints for managing the Luna Bar menu system and integrating with POS (Point of Sale) systems.
+This API provides endpoints for managing the Malts menu system and integrating with POS (Point of Sale) systems.
 
 **Base URL:** `https://your-domain.com/api`
 
@@ -36,10 +36,10 @@ GET /api/products
       "category_id": "uuid",
       "name_bg": "Капучино",
       "name_en": "Cappuccino",
-      "name_de": "Cappuccino",
+      "name_ro": "Cappuccino",
       "description_bg": "Класическо италианско кафе",
       "description_en": "Classic Italian coffee",
-      "description_de": "Klassischer italienischer Kaffee",
+      "description_ro": "Cafea italiană clasică",
       "price_bgn": 5.00,
       "price_eur": 2.56,
       "image_url": "https://...",
@@ -78,7 +78,7 @@ POST /api/products
   "category_id": "uuid",
   "name_bg": "Продукт",
   "name_en": "Product",
-  "name_de": "Produkt",
+  "name_ro": "Produs",
   "price_bgn": 10.00,
   "price_eur": 5.11,
   "is_available": true
@@ -121,7 +121,7 @@ GET /api/categories
       "id": "uuid",
       "name_bg": "Алкохол",
       "name_en": "Alcohol",
-      "name_de": "Alkohol",
+      "name_ro": "Alcool",
       "slug": "alcohol",
       "order": 1
     }
@@ -348,6 +348,6 @@ Both prices are always returned in API responses.
 
 ## Support
 
-For POS integration support, contact: admin@lunabar.bg
+For POS integration support, contact the project admin (use the production contact email).
 
 

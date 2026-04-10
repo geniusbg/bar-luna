@@ -30,13 +30,13 @@ export async function PUT(
         icon: data.icon,
         titleBg: data.titleBg,
         titleEn: data.titleEn,
-        titleDe: data.titleDe,
+        titleRo: data.titleRo,
         descriptionBg: data.descriptionBg,
         descriptionEn: data.descriptionEn,
-        descriptionDe: data.descriptionDe,
+        descriptionRo: data.descriptionRo,
         badgeBg: data.badgeBg,
         badgeEn: data.badgeEn,
-        badgeDe: data.badgeDe,
+        badgeRo: data.badgeRo,
         highlights: data.highlights,
         isActive: data.isActive
       }

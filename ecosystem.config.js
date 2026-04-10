@@ -3,7 +3,7 @@ require('dotenv').config();
 module.exports = {
   apps: [
     {
-      name: process.env.APP_NAME || 'bar-luna',
+      name: process.env.APP_NAME || 'malts-web',
       script: 'node_modules/.bin/next',
       args: 'start -H 127.0.0.1',
       cwd: process.cwd(),
@@ -15,7 +15,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: process.env.PORT || 4000,
-        APP_NAME: process.env.APP_NAME || 'bar-luna'
+        APP_NAME: process.env.APP_NAME || 'malts-web'
       },
       error_file: './logs/pm2-error.log',
       out_file: './logs/pm2-out.log',

@@ -1,4 +1,23 @@
-# Project Overview - Luna Bar QR Ordering System
+# Project Overview — Malts (malts-ruse.com)
+
+**Product (v1):** QR ordering for **Malts**, domain **`malts-ruse.com`**, languages **BG / EN / RO**, PostgreSQL database/user **`malts`** (Prisma), real-time via Pusher, portals: **public / admin / staff**.
+
+**Brand/UI:** “Beerhouse Paper” (recycled paper) theme with centralized `malts-*` CSS tokens in `app/globals.css`.  
+**Data model (v1):** `Brand` + `brandId` scoping, 3+ level categories (`parentId`), promotions by period (`ProductPromotion`), operational/super-admin settings (`OperationalSettings`).
+
+## Access points (routes)
+- **Public:** `/{locale}`, `/{locale}/menu`, `/{locale}/order`
+- **Admin:** `/{locale}/admin` (login: `/{locale}/admin/login`)
+- **Staff:** `/{locale}/staff` (login: `/{locale}/staff/login`)
+
+## Definition of Done (remaining)
+- **Deploy + smoke on prod/staging**: follow `.knowledge-base/deployment-malts-ruse.md` (env, migrate/seed, smoke flows).
+- **Credentials/links**: fill real Instagram/Facebook links when provided (contact page + docs).
+
+---
+
+## Legacy notes (historical)
+Older “Luna Bar” documentation was removed during cleanup; Malts v1 docs live under `.knowledge-base/`.
 
 ## ✅ Phase 1 Status: FUNCTIONAL IMPLEMENTATION COMPLETE
 
@@ -324,8 +343,8 @@
 ## 📞 Handoff Information
 
 ### Access Points:
-- **Production URL:** (to be deployed)
-- **Database:** 66.29.142.10:5432/luna_bar
+- **Production URL:** `https://malts-ruse.com` (or staging)
+- **Database:** PostgreSQL `malts` (see `DATABASE_URL` in environment)
 - **Pusher:** Dashboard at pusher.com
 - **Admin Panel:** /bg/admin
 - **Staff Dashboard:** /bg/staff

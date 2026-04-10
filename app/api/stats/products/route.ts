@@ -63,7 +63,7 @@ export async function GET(request: Request) {
           select: {
             nameBg: true,
             nameEn: true,
-            nameDe: true,
+            nameRo: true,
             imageUrl: true,
             priceBgn: true,
             category: {

@@ -1,36 +1,30 @@
 {
   "id": "/bg/staff",
-  "name": "Luna Bar Staff",
-  "short_name": "Luna Staff",
+  "name": "Malts Staff",
+  "short_name": "Malts Staff",
   "description": "Real-time Orders & Notifications",
   "start_url": "/bg/staff",
   "scope": "/bg/staff",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#000000",
-  "background_color": "#000000",
+  "theme_color": "#e8e0d4",
+  "background_color": "#e8e0d4",
   "categories": ["business", "food"],
   "icons": [
     {
-      "src": "/luna-icon-144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/luna-icon-192.png",
+      "src": "/malts-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/luna-icon-512.png",
+      "src": "/malts-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/luna-icon-512-maskable.png",
+      "src": "/malts-icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -38,13 +32,13 @@
   ],
   "screenshots": [
     {
-      "src": "/luna-icon-512.png",
+      "src": "/malts-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "/luna-icon-512.png",
+      "src": "/malts-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide"
@@ -56,4 +50,3 @@
     "types": ["password", "federated-identity"]
   }
 }
-

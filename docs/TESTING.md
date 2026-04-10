@@ -1,4 +1,4 @@
-# 🧪 Luna Bar - Testing Guide
+# 🧪 Malls - Testing Guide
 
 ## ✅ Какво е завършено
 
@@ -26,7 +26,7 @@
 
 **Стъпка 1: Scan QR Code (simulate)**
 ```
-http://localhost:3000/order?table=5
+http://localhost:3000/bg/order?table=5
 ```
 Отворете този URL (symулира сканиране на QR на маса 5)
 
@@ -62,7 +62,7 @@ http://localhost:3000/order?table=5
 **Подготовка:**
 1. Отворете 2 browser tabs:
    - Tab 1: http://localhost:3000/bg/staff (Staff Dashboard)
-   - Tab 2: http://localhost:3000/order?table=7 (Customer view)
+   - Tab 2: http://localhost:3000/bg/order?table=7 (Customer view)
 
 **Test нова поръчка:**
 
@@ -131,11 +131,11 @@ http://localhost:3000/order?table=5
 
 1. http://localhost:3000/bg - Български
 2. Click "EN" → http://localhost:3000/en - English
-3. Click "DE" → http://localhost:3000/de - Deutsch
+3. Click "RO" → http://localhost:3000/ro - Română
 
 **Проверете:**
 - Navigation labels update
-- Product names update (ако има EN/DE данни)
+- Product names update (ако има EN/RO данни)
 - Prices остават същите
 
 **Резултат:** ✅ Multi-language working!
@@ -260,7 +260,7 @@ http://localhost:3000/order?table=5
 
 ✅ **QR Ordering** - Fully functional  
 ✅ **Real-time** - Pusher working  
-✅ **Multi-language** - BG/EN/DE  
+✅ **Multi-language** - BG/EN/RO  
 ✅ **Dual currency** - BGN/EUR  
 ✅ **Staff Dashboard** - Live updates  
 ✅ **Waiter Calls** - Urgent notifications  

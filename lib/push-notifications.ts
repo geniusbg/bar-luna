@@ -230,10 +230,10 @@ function getDeviceName() {
 // Show test notification
 export async function showTestNotification() {
   if (Notification.permission === 'granted') {
-    new Notification('Luna Bar Test', {
+    new Notification('Malts Test', {
       body: 'Notifications are working! 🎉',
-      icon: '/luna-icon-192.png',
-      badge: '/luna-icon-192.png',
+      icon: '/malts-icon.svg',
+      badge: '/malts-icon.svg',
       vibrate: [200, 100, 200]
     } as NotificationOptions & { vibrate?: number[] });
   }

@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import QRCode from 'qrcode';
+import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
+import { getDefaultBrandId } from '@/lib/brand';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+
+function requireAdmin(role: string | undefined) {
+  return role === 'ADMIN' || role === 'SUPER_ADMIN';
+}
 
 interface QRCodeSettings {
   backgroundColor?: string;
@@ -162,15 +169,30 @@ async function generateQRCodeWithTableNumber(
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const role = (session?.user as { role?: string })?.role;
+    if (!session?.user || !requireAdmin(role)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { tableNumber, settings } = await request.json();
 
     if (!tableNumber) {
       return NextResponse.json({ error: 'Table number required' }, { status: 400 });
     }
 
-    // Find table
+    const brandId = await getDefaultBrandId();
+    const ops = await prisma.operationalSettings.findUnique({ where: { brandId } });
+    const maxTables = ops?.maxQrTables ?? 30;
+    const n = parseInt(tableNumber, 10);
+    if (!Number.isFinite(n) || n < 1 || n > maxTables) {
+      return NextResponse.json({ error: 'Невалидна маса' }, { status: 400 });
+    }
+
     const table = await prisma.barTable.findUnique({
-      where: { tableNumber: parseInt(tableNumber) }
+      where: {
+        brandId_tableNumber: { brandId, tableNumber: n },
+      },
     });
 
     if (!table) {
@@ -179,12 +201,12 @@ export async function POST(request: Request) {
 
     // Generate SHORT QR code URL (dynamic redirect)
     const { getAppUrl } = await import('@/lib/app-url');
-    const qrUrl = `${getAppUrl()}/t/${tableNumber}`;
+    const qrUrl = `${getAppUrl()}/t/${n}`;
 
     // Generate QR code with embedded table number in center
     const qrCodeSize = settings?.qrCodeSize || 400;
     // Use fixed width for the SVG canvas (same as QR code size, no padding needed)
-    const qrCodeDataUrl = await generateQRCodeWithTableNumber(qrUrl, tableNumber, qrCodeSize, settings);
+    const qrCodeDataUrl = await generateQRCodeWithTableNumber(qrUrl, n, qrCodeSize, settings);
 
     // Update table with QR code data and default redirect URL
     await prisma.barTable.update({
@@ -192,14 +214,14 @@ export async function POST(request: Request) {
       data: {
         qrCodeUrl: qrUrl,
         qrCodeData: qrCodeDataUrl,
-        redirectUrl: `/bg/order?table=${tableNumber}` // Default redirect
+        redirectUrl: `/bg/order?table=${n}` // Default redirect
       }
     });
 
     return NextResponse.json({
       qrCodeDataUrl,
       qrUrl,
-      tableNumber,
+      tableNumber: n,
       tableName: table.tableName
     });
 
@@ -212,10 +234,20 @@ export async function POST(request: Request) {
 // Generate all QR codes at once (with settings support)
 export async function PUT(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const role = (session?.user as { role?: string })?.role;
+    if (!session?.user || !requireAdmin(role)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { settings } = await request.json();
-    
+    const brandId = await getDefaultBrandId();
+    const ops = await prisma.operationalSettings.findUnique({ where: { brandId } });
+    const maxTables = ops?.maxQrTables ?? 30;
+
     const tables = await prisma.barTable.findMany({
-      orderBy: { tableNumber: 'asc' }
+      where: { brandId, tableNumber: { lte: maxTables } },
+      orderBy: { tableNumber: 'asc' },
     });
 
     const results = [];
@@ -258,8 +290,18 @@ export async function PUT(request: Request) {
 // Generate all QR codes at once (default settings)
 export async function GET() {
   try {
+    const brandId = await getDefaultBrandId();
+    const session = await getServerSession(authOptions);
+    const role = (session?.user as { role?: string })?.role;
+    if (!session?.user || !requireAdmin(role)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const ops = await prisma.operationalSettings.findUnique({ where: { brandId } });
+    const maxTables = ops?.maxQrTables ?? 30;
     const tables = await prisma.barTable.findMany({
-      orderBy: { tableNumber: 'asc' }
+      where: { brandId, tableNumber: { lte: maxTables } },
+      orderBy: { tableNumber: 'asc' },
     });
 
     const results = [];

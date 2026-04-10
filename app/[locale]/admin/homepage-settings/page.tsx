@@ -4,35 +4,39 @@ import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import LoadingScreen from '@/components/LoadingScreen';
+import AutoTranslateButton from '@/components/AutoTranslateButton';
 
 interface HomepageSettings {
   id: string;
   sectionLabelBg: string;
   sectionLabelEn: string;
-  sectionLabelDe: string;
+  sectionLabelRo: string;
   titleBg: string;
   titleEn: string;
-  titleDe: string;
+  titleRo: string;
   subtitleBg: string;
   subtitleEn: string;
-  subtitleDe: string;
+  subtitleRo: string;
   descriptionBg: string;
   descriptionEn: string;
-  descriptionDe: string;
+  descriptionRo: string;
   moodTextBg: string;
   moodTextEn: string;
-  moodTextDe: string;
+  moodTextRo: string;
+  offeringsNoteBg: string;
+  offeringsNoteEn: string;
+  offeringsNoteRo: string;
   stats: {
     bg: { label: string; value: string }[];
     en: { label: string; value: string }[];
-    de: { label: string; value: string }[];
+    ro: { label: string; value: string }[];
   };
   ctaPrimaryBg: string;
   ctaPrimaryEn: string;
-  ctaPrimaryDe: string;
+  ctaPrimaryRo: string;
   ctaSecondaryBg: string;
   ctaSecondaryEn: string;
-  ctaSecondaryDe: string;
+  ctaSecondaryRo: string;
 }
 
 interface OfferingCard {
@@ -41,17 +45,17 @@ interface OfferingCard {
   icon: string;
   titleBg: string;
   titleEn: string;
-  titleDe: string;
+  titleRo: string;
   descriptionBg: string;
   descriptionEn: string;
-  descriptionDe: string;
+  descriptionRo: string;
   badgeBg: string;
   badgeEn: string;
-  badgeDe: string;
+  badgeRo: string;
   highlights: {
     bg: string[];
     en: string[];
-    de: string[];
+    ro: string[];
   };
   isActive: boolean;
 }
@@ -97,6 +101,7 @@ export default function HomepageSettingsPage({
   const [activeTab, setActiveTab] = useState<'general' | 'stats' | 'cards'>('general');
   const [editingCard, setEditingCard] = useState<OfferingCard | null>(null);
   const [showCardModal, setShowCardModal] = useState(false);
+  const [translateErr, setTranslateErr] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -226,7 +231,7 @@ export default function HomepageSettingsPage({
     }
   };
 
-  const updateHighlightValue = (localeKey: 'bg' | 'en' | 'de', index: number, value: string) => {
+  const updateHighlightValue = (localeKey: 'bg' | 'en' | 'ro', index: number, value: string) => {
     if (!editingCard) return;
 
     const nextHighlights = {
@@ -240,7 +245,7 @@ export default function HomepageSettingsPage({
     });
   };
 
-  const addHighlightRow = (localeKey: 'bg' | 'en' | 'de') => {
+  const addHighlightRow = (localeKey: 'bg' | 'en' | 'ro') => {
     if (!editingCard) return;
 
     setEditingCard({
@@ -252,7 +257,7 @@ export default function HomepageSettingsPage({
     });
   };
 
-  const removeHighlightRow = (localeKey: 'bg' | 'en' | 'de', index: number) => {
+  const removeHighlightRow = (localeKey: 'bg' | 'en' | 'ro', index: number) => {
     if (!editingCard) return;
 
     setEditingCard({
@@ -269,31 +274,31 @@ export default function HomepageSettingsPage({
   }
 
   return (
-    <div className="min-h-screen bg-black p-4 md:p-8">
+    <div className="p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => router.push(`/${locale}/admin`)}
-            className="text-gray-400 hover:text-white mb-4 flex items-center gap-2 transition-colors"
+            className="malts-muted hover:text-[var(--malts-ink)] mb-4 flex items-center gap-2 transition-colors"
           >
             <span>←</span>
             <span>Назад към Dashboard</span>
           </button>
-          <h1 className="text-3xl md:text-4xl font-bold text-white">Настройки на началната страница</h1>
-          <p className="text-gray-400 mt-2">
+          <h1 className="text-3xl md:text-4xl font-bold">Настройки на началната страница</h1>
+          <p className="malts-muted mt-2">
             Управлявай съдържанието на секцията "Предложения" на началната страница.
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-gray-800">
+        <div className="flex gap-2 mb-6 border-b border-[var(--malts-hairline)]">
           <button
             onClick={() => setActiveTab('general')}
             className={`px-4 py-2 font-semibold transition-colors ${
               activeTab === 'general'
-                ? 'text-white border-b-2 border-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'text-[var(--malts-ink)] border-b-2 border-[var(--malts-accent)]'
+                : 'malts-muted hover:text-[var(--malts-ink)]'
             }`}
           >
             Общи настройки
@@ -302,8 +307,8 @@ export default function HomepageSettingsPage({
             onClick={() => setActiveTab('stats')}
             className={`px-4 py-2 font-semibold transition-colors ${
               activeTab === 'stats'
-                ? 'text-white border-b-2 border-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'text-[var(--malts-ink)] border-b-2 border-[var(--malts-accent)]'
+                : 'malts-muted hover:text-[var(--malts-ink)]'
             }`}
           >
             Статистики
@@ -312,8 +317,8 @@ export default function HomepageSettingsPage({
             onClick={() => setActiveTab('cards')}
             className={`px-4 py-2 font-semibold transition-colors ${
               activeTab === 'cards'
-                ? 'text-white border-b-2 border-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'text-[var(--malts-ink)] border-b-2 border-[var(--malts-accent)]'
+                : 'malts-muted hover:text-[var(--malts-ink)]'
             }`}
           >
             Карти ({cards.length})
@@ -321,28 +326,39 @@ export default function HomepageSettingsPage({
         </div>
 
         {message && (
-          <div className="mb-4 rounded-lg border border-green-500/50 bg-green-500/10 text-green-200 px-4 py-2">
+          <div
+            className="mb-4 malts-alert malts-alert-success"
+            role="status"
+          >
             {message}
           </div>
         )}
         {error && (
-          <div className="mb-4 rounded-lg border border-red-500/50 bg-red-500/10 text-red-200 px-4 py-2">
+          <div
+            className="mb-4 malts-alert malts-alert-error"
+            role="alert"
+          >
             {error}
+          </div>
+        )}
+        {translateErr && (
+          <div className="mb-4 malts-alert malts-alert-error text-sm" role="alert">
+            {translateErr}
           </div>
         )}
 
         {/* General Settings Tab */}
         {activeTab === 'general' && (
-          <div className="bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-800 rounded-2xl p-6 md:p-8">
+          <div className="malts-card p-6 md:p-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-              <h2 className="text-2xl font-bold text-white">Общи настройки</h2>
+              <h2 className="text-2xl font-bold">Общи настройки</h2>
               <button
                 onClick={handleSaveSettings}
                 disabled={saving}
                 className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                   saving
-                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-black hover:bg-gray-200'
+                    ? 'malts-btn-secondary opacity-50 cursor-not-allowed'
+                    : 'malts-btn-primary'
                 }`}
               >
                 {saving ? 'Запазване...' : 'Запази'}
@@ -353,30 +369,46 @@ export default function HomepageSettingsPage({
               {/* Section Label */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Етикет на секцията (БГ)</label>
+                  <label className="block text-sm font-semibold malts-subtle mb-2">Етикет на секцията (БГ)</label>
                   <input
                     type="text"
                     value={settings.sectionLabelBg}
                     onChange={(e) => setSettings({ ...settings, sectionLabelBg: e.target.value })}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Етикет на секцията (EN)</label>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="block text-sm font-semibold malts-subtle">Етикет на секцията (EN)</label>
+                    <AutoTranslateButton
+                      sourceText={settings.sectionLabelBg}
+                      targetLang="en"
+                      onTranslated={(text) => setSettings({ ...settings, sectionLabelEn: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
                   <input
                     type="text"
                     value={settings.sectionLabelEn}
                     onChange={(e) => setSettings({ ...settings, sectionLabelEn: e.target.value })}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Етикет на секцията (DE)</label>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="block text-sm font-semibold malts-subtle">Етикет на секцията (RO)</label>
+                    <AutoTranslateButton
+                      sourceText={settings.sectionLabelBg}
+                      targetLang="ro"
+                      onTranslated={(text) => setSettings({ ...settings, sectionLabelRo: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
                   <input
                     type="text"
-                    value={settings.sectionLabelDe}
-                    onChange={(e) => setSettings({ ...settings, sectionLabelDe: e.target.value })}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    value={settings.sectionLabelRo}
+                    onChange={(e) => setSettings({ ...settings, sectionLabelRo: e.target.value })}
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
               </div>
@@ -384,30 +416,46 @@ export default function HomepageSettingsPage({
               {/* Title */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Заглавие (БГ)</label>
+                  <label className="block text-sm font-semibold malts-subtle mb-2">Заглавие (БГ)</label>
                   <input
                     type="text"
                     value={settings.titleBg}
                     onChange={(e) => setSettings({ ...settings, titleBg: e.target.value })}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Заглавие (EN)</label>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="block text-sm font-semibold malts-subtle">Заглавие (EN)</label>
+                    <AutoTranslateButton
+                      sourceText={settings.titleBg}
+                      targetLang="en"
+                      onTranslated={(text) => setSettings({ ...settings, titleEn: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
                   <input
                     type="text"
                     value={settings.titleEn}
                     onChange={(e) => setSettings({ ...settings, titleEn: e.target.value })}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Заглавие (DE)</label>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="block text-sm font-semibold malts-subtle">Заглавие (RO)</label>
+                    <AutoTranslateButton
+                      sourceText={settings.titleBg}
+                      targetLang="ro"
+                      onTranslated={(text) => setSettings({ ...settings, titleRo: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
                   <input
                     type="text"
-                    value={settings.titleDe}
-                    onChange={(e) => setSettings({ ...settings, titleDe: e.target.value })}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    value={settings.titleRo}
+                    onChange={(e) => setSettings({ ...settings, titleRo: e.target.value })}
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
               </div>
@@ -415,30 +463,46 @@ export default function HomepageSettingsPage({
               {/* Subtitle */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Подзаглавие (БГ)</label>
+                  <label className="block text-sm font-semibold malts-subtle mb-2">Подзаглавие (БГ)</label>
                   <input
                     type="text"
                     value={settings.subtitleBg}
                     onChange={(e) => setSettings({ ...settings, subtitleBg: e.target.value })}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Подзаглавие (EN)</label>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="block text-sm font-semibold malts-subtle">Подзаглавие (EN)</label>
+                    <AutoTranslateButton
+                      sourceText={settings.subtitleBg}
+                      targetLang="en"
+                      onTranslated={(text) => setSettings({ ...settings, subtitleEn: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
                   <input
                     type="text"
                     value={settings.subtitleEn}
                     onChange={(e) => setSettings({ ...settings, subtitleEn: e.target.value })}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Подзаглавие (DE)</label>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="block text-sm font-semibold malts-subtle">Подзаглавие (RO)</label>
+                    <AutoTranslateButton
+                      sourceText={settings.subtitleBg}
+                      targetLang="ro"
+                      onTranslated={(text) => setSettings({ ...settings, subtitleRo: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
                   <input
                     type="text"
-                    value={settings.subtitleDe}
-                    onChange={(e) => setSettings({ ...settings, subtitleDe: e.target.value })}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    value={settings.subtitleRo}
+                    onChange={(e) => setSettings({ ...settings, subtitleRo: e.target.value })}
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
               </div>
@@ -446,30 +510,46 @@ export default function HomepageSettingsPage({
               {/* Description */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Описание (БГ)</label>
+                  <label className="block text-sm font-semibold malts-subtle mb-2">Описание (БГ)</label>
                   <textarea
                     value={settings.descriptionBg}
                     onChange={(e) => setSettings({ ...settings, descriptionBg: e.target.value })}
                     rows={4}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Описание (EN)</label>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="block text-sm font-semibold malts-subtle">Описание (EN)</label>
+                    <AutoTranslateButton
+                      sourceText={settings.descriptionBg}
+                      targetLang="en"
+                      onTranslated={(text) => setSettings({ ...settings, descriptionEn: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
                   <textarea
                     value={settings.descriptionEn}
                     onChange={(e) => setSettings({ ...settings, descriptionEn: e.target.value })}
                     rows={4}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Описание (DE)</label>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="block text-sm font-semibold malts-subtle">Описание (RO)</label>
+                    <AutoTranslateButton
+                      sourceText={settings.descriptionBg}
+                      targetLang="ro"
+                      onTranslated={(text) => setSettings({ ...settings, descriptionRo: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
                   <textarea
-                    value={settings.descriptionDe}
-                    onChange={(e) => setSettings({ ...settings, descriptionDe: e.target.value })}
+                    value={settings.descriptionRo}
+                    onChange={(e) => setSettings({ ...settings, descriptionRo: e.target.value })}
                     rows={4}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
               </div>
@@ -477,30 +557,93 @@ export default function HomepageSettingsPage({
               {/* Mood Text */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Текст за настроение (БГ)</label>
+                  <label className="block text-sm font-semibold malts-subtle mb-2">Текст под логото (БГ)</label>
                   <textarea
                     value={settings.moodTextBg}
                     onChange={(e) => setSettings({ ...settings, moodTextBg: e.target.value })}
                     rows={2}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Текст за настроение (EN)</label>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="block text-sm font-semibold malts-subtle">Текст под логото (EN)</label>
+                    <AutoTranslateButton
+                      sourceText={settings.moodTextBg}
+                      targetLang="en"
+                      onTranslated={(text) => setSettings({ ...settings, moodTextEn: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
                   <textarea
                     value={settings.moodTextEn}
                     onChange={(e) => setSettings({ ...settings, moodTextEn: e.target.value })}
                     rows={2}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Текст за настроение (DE)</label>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="block text-sm font-semibold malts-subtle">Текст под логото (RO)</label>
+                    <AutoTranslateButton
+                      sourceText={settings.moodTextBg}
+                      targetLang="ro"
+                      onTranslated={(text) => setSettings({ ...settings, moodTextRo: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
                   <textarea
-                    value={settings.moodTextDe}
-                    onChange={(e) => setSettings({ ...settings, moodTextDe: e.target.value })}
+                    value={settings.moodTextRo}
+                    onChange={(e) => setSettings({ ...settings, moodTextRo: e.target.value })}
                     rows={2}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
+                  />
+                </div>
+              </div>
+
+              {/* Offerings Note */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold malts-subtle mb-2">Текст в „Какво предлагаме“ (БГ)</label>
+                  <textarea
+                    value={settings.offeringsNoteBg}
+                    onChange={(e) => setSettings({ ...settings, offeringsNoteBg: e.target.value })}
+                    rows={2}
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="block text-sm font-semibold malts-subtle">Текст в „Какво предлагаме“ (EN)</label>
+                    <AutoTranslateButton
+                      sourceText={settings.offeringsNoteBg}
+                      targetLang="en"
+                      onTranslated={(text) => setSettings({ ...settings, offeringsNoteEn: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
+                  <textarea
+                    value={settings.offeringsNoteEn}
+                    onChange={(e) => setSettings({ ...settings, offeringsNoteEn: e.target.value })}
+                    rows={2}
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="block text-sm font-semibold malts-subtle">Текст в „Какво предлагаме“ (RO)</label>
+                    <AutoTranslateButton
+                      sourceText={settings.offeringsNoteBg}
+                      targetLang="ro"
+                      onTranslated={(text) => setSettings({ ...settings, offeringsNoteRo: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
+                  <textarea
+                    value={settings.offeringsNoteRo}
+                    onChange={(e) => setSettings({ ...settings, offeringsNoteRo: e.target.value })}
+                    rows={2}
+                    className="w-full rounded-xl malts-inset px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
                   />
                 </div>
               </div>
@@ -508,30 +651,48 @@ export default function HomepageSettingsPage({
               {/* CTA Buttons */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Основен призив (БГ)</label>
+                  <label className="malts-label">Основен призив (БГ)</label>
                   <input
                     type="text"
                     value={settings.ctaPrimaryBg}
                     onChange={(e) => setSettings({ ...settings, ctaPrimaryBg: e.target.value })}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="malts-field"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Основен призив (EN)</label>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="malts-label">Основен призив (EN)</label>
+                    <AutoTranslateButton
+                      variant="dark"
+                      sourceText={settings.ctaPrimaryBg}
+                      targetLang="en"
+                      onTranslated={(text) => setSettings({ ...settings, ctaPrimaryEn: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
                   <input
                     type="text"
                     value={settings.ctaPrimaryEn}
                     onChange={(e) => setSettings({ ...settings, ctaPrimaryEn: e.target.value })}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="malts-field"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Основен призив (DE)</label>
+                  <div className="flex justify-between items-center gap-2 mb-2">
+                    <label className="malts-label">Основен призив (RO)</label>
+                    <AutoTranslateButton
+                      variant="dark"
+                      sourceText={settings.ctaPrimaryBg}
+                      targetLang="ro"
+                      onTranslated={(text) => setSettings({ ...settings, ctaPrimaryRo: text })}
+                      onError={setTranslateErr}
+                    />
+                  </div>
                   <input
                     type="text"
-                    value={settings.ctaPrimaryDe}
-                    onChange={(e) => setSettings({ ...settings, ctaPrimaryDe: e.target.value })}
-                    className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                    value={settings.ctaPrimaryRo}
+                    onChange={(e) => setSettings({ ...settings, ctaPrimaryRo: e.target.value })}
+                    className="malts-field"
                   />
                 </div>
               </div>
@@ -541,16 +702,16 @@ export default function HomepageSettingsPage({
 
         {/* Stats Tab */}
         {activeTab === 'stats' && (
-          <div className="bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-800 rounded-2xl p-6 md:p-8">
+          <div className="malts-card rounded-2xl p-6 md:p-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-              <h2 className="text-2xl font-bold text-white">Статистики</h2>
+              <h2 className="text-2xl font-bold text-[var(--malts-ink)]">Статистики</h2>
               <button
                 onClick={handleSaveSettings}
                 disabled={saving}
                 className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                   saving
-                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-black hover:bg-gray-200'
+                    ? 'malts-btn-secondary opacity-50 cursor-not-allowed'
+                    : 'malts-btn-primary'
                 }`}
               >
                 {saving ? 'Запазване...' : 'Запази'}
@@ -559,7 +720,7 @@ export default function HomepageSettingsPage({
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Български</h3>
+                <h3 className="text-lg font-semibold text-[var(--malts-ink)] mb-4">Български</h3>
                 {settings.stats.bg.map((stat, index) => (
                   <div key={index} className="grid grid-cols-2 gap-4 mb-4">
                     <input
@@ -571,7 +732,7 @@ export default function HomepageSettingsPage({
                         setSettings({ ...settings, stats: newStats });
                       }}
                       placeholder="Label"
-                      className="rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                     <input
                       type="text"
@@ -582,7 +743,7 @@ export default function HomepageSettingsPage({
                         setSettings({ ...settings, stats: newStats });
                       }}
                       placeholder="Value"
-                      className="rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                   </div>
                 ))}
@@ -592,27 +753,41 @@ export default function HomepageSettingsPage({
                     newStats.bg.push({ label: '', value: '' });
                     setSettings({ ...settings, stats: newStats });
                   }}
-                  className="text-gray-400 hover:text-white text-sm"
+                  className="malts-muted hover:text-[var(--malts-ink)] text-sm"
                 >
                   + Добави статистика
                 </button>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-white mb-4">English</h3>
+                <h3 className="text-lg font-semibold text-[var(--malts-ink)] mb-4">English</h3>
                 {settings.stats.en.map((stat, index) => (
                   <div key={index} className="grid grid-cols-2 gap-4 mb-4">
-                    <input
-                      type="text"
-                      value={stat.label}
-                      onChange={(e) => {
-                        const newStats = { ...settings.stats };
-                        newStats.en[index].label = e.target.value;
-                        setSettings({ ...settings, stats: newStats });
-                      }}
-                      placeholder="Label"
-                      className="rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
-                    />
+                    <div className="flex gap-2 items-start">
+                      <input
+                        type="text"
+                        value={stat.label}
+                        onChange={(e) => {
+                          const newStats = { ...settings.stats };
+                          newStats.en[index].label = e.target.value;
+                          setSettings({ ...settings, stats: newStats });
+                        }}
+                        placeholder="Label"
+                        className="malts-field flex-1 min-w-0"
+                      />
+                      <AutoTranslateButton
+                        variant="dark"
+                        sourceText={settings.stats.bg[index]?.label || ''}
+                        targetLang="en"
+                        onTranslated={(text) => {
+                          const newStats = { ...settings.stats };
+                          newStats.en[index].label = text;
+                          setSettings({ ...settings, stats: newStats });
+                        }}
+                        onError={setTranslateErr}
+                        className="mt-0.5"
+                      />
+                    </div>
                     <input
                       type="text"
                       value={stat.value}
@@ -622,7 +797,7 @@ export default function HomepageSettingsPage({
                         setSettings({ ...settings, stats: newStats });
                       }}
                       placeholder="Value"
-                      className="rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                   </div>
                 ))}
@@ -632,47 +807,61 @@ export default function HomepageSettingsPage({
                     newStats.en.push({ label: '', value: '' });
                     setSettings({ ...settings, stats: newStats });
                   }}
-                  className="text-gray-400 hover:text-white text-sm"
+                  className="malts-muted hover:text-[var(--malts-ink)] text-sm"
                 >
                   + Add stat
                 </button>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Deutsch</h3>
-                {settings.stats.de.map((stat, index) => (
+                <h3 className="text-lg font-semibold text-[var(--malts-ink)] mb-4">Română</h3>
+                {settings.stats.ro.map((stat, index) => (
                   <div key={index} className="grid grid-cols-2 gap-4 mb-4">
-                    <input
-                      type="text"
-                      value={stat.label}
-                      onChange={(e) => {
-                        const newStats = { ...settings.stats };
-                        newStats.de[index].label = e.target.value;
-                        setSettings({ ...settings, stats: newStats });
-                      }}
-                      placeholder="Label"
-                      className="rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
-                    />
+                    <div className="flex gap-2 items-start">
+                      <input
+                        type="text"
+                        value={stat.label}
+                        onChange={(e) => {
+                          const newStats = { ...settings.stats };
+                          newStats.ro[index].label = e.target.value;
+                          setSettings({ ...settings, stats: newStats });
+                        }}
+                        placeholder="Label"
+                        className="malts-field flex-1 min-w-0"
+                      />
+                      <AutoTranslateButton
+                        variant="dark"
+                        sourceText={settings.stats.bg[index]?.label || ''}
+                        targetLang="ro"
+                        onTranslated={(text) => {
+                          const newStats = { ...settings.stats };
+                          newStats.ro[index].label = text;
+                          setSettings({ ...settings, stats: newStats });
+                        }}
+                        onError={setTranslateErr}
+                        className="mt-0.5"
+                      />
+                    </div>
                     <input
                       type="text"
                       value={stat.value}
                       onChange={(e) => {
                         const newStats = { ...settings.stats };
-                        newStats.de[index].value = e.target.value;
+                        newStats.ro[index].value = e.target.value;
                         setSettings({ ...settings, stats: newStats });
                       }}
                       placeholder="Value"
-                      className="rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                   </div>
                 ))}
                 <button
                   onClick={() => {
                     const newStats = { ...settings.stats };
-                    newStats.de.push({ label: '', value: '' });
+                    newStats.ro.push({ label: '', value: '' });
                     setSettings({ ...settings, stats: newStats });
                   }}
-                  className="text-gray-400 hover:text-white text-sm"
+                  className="malts-muted hover:text-[var(--malts-ink)] text-sm"
                 >
                   + Statistik hinzufügen
                 </button>
@@ -685,28 +874,28 @@ export default function HomepageSettingsPage({
         {activeTab === 'cards' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-white">Карти</h2>
+              <h2 className="text-2xl font-bold text-[var(--malts-ink)]">Карти</h2>
               <button
                 onClick={() => {
                   setEditingCard({
                     id: '',
                     order: cards.length,
-                    icon: '🍸',
+                    icon: '🍽️',
                     titleBg: '',
                     titleEn: '',
-                    titleDe: '',
+                    titleRo: '',
                     descriptionBg: '',
                     descriptionEn: '',
-                    descriptionDe: '',
+                    descriptionRo: '',
                     badgeBg: '',
                     badgeEn: '',
-                    badgeDe: '',
-                    highlights: { bg: [], en: [], de: [] },
+                    badgeRo: '',
+                    highlights: { bg: [], en: [], ro: [] },
                     isActive: true
                   });
                   setShowCardModal(true);
                 }}
-                className="px-6 py-3 rounded-xl font-semibold bg-white text-black hover:bg-gray-200 transition-all"
+                className="px-6 py-3 rounded-xl font-semibold malts-btn-primary transition-all"
               >
                 + Добави карта
               </button>
@@ -716,7 +905,7 @@ export default function HomepageSettingsPage({
               {cards.map((card) => (
                 <div
                   key={card.id}
-                  className="bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-800 rounded-2xl p-6"
+                  className="malts-card rounded-2xl p-6"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="text-4xl">{card.icon}</div>
@@ -726,23 +915,23 @@ export default function HomepageSettingsPage({
                           setEditingCard(card);
                           setShowCardModal(true);
                         }}
-                        className="px-3 py-1 rounded-lg bg-gray-700 text-white hover:bg-gray-600 text-sm"
+                        className="px-3 py-1 rounded-lg malts-btn-secondary text-sm"
                       >
                         Редактирай
                       </button>
                       <button
                         onClick={() => handleDeleteCard(card.id)}
-                        className="px-3 py-1 rounded-lg bg-red-900/50 text-red-200 hover:bg-red-900/70 text-sm"
+                        className="px-3 py-1 rounded-lg malts-btn-danger text-sm"
                       >
                         Изтрий
                       </button>
                     </div>
                   </div>
-                  <h3 className="text-white font-semibold mb-2">{card.titleBg}</h3>
-                  <p className="text-gray-400 text-sm mb-2">{card.descriptionBg.substring(0, 100)}...</p>
+                  <h3 className="text-[var(--malts-ink)] font-semibold mb-2">{card.titleBg}</h3>
+                  <p className="malts-muted text-sm mb-2">{card.descriptionBg.substring(0, 100)}...</p>
                   <div className="flex items-center gap-2 mt-4">
-                    <span className="text-xs text-gray-500">Badge: {card.badgeBg}</span>
-                    <span className="text-xs text-gray-500">Order: {card.order}</span>
+                    <span className="text-xs malts-muted">Badge: {card.badgeBg}</span>
+                    <span className="text-xs malts-muted">Order: {card.order}</span>
                   </div>
                 </div>
               ))}
@@ -752,10 +941,10 @@ export default function HomepageSettingsPage({
 
         {/* Card Modal */}
         {showCardModal && editingCard && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6 md:p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-[var(--malts-paper)]/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="malts-card rounded-2xl p-6 md:p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-white">
+                <h3 className="text-2xl font-bold text-[var(--malts-ink)]">
                   {editingCard.id ? 'Редактирай карта' : 'Добави карта'}
                 </h3>
                 <button
@@ -763,7 +952,7 @@ export default function HomepageSettingsPage({
                     setShowCardModal(false);
                     setEditingCard(null);
                   }}
-                  className="text-gray-400 hover:text-white"
+                  className="text-[var(--malts-subtle)] hover:text-[var(--malts-ink)]"
                 >
                   ✕
                 </button>
@@ -772,139 +961,202 @@ export default function HomepageSettingsPage({
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Икона (емоджи)</label>
+                    <label className="malts-label">Икона (емоджи)</label>
                     <input
                       type="text"
                       value={editingCard.icon}
                       onChange={(e) => setEditingCard({ ...editingCard, icon: e.target.value })}
-                      className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Позиция (подредба)</label>
+                    <label className="malts-label">Позиция (подредба)</label>
                     <input
                       type="number"
                       value={editingCard.order}
                       onChange={(e) => setEditingCard({ ...editingCard, order: Number(e.target.value) })}
-                      className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Заглавие (BG)</label>
+                    <label className="malts-label">Заглавие (BG)</label>
                     <input
                       type="text"
                       value={editingCard.titleBg}
                       onChange={(e) => setEditingCard({ ...editingCard, titleBg: e.target.value })}
-                      className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Заглавие (EN)</label>
+                    <div className="flex justify-between items-center gap-2 mb-2">
+                      <label className="malts-label">Заглавие (EN)</label>
+                      <AutoTranslateButton
+                        variant="dark"
+                        sourceText={editingCard.titleBg}
+                        targetLang="en"
+                        onTranslated={(text) => setEditingCard({ ...editingCard, titleEn: text })}
+                        onError={setTranslateErr}
+                      />
+                    </div>
                     <input
                       type="text"
                       value={editingCard.titleEn}
                       onChange={(e) => setEditingCard({ ...editingCard, titleEn: e.target.value })}
-                      className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Заглавие (DE)</label>
+                    <div className="flex justify-between items-center gap-2 mb-2">
+                      <label className="malts-label">Заглавие (RO)</label>
+                      <AutoTranslateButton
+                        variant="dark"
+                        sourceText={editingCard.titleBg}
+                        targetLang="ro"
+                        onTranslated={(text) => setEditingCard({ ...editingCard, titleRo: text })}
+                        onError={setTranslateErr}
+                      />
+                    </div>
                     <input
                       type="text"
-                      value={editingCard.titleDe}
-                      onChange={(e) => setEditingCard({ ...editingCard, titleDe: e.target.value })}
-                      className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      value={editingCard.titleRo}
+                      onChange={(e) => setEditingCard({ ...editingCard, titleRo: e.target.value })}
+                      className="malts-field"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Описание (BG)</label>
+                    <label className="malts-label">Описание (BG)</label>
                     <textarea
                       value={editingCard.descriptionBg}
                       onChange={(e) => setEditingCard({ ...editingCard, descriptionBg: e.target.value })}
                       rows={4}
-                      className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Описание (EN)</label>
+                    <div className="flex justify-between items-center gap-2 mb-2">
+                      <label className="malts-label">Описание (EN)</label>
+                      <AutoTranslateButton
+                        variant="dark"
+                        sourceText={editingCard.descriptionBg}
+                        targetLang="en"
+                        onTranslated={(text) => setEditingCard({ ...editingCard, descriptionEn: text })}
+                        onError={setTranslateErr}
+                      />
+                    </div>
                     <textarea
                       value={editingCard.descriptionEn}
                       onChange={(e) => setEditingCard({ ...editingCard, descriptionEn: e.target.value })}
                       rows={4}
-                      className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Описание (DE)</label>
+                    <div className="flex justify-between items-center gap-2 mb-2">
+                      <label className="malts-label">Описание (RO)</label>
+                      <AutoTranslateButton
+                        variant="dark"
+                        sourceText={editingCard.descriptionBg}
+                        targetLang="ro"
+                        onTranslated={(text) => setEditingCard({ ...editingCard, descriptionRo: text })}
+                        onError={setTranslateErr}
+                      />
+                    </div>
                     <textarea
-                      value={editingCard.descriptionDe}
-                      onChange={(e) => setEditingCard({ ...editingCard, descriptionDe: e.target.value })}
+                      value={editingCard.descriptionRo}
+                      onChange={(e) => setEditingCard({ ...editingCard, descriptionRo: e.target.value })}
                       rows={4}
-                      className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Бадж (BG)</label>
+                    <label className="malts-label">Бадж (BG)</label>
                     <input
                       type="text"
                       value={editingCard.badgeBg}
                       onChange={(e) => setEditingCard({ ...editingCard, badgeBg: e.target.value })}
-                      className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Бадж (EN)</label>
+                    <div className="flex justify-between items-center gap-2 mb-2">
+                      <label className="malts-label">Бадж (EN)</label>
+                      <AutoTranslateButton
+                        variant="dark"
+                        sourceText={editingCard.badgeBg}
+                        targetLang="en"
+                        onTranslated={(text) => setEditingCard({ ...editingCard, badgeEn: text })}
+                        onError={setTranslateErr}
+                      />
+                    </div>
                     <input
                       type="text"
                       value={editingCard.badgeEn}
                       onChange={(e) => setEditingCard({ ...editingCard, badgeEn: e.target.value })}
-                      className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      className="malts-field"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-300 mb-2">Бадж (DE)</label>
+                    <div className="flex justify-between items-center gap-2 mb-2">
+                      <label className="malts-label">Бадж (RO)</label>
+                      <AutoTranslateButton
+                        variant="dark"
+                        sourceText={editingCard.badgeBg}
+                        targetLang="ro"
+                        onTranslated={(text) => setEditingCard({ ...editingCard, badgeRo: text })}
+                        onError={setTranslateErr}
+                      />
+                    </div>
                     <input
                       type="text"
-                      value={editingCard.badgeDe}
-                      onChange={(e) => setEditingCard({ ...editingCard, badgeDe: e.target.value })}
-                      className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                      value={editingCard.badgeRo}
+                      onChange={(e) => setEditingCard({ ...editingCard, badgeRo: e.target.value })}
+                      className="malts-field"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-300 mb-2">Акценти (едно поле = един акцент)</label>
+                  <label className="malts-label">Акценти (едно поле = един акцент)</label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {(['bg', 'en', 'de'] as Array<'bg' | 'en' | 'de'>).map((localeKey) => (
+                    {(['bg', 'en', 'ro'] as Array<'bg' | 'en' | 'ro'>).map((localeKey) => (
                       <div key={localeKey}>
-                        <label className="block text-xs text-gray-400 mb-2 uppercase">{localeKey}</label>
+                        <label className="block text-xs malts-subtle mb-2 uppercase">{localeKey}</label>
                         <div className="space-y-3">
                           <div className="space-y-2">
                             {editingCard.highlights[localeKey].map((highlight, idx) => (
                               <div
                                 key={`${localeKey}-${idx}`}
-                                className="flex gap-2 items-center"
+                                className="flex gap-2 items-center flex-wrap"
                               >
                                 <input
                                   type="text"
                                   value={highlight}
                                   onChange={(e) => updateHighlightValue(localeKey, idx, e.target.value)}
-                                  className="flex-1 min-w-0 rounded-xl border border-gray-700 bg-black/40 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                                  className="malts-field flex-1 min-w-0"
                                   placeholder="Въведи акцент"
                                 />
+                                {(localeKey === 'en' || localeKey === 'ro') && (
+                                  <AutoTranslateButton
+                                    variant="dark"
+                                    sourceText={editingCard.highlights.bg[idx] || ''}
+                                    targetLang={localeKey}
+                                    onTranslated={(text) => updateHighlightValue(localeKey, idx, text)}
+                                    onError={setTranslateErr}
+                                  />
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => removeHighlightRow(localeKey, idx)}
-                                  className="flex-shrink-0 px-3 py-2 rounded-xl bg-red-900/50 text-red-200 hover:bg-red-900/70 text-sm"
+                                  className="flex-shrink-0 px-3 py-2 rounded-xl malts-btn-danger text-sm"
                                 >
                                   ✕
                                 </button>
@@ -914,7 +1166,7 @@ export default function HomepageSettingsPage({
                           <button
                             type="button"
                             onClick={() => addHighlightRow(localeKey)}
-                            className="text-gray-400 hover:text-white text-sm block"
+                            className="malts-muted hover:text-[var(--malts-ink)] text-sm block"
                           >
                             + Добави акцент
                           </button>
@@ -930,8 +1182,8 @@ export default function HomepageSettingsPage({
                     disabled={saving}
                     className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all ${
                       saving
-                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                        : 'bg-white text-black hover:bg-gray-200'
+                        ? 'malts-btn-secondary opacity-50 cursor-not-allowed'
+                        : 'malts-btn-primary'
                     }`}
                   >
                     {saving ? 'Запазване...' : 'Запази'}
@@ -941,7 +1193,7 @@ export default function HomepageSettingsPage({
                       setShowCardModal(false);
                       setEditingCard(null);
                     }}
-                    className="px-6 py-3 rounded-xl font-semibold bg-gray-700 text-white hover:bg-gray-600 transition-all"
+                    className="px-6 py-3 rounded-xl font-semibold malts-btn-secondary transition-all"
                   >
                     Отказ
                   </button>

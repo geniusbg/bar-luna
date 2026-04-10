@@ -1,22 +1,24 @@
 import { prisma } from './prisma';
+import { getDefaultBrandId } from './brand';
 
 export interface LocationSettings {
   id: string;
   addressBg: string;
   addressEn: string;
-  addressDe: string;
+  addressRo: string;
 }
 
 const DEFAULT_ADDRESS = {
   addressBg: 'Русе, ул. Александровска 97',
   addressEn: 'Ruse, 97 Alexandrovska St',
-  addressDe: 'Ruse, Alexandrovska Str. 97'
+  addressRo: 'Ruse, str. Alexandrovska 97',
 };
 
 export async function getLocationSettings(): Promise<LocationSettings> {
   try {
-    const settings = await prisma.locationSettings.findFirst({
-      orderBy: { createdAt: 'desc' }
+    const brandId = await getDefaultBrandId();
+    const settings = await prisma.locationSettings.findUnique({
+      where: { brandId },
     });
 
     if (settings) {
@@ -24,26 +26,28 @@ export async function getLocationSettings(): Promise<LocationSettings> {
         id: settings.id,
         addressBg: settings.addressBg || DEFAULT_ADDRESS.addressBg,
         addressEn: settings.addressEn || DEFAULT_ADDRESS.addressEn,
-        addressDe: settings.addressDe || DEFAULT_ADDRESS.addressDe
+        addressRo: settings.addressRo || DEFAULT_ADDRESS.addressRo,
       };
     }
 
-    // Create default if none exists
     const newSettings = await prisma.locationSettings.create({
-      data: DEFAULT_ADDRESS
+      data: {
+        brandId,
+        ...DEFAULT_ADDRESS,
+      },
     });
 
     return {
       id: newSettings.id,
       addressBg: newSettings.addressBg,
       addressEn: newSettings.addressEn,
-      addressDe: newSettings.addressDe
+      addressRo: newSettings.addressRo,
     };
   } catch (error) {
     console.error('Error fetching location settings:', error);
     return {
       id: '',
-      ...DEFAULT_ADDRESS
+      ...DEFAULT_ADDRESS,
     };
   }
 }
@@ -51,11 +55,12 @@ export async function getLocationSettings(): Promise<LocationSettings> {
 export async function updateLocationSettings(data: {
   addressBg: string;
   addressEn: string;
-  addressDe: string;
+  addressRo: string;
 }): Promise<LocationSettings> {
   try {
-    const existing = await prisma.locationSettings.findFirst({
-      orderBy: { createdAt: 'desc' }
+    const brandId = await getDefaultBrandId();
+    const existing = await prisma.locationSettings.findUnique({
+      where: { brandId },
     });
 
     if (existing) {
@@ -64,35 +69,35 @@ export async function updateLocationSettings(data: {
         data: {
           addressBg: data.addressBg,
           addressEn: data.addressEn,
-          addressDe: data.addressDe
-        }
+          addressRo: data.addressRo,
+        },
       });
 
       return {
         id: updated.id,
         addressBg: updated.addressBg,
         addressEn: updated.addressEn,
-        addressDe: updated.addressDe
+        addressRo: updated.addressRo,
       };
     }
 
     const created = await prisma.locationSettings.create({
       data: {
+        brandId,
         addressBg: data.addressBg,
         addressEn: data.addressEn,
-        addressDe: data.addressDe
-      }
+        addressRo: data.addressRo,
+      },
     });
 
     return {
       id: created.id,
       addressBg: created.addressBg,
       addressEn: created.addressEn,
-      addressDe: created.addressDe
+      addressRo: created.addressRo,
     };
   } catch (error) {
     console.error('Error updating location settings:', error);
     throw error;
   }
 }
-

@@ -23,7 +23,7 @@
 ┌─────────────────────────────────────┐
 │ Name your Channels app              │
 │ ┌─────────────────────────────────┐ │
-│ │ luna-bar                        │ │
+│ │ malts-web                       │ │
 │ └─────────────────────────────────┘ │
 │                                     │
 │ Select a cluster                    │
@@ -36,7 +36,7 @@
 ```
 
 **Попълнете:**
-- Name: `luna-bar`
+- Name: `malts-web`
 - Cluster: `eu` (най-близко до България)
 
 **Кликнете "Create app"**
@@ -67,7 +67,7 @@
 
 ### 4️⃣ Създайте .env.local файл
 
-В Luna проект root директория:
+В проекта root директория:
 
 **Windows PowerShell:**
 ```powershell
@@ -92,7 +92,7 @@ File → New File → Save as ".env.local"
 ```env
 # PostgreSQL Database
 # ВАЖНО: Сменете YOUR_PASSWORD с вашата PostgreSQL парола!
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/luna_bar"
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/malts"
 
 # Pusher Channels - КОПИРАЙТЕ ОТ PUSHER DASHBOARD
 PUSHER_APP_ID="1234567"                    # ← вашият app_id
@@ -101,7 +101,7 @@ PUSHER_SECRET="xyz987654321"               # ← вашият secret
 NEXT_PUBLIC_PUSHER_CLUSTER="eu"            # ← cluster (eu)
 
 # App Configuration
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_APP_URL="http://localhost:4000"
 
 # Auth Secret - генерирайте random string
 AUTH_SECRET="change-this-to-random-secure-string"
@@ -120,7 +120,7 @@ AUTH_SECRET="change-this-to-random-secure-string"
 
 **Или просто:**
 ```
-AUTH_SECRET="luna_bar_super_secret_key_2024_xyz123"
+AUTH_SECRET="change-this-to-random-secure-string"
 ```
 
 ---
@@ -130,12 +130,12 @@ AUTH_SECRET="luna_bar_super_secret_key_2024_xyz123"
 Вашият `.env.local` трябва да изглежда така:
 
 ```env
-DATABASE_URL="postgresql://postgres:mypassword123@localhost:5432/luna_bar"
+DATABASE_URL="postgresql://postgres:mypassword123@localhost:5432/malts"
 PUSHER_APP_ID="1839284"
 NEXT_PUBLIC_PUSHER_KEY="a1b2c3d4e5f6g7h8i9j0"
 PUSHER_SECRET="x9y8z7w6v5u4t3s2r1q0"
 NEXT_PUBLIC_PUSHER_CLUSTER="eu"
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_APP_URL="http://localhost:4000"
 AUTH_SECRET="MySecureRandomString2024XYZ"
 ```
 
@@ -154,7 +154,7 @@ AUTH_SECRET="MySecureRandomString2024XYZ"
 # 1. Стартирайте PostgreSQL
 # 2. Създайте database
 psql -U postgres
-CREATE DATABASE luna_bar;
+CREATE DATABASE malts;
 \q
 
 # 3. Run Prisma migrations
@@ -216,7 +216,7 @@ channel.bind('test-event', (data) => {
 ✅ **Unlimited channels**
 ✅ **SSL encryption**
 
-За Luna Bar (30 маси):
+За Malls (напр. 30 маси):
 - ~150-300 messages/ден = 0.15% usage
 - ~5-10 concurrent connections = 10% usage
 

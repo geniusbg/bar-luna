@@ -58,12 +58,12 @@ export default function StaffLoginPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center p-4 sm:p-6 md:p-8">
+    <div className="fixed inset-0 malts-surface flex items-center justify-center p-4 sm:p-6 md:p-8">
       <div className="w-full max-w-md">
-        <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 sm:p-8 shadow-2xl">
+        <div className="malts-card p-6 sm:p-8 shadow-2xl">
           <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Luna Bar</h1>
-            <p className="text-gray-400 text-sm sm:text-base">Staff панел</p>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Malts</h1>
+            <p className="malts-muted text-sm sm:text-base">Staff панел</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
@@ -74,7 +74,7 @@ export default function StaffLoginPage() {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium malts-subtle mb-2">
                 Email
               </label>
               <input
@@ -85,13 +85,13 @@ export default function StaffLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/50 transition-all"
+                className="w-full px-4 py-3 malts-inset rounded-lg placeholder-[var(--malts-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)] transition-all"
                 placeholder="your@email.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium malts-subtle mb-2">
                 Парола
               </label>
               <input
@@ -102,7 +102,7 @@ export default function StaffLoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/50 transition-all"
+                className="w-full px-4 py-3 malts-inset rounded-lg placeholder-[var(--malts-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)] transition-all"
                 placeholder="••••••••"
               />
             </div>
@@ -110,14 +110,14 @@ export default function StaffLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-white/30"
+              className="w-full py-3 malts-btn-primary rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
             >
               {loading ? 'Влизане...' : 'Вход'}
             </button>
           </form>
 
-          <p className="text-center text-gray-500 text-xs sm:text-sm mt-6 pt-6 border-t border-gray-800">
-            Контакт: <span className="text-white">support@gsoft.bg</span>
+          <p className="text-center malts-muted text-xs sm:text-sm mt-6 pt-6 border-t border-[var(--malts-hairline)]">
+            Контакт: <span className="font-medium text-[var(--malts-ink)]">support@gsoft.bg</span>
           </p>
         </div>
       </div>

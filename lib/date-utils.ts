@@ -116,19 +116,19 @@ export function getBulgarianDateTime(): Date {
 }
 
 /**
- * Format date for a specific locale (bg, en, de) with month name
+ * Format date for a specific locale (bg, en, ro) with month name
  * Used for events that need multilingual date formatting
  * Always uses Bulgarian timezone (Europe/Sofia) regardless of locale
  */
 export function formatDateForLocale(
   date: Date | string | null,
-  locale: 'bg' | 'en' | 'de'
+  locale: 'bg' | 'en' | 'ro'
 ): string {
   if (!date) {
     const noDateMap = {
       bg: 'Никога',
       en: 'Never',
-      de: 'Nie'
+      ro: 'Niciodată',
     };
     return noDateMap[locale];
   }
@@ -137,7 +137,7 @@ export function formatDateForLocale(
   const localeMap = {
     bg: 'bg-BG',
     en: 'en-US',
-    de: 'de-DE'
+    ro: 'ro-RO',
   };
   
   return dateObj.toLocaleDateString(localeMap[locale], {

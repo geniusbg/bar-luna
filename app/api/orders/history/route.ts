@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { getDefaultBrandId } from '@/lib/brand';
 
 export async function GET(request: Request) {
   try {
+    const brandId = await getDefaultBrandId();
     const { searchParams } = new URL(request.url);
     
     // Pagination
@@ -18,8 +21,7 @@ export async function GET(request: Request) {
     const sortBy = searchParams.get('sortBy') || 'createdAt'; // createdAt, totalBgn, tableNumber
     const sortOrder = searchParams.get('sortOrder') || 'desc'; // asc, desc
 
-    // Build where clause
-    const where: any = {};
+    const where: Prisma.OrderWhereInput = { brandId };
     
     if (status) {
       where.status = status;

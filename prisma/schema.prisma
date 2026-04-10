@@ -1,5 +1,5 @@
-// Prisma Schema for Luna Bar
-// Ordering System with QR Codes
+// Prisma Schema — Malts (multi-brand ready)
+// Ordering system with QR codes
 
 generator client {
   provider = "prisma-client-js"
@@ -11,15 +11,47 @@ datasource db {
 }
 
 // ============================================
-// MENU SYSTEM (existing)
+// TENANT / BRAND
+// ============================================
+
+model Brand {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  categories            Category[]
+  events                Event[]
+  barTables             BarTable[]
+  orders                Order[]
+  waiterCalls           WaiterCall[]
+  productPromotions     ProductPromotion[]
+  qrCodeSettings        QRCodeSettings[]
+  workingHours          WorkingHours[]
+  securitySettings      SecuritySettings[]
+  locationSettings      LocationSettings[]
+  homepageSettings      HomepageSettings[]
+  homepageOfferingCards HomepageOfferingCard[]
+  menuSettings          MenuSettings[]
+  operationalSettings   OperationalSettings?
+  operationalAuditLogs  OperationalSettingsAuditLog[]
+
+  @@map("brands")
+}
+
+// ============================================
+// MENU SYSTEM
 // ============================================
 
 model Category {
   id               String     @id @default(uuid())
+  brandId          String     @map("brand_id")
+  brand            Brand      @relation(fields: [brandId], references: [id], onDelete: Cascade)
   nameBg           String     @map("name_bg")
   nameEn           String     @map("name_en")
-  nameDe           String     @map("name_de")
-  slug             String     @unique
+  nameRo           String     @map("name_ro")
+  slug             String
   order            Int        @default(0)
   parentCategoryId String?    @map("parent_category_id")
   parentCategory   Category?  @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: Cascade)
@@ -28,33 +60,36 @@ model Category {
   createdAt        DateTime   @default(now()) @map("created_at")
   updatedAt        DateTime   @updatedAt @map("updated_at")
 
+  @@unique([brandId, slug])
   @@index([parentCategoryId])
+  @@index([brandId])
   @@map("categories")
 }
 
 model Product {
-  id            String      @id @default(uuid())
-  categoryId    String      @map("category_id")
-  category      Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  nameBg        String      @map("name_bg")
-  nameEn        String      @map("name_en")
-  nameDe        String      @map("name_de")
-  descriptionBg String?     @map("description_bg")
-  descriptionEn String?     @map("description_en")
-  descriptionDe String?     @map("description_de")
-  priceBgn      Decimal     @map("price_bgn") @db.Decimal(10, 2)
-  priceEur      Decimal     @map("price_eur") @db.Decimal(10, 2)
-  imageUrl      String?     @map("image_url")
-  unit          String      @default("pcs") @map("unit") // ml, g, kg, pcs
-  quantity      Int         @default(1) @map("quantity")
-  isAvailable   Boolean     @default(true) @map("is_available")
-  isHidden      Boolean     @default(false) @map("is_hidden")
-  isFeatured    Boolean     @default(false) @map("is_featured")
+  id            String              @id @default(uuid())
+  categoryId    String              @map("category_id")
+  category      Category            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  nameBg        String              @map("name_bg")
+  nameEn        String              @map("name_en")
+  nameRo        String              @map("name_ro")
+  descriptionBg String?             @map("description_bg")
+  descriptionEn String?             @map("description_en")
+  descriptionRo String?             @map("description_ro")
+  priceBgn      Decimal             @map("price_bgn") @db.Decimal(10, 2)
+  priceEur      Decimal             @map("price_eur") @db.Decimal(10, 2)
+  imageUrl      String?             @map("image_url")
+  unit          String              @default("pcs") @map("unit")
+  quantity      Int                 @default(1) @map("quantity")
+  isAvailable   Boolean             @default(true) @map("is_available")
+  isHidden      Boolean             @default(false) @map("is_hidden")
+  isFeatured    Boolean             @default(false) @map("is_featured")
   allergens     String[]
-  order         Int         @default(0)
+  order         Int                 @default(0)
   orderItems    OrderItem[]
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
+  promotions    ProductPromotion[]
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
 
   @@index([categoryId])
   @@index([isAvailable])
@@ -63,22 +98,44 @@ model Product {
   @@map("products")
 }
 
+/// Scheduled promo price window; effective price = promo when now ∈ [startsAt, endsAt].
+model ProductPromotion {
+  id        String   @id @default(uuid())
+  brandId   String   @map("brand_id")
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  startsAt  DateTime @map("starts_at")
+  endsAt    DateTime @map("ends_at")
+  priceBgn  Decimal  @map("price_bgn") @db.Decimal(10, 2)
+  priceEur  Decimal  @map("price_eur") @db.Decimal(10, 2)
+  label     String? // optional short label e.g. "Promo"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([productId])
+  @@index([brandId, startsAt, endsAt])
+  @@map("product_promotions")
+}
+
 model Event {
   id            String   @id @default(uuid())
+  brandId       String   @map("brand_id")
+  brand         Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
   titleBg       String   @map("title_bg")
   titleEn       String   @map("title_en")
-  titleDe       String   @map("title_de")
+  titleRo       String   @map("title_ro")
   descriptionBg String   @map("description_bg")
   descriptionEn String   @map("description_en")
-  descriptionDe String   @map("description_de")
+  descriptionRo String   @map("description_ro")
   eventDate     DateTime @map("event_date")
-  location      String // Primary location (used for display)
-  locationBg    String?  @map("location_bg") // Bulgarian location name
-  locationEn    String?  @map("location_en") // English location name
-  locationDe    String?  @map("location_de") // German location name
+  location      String
+  locationBg    String?  @map("location_bg")
+  locationEn    String?  @map("location_en")
+  locationRo    String?  @map("location_ro")
   isExternal    Boolean  @default(false) @map("is_external")
-  externalUrl   String?  @map("external_url") // URL for external events
-  contactInfo   String?  @map("contact_info") // Contact details for external events
+  externalUrl   String?  @map("external_url")
+  contactInfo   String?  @map("contact_info")
   imageUrl      String?  @map("image_url")
   isPublished   Boolean  @default(false) @map("is_published")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -86,31 +143,36 @@ model Event {
 
   @@index([eventDate])
   @@index([isPublished])
+  @@index([brandId])
   @@map("events")
 }
 
 // ============================================
-// ORDERING SYSTEM (new)
+// ORDERING SYSTEM
 // ============================================
 
 model BarTable {
   id            String       @id @default(uuid())
-  tableNumber   Int          @unique @map("table_number")
+  brandId       String       @map("brand_id")
+  brand         Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  tableNumber   Int          @map("table_number")
   tableName     String?      @map("table_name")
   capacity      Int          @default(4)
-  location      String       @default("indoor") // indoor, terrace, bar
-  qrCodeUrl     String?      @map("qr_code_url") // URL to QR code page
-  qrCodeData    String?      @map("qr_code_data") @db.Text // Base64 QR image for printing
+  location      String       @default("indoor")
+  qrCodeUrl     String?      @map("qr_code_url")
+  qrCodeData    String?      @map("qr_code_data") @db.Text
   isActive      Boolean      @default(true) @map("is_active")
-  redirectUrl   String?      @map("redirect_url") // Dynamic redirect URL (default: /order?table=X)
-  scanCount     Int          @default(0) @map("scan_count") // Track QR code scans
-  lastScannedAt DateTime?    @map("last_scanned_at") // Last scan timestamp
+  redirectUrl   String?      @map("redirect_url")
+  scanCount     Int          @default(0) @map("scan_count")
+  lastScannedAt DateTime?    @map("last_scanned_at")
   orders        Order[]
   waiterCalls   WaiterCall[]
-  qrScans       QrScan[] // History of QR scans
+  qrScans       QrScan[]
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
+  @@unique([brandId, tableNumber])
+  @@index([brandId])
   @@map("bar_tables")
 }
 
@@ -129,18 +191,20 @@ model QrScan {
 
 model Order {
   id                 String                @id @default(uuid())
+  brandId            String                @map("brand_id")
+  brand              Brand                 @relation(fields: [brandId], references: [id], onDelete: Cascade)
   tableId            String?               @map("table_id")
   table              BarTable?             @relation(fields: [tableId], references: [id])
   tableNumber        Int                   @map("table_number")
-  orderNumber        Int                   @map("order_number") // Daily sequential number
-  status             String                @default("pending") @map("status") // pending, pending_approval, preparing, ready, completed, cancelled
-  paymentMethod      String?               @map("payment_method") // cash, card, null
+  orderNumber        Int                   @map("order_number")
+  status             String                @default("pending") @map("status")
+  paymentMethod      String?               @map("payment_method")
   totalBgn           Decimal               @map("total_bgn") @db.Decimal(10, 2)
   totalEur           Decimal               @map("total_eur") @db.Decimal(10, 2)
   notes              String?
   customerName       String?               @map("customer_name")
   isPaid             Boolean               @default(false) @map("is_paid")
-  cancellationReason String?               @map("cancellation_reason") // Reason for cancellation
+  cancellationReason String?               @map("cancellation_reason")
   items              OrderItem[]
   approval           PendingOrderApproval?
   createdAt          DateTime              @default(now()) @map("created_at")
@@ -150,6 +214,7 @@ model Order {
   @@index([status])
   @@index([createdAt(sort: Desc)])
   @@index([tableNumber])
+  @@index([brandId])
   @@map("orders")
 }
 
@@ -158,12 +223,12 @@ model PendingOrderApproval {
   orderId     String    @unique @map("order_id")
   order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   tableNumber Int       @map("table_number")
-  orderCount  Int       @map("order_count") // Number of orders in last 5 minutes
-  reason      String    @default("rate_limit_exceeded") // "rate_limit_exceeded"
-  status      String    @default("pending") // "pending", "approved", "rejected"
+  orderCount  Int       @map("order_count")
+  reason      String    @default("rate_limit_exceeded")
+  status      String    @default("pending")
   requestedAt DateTime  @default(now()) @map("requested_at")
   reviewedAt  DateTime? @map("reviewed_at")
-  reviewedBy  String?   @map("reviewed_by") // Admin user ID
+  reviewedBy  String?   @map("reviewed_by")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
@@ -177,7 +242,7 @@ model OrderItem {
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId   String   @map("product_id")
   product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
-  productName String   @map("product_name") // Snapshot at order time
+  productName String   @map("product_name")
   quantity    Int      @default(1)
   priceBgn    Decimal  @map("price_bgn") @db.Decimal(10, 2)
   priceEur    Decimal  @map("price_eur") @db.Decimal(10, 2)
@@ -190,11 +255,13 @@ model OrderItem {
 
 model WaiterCall {
   id             String    @id @default(uuid())
+  brandId        String    @map("brand_id")
+  brand          Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
   tableId        String?   @map("table_id")
   table          BarTable? @relation(fields: [tableId], references: [id])
   tableNumber    Int       @map("table_number")
-  callType       String    @map("call_type") // payment_cash, payment_card, help, service
-  status         String    @default("pending") // pending, acknowledged, completed
+  callType       String    @map("call_type")
+  status         String    @default("pending")
   message        String?
   createdAt      DateTime  @default(now()) @map("created_at")
   acknowledgedAt DateTime? @map("acknowledged_at")
@@ -202,6 +269,7 @@ model WaiterCall {
 
   @@index([status])
   @@index([createdAt(sort: Desc)])
+  @@index([brandId])
   @@map("waiter_calls")
 }
 
@@ -217,14 +285,12 @@ model TableSession {
   @@map("table_sessions")
 }
 
-// User roles enum
 enum UserRole {
   SUPER_ADMIN
   ADMIN
   STAFF
 }
 
-// User model with role hierarchy
 model User {
   id                String             @id @default(uuid())
   email             String             @unique
@@ -232,9 +298,9 @@ model User {
   name              String
   role              UserRole           @default(STAFF)
   isActive          Boolean            @default(true) @map("is_active")
-  createdBy         String?            @map("created_by") // Admin who created this user
+  createdBy         String?            @map("created_by")
   creator           User?              @relation("UserCreator", fields: [createdBy], references: [id])
-  createdUsers      User[]             @relation("UserCreator") // Users created by this admin
+  createdUsers      User[]             @relation("UserCreator")
   pushSubscriptions PushSubscription[]
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
@@ -244,13 +310,12 @@ model User {
   @@map("users")
 }
 
-// Staff model (legacy - keep for backwards compatibility)
 model Staff {
   id                String             @id @default(uuid())
   email             String             @unique
   passwordHash      String             @map("password_hash")
   name              String
-  role              String             @default("staff") // staff, manager, admin
+  role              String             @default("staff")
   isActive          Boolean            @default(true) @map("is_active")
   pushSubscriptions PushSubscription[]
   createdAt         DateTime           @default(now()) @map("created_at")
@@ -259,11 +324,10 @@ model Staff {
   @@map("staff")
 }
 
-// Future: Hype Integration tracking
 model HypeSyncLog {
   id        String   @id @default(uuid())
-  syncType  String   @map("sync_type") // menu, order, inventory
-  status    String // success, error
+  syncType  String   @map("sync_type")
+  status    String
   data      Json?
   error     String?
   createdAt DateTime @default(now()) @map("created_at")
@@ -272,16 +336,15 @@ model HypeSyncLog {
   @@map("hype_sync_log")
 }
 
-// Web Push Subscriptions for PWA notifications
 model PushSubscription {
   id         String   @id @default(uuid())
   userId     String?  @map("user_id")
   user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  staffId    String?  @map("staff_id") // Legacy - keep for migration
+  staffId    String?  @map("staff_id")
   staff      Staff?   @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  endpoint   String   @unique // Browser push endpoint
-  p256dh     String // Encryption key
-  auth       String // Auth secret
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
   deviceName String?  @map("device_name")
   userAgent  String?  @map("user_agent")
   isActive   Boolean  @default(true) @map("is_active")
@@ -294,122 +357,162 @@ model PushSubscription {
   @@map("push_subscriptions")
 }
 
-// QR Code Settings - Global settings for QR code generation
 model QRCodeSettings {
   id        String   @id @default(uuid())
-  settings  Json // JSON object with all QR code settings
+  brandId   String   @unique @map("brand_id")
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  settings  Json
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("qr_code_settings")
 }
 
-// Working Hours - Store working hours for each day of the week
 model WorkingHours {
   id        String   @id @default(uuid())
-  dayOfWeek Int      @unique @map("day_of_week") // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  brandId   String   @map("brand_id")
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  dayOfWeek Int      @map("day_of_week")
   isOpen    Boolean  @default(true) @map("is_open")
-  openTime  String?  @map("open_time") // Format: "HH:mm" (e.g., "10:00")
-  closeTime String?  @map("close_time") // Format: "HH:mm" (e.g., "00:00")
+  openTime  String?  @map("open_time")
+  closeTime String?  @map("close_time")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@unique([brandId, dayOfWeek])
+  @@index([brandId])
   @@map("working_hours")
 }
 
-// Security & Rate Limit Settings
 model SecuritySettings {
   id                        String   @id @default(uuid())
-  approvalOrderThreshold    Int      @default(5) @map("approval_order_threshold") // number of orders before requiring approval
-  approvalTimeWindowMinutes Int      @default(5) @map("approval_time_window_minutes") // time window in minutes
-  sessionDurationHours      Int      @default(3) @map("session_duration_hours") // QR session duration
-  autoRejectMinutes         Int      @default(30) @map("auto_reject_minutes") // pending approval auto-reject window
+  brandId                   String   @unique @map("brand_id")
+  brand                     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  approvalOrderThreshold    Int      @default(5) @map("approval_order_threshold")
+  approvalTimeWindowMinutes Int      @default(5) @map("approval_time_window_minutes")
+  sessionDurationHours      Int      @default(3) @map("session_duration_hours")
+  autoRejectMinutes         Int      @default(30) @map("auto_reject_minutes")
   createdAt                 DateTime @default(now()) @map("created_at")
   updatedAt                 DateTime @updatedAt @map("updated_at")
 
   @@map("security_settings")
 }
 
-// Location Settings - Store location/address for all locales
 model LocationSettings {
   id        String   @id @default(uuid())
-  addressBg String   @map("address_bg") // Bulgarian address
-  addressEn String   @map("address_en") // English address
-  addressDe String   @map("address_de") // German address
+  brandId   String   @unique @map("brand_id")
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  addressBg String   @map("address_bg")
+  addressEn String   @map("address_en")
+  addressRo String   @map("address_ro")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("location_settings")
 }
 
-// Homepage Settings - Store all homepage content (offerings section)
 model HomepageSettings {
   id             String   @id @default(uuid())
-  // Section header
+  brandId        String   @unique @map("brand_id")
+  brand          Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
   sectionLabelBg String   @map("section_label_bg")
   sectionLabelEn String   @map("section_label_en")
-  sectionLabelDe String   @map("section_label_de")
+  sectionLabelRo String   @map("section_label_ro")
   titleBg        String   @map("title_bg")
   titleEn        String   @map("title_en")
-  titleDe        String   @map("title_de")
+  titleRo        String   @map("title_ro")
   subtitleBg     String   @map("subtitle_bg")
   subtitleEn     String   @map("subtitle_en")
-  subtitleDe     String   @map("subtitle_de")
+  subtitleRo     String   @map("subtitle_ro")
   descriptionBg  String   @map("description_bg") @db.Text
   descriptionEn  String   @map("description_en") @db.Text
-  descriptionDe  String   @map("description_de") @db.Text
+  descriptionRo  String   @map("description_ro") @db.Text
   moodTextBg     String   @map("mood_text_bg")
   moodTextEn     String   @map("mood_text_en")
-  moodTextDe     String   @map("mood_text_de")
-  // Stats (JSON array)
-  stats          Json // [{ label: string, value: string }] for each locale
-  // CTA buttons
+  moodTextRo     String   @map("mood_text_ro")
+  offeringsNoteBg String  @default("") @map("offerings_note_bg") @db.Text
+  offeringsNoteEn String  @default("") @map("offerings_note_en") @db.Text
+  offeringsNoteRo String  @default("") @map("offerings_note_ro") @db.Text
+  stats          Json
   ctaPrimaryBg   String   @map("cta_primary_bg")
   ctaPrimaryEn   String   @map("cta_primary_en")
-  ctaPrimaryDe   String   @map("cta_primary_de")
+  ctaPrimaryRo   String   @map("cta_primary_ro")
   ctaSecondaryBg String   @map("cta_secondary_bg")
   ctaSecondaryEn String   @map("cta_secondary_en")
-  ctaSecondaryDe String   @map("cta_secondary_de")
+  ctaSecondaryRo String   @map("cta_secondary_ro")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@map("homepage_settings")
 }
 
-// Homepage Offering Cards - Dynamic cards for offerings section
 model HomepageOfferingCard {
   id            String   @id @default(uuid())
-  order         Int      @default(0) // Display order
-  icon          String // Emoji or icon identifier
+  brandId       String   @map("brand_id")
+  brand         Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  order         Int      @default(0)
+  icon          String
   titleBg       String   @map("title_bg")
   titleEn       String   @map("title_en")
-  titleDe       String   @map("title_de")
+  titleRo       String   @map("title_ro")
   descriptionBg String   @map("description_bg") @db.Text
   descriptionEn String   @map("description_en") @db.Text
-  descriptionDe String   @map("description_de") @db.Text
+  descriptionRo String   @map("description_ro") @db.Text
   badgeBg       String   @map("badge_bg")
   badgeEn       String   @map("badge_en")
-  badgeDe       String   @map("badge_de")
-  highlights    Json // Array of strings for each locale: { bg: string[], en: string[], de: string[] }
+  badgeRo       String   @map("badge_ro")
+  highlights    Json
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
+  @@index([brandId])
   @@map("homepage_offering_cards")
 }
 
-// Menu Settings - Store menu page content (title, subtitle, background image)
 model MenuSettings {
   id                 String   @id @default(uuid())
+  brandId            String   @unique @map("brand_id")
+  brand              Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
   titleBg            String   @map("title_bg")
   titleEn            String   @map("title_en")
-  titleDe            String   @map("title_de")
+  titleRo            String   @map("title_ro")
   subtitleBg         String   @map("subtitle_bg")
   subtitleEn         String   @map("subtitle_en")
-  subtitleDe         String   @map("subtitle_de")
+  subtitleRo         String   @map("subtitle_ro")
   backgroundImageUrl String?  @map("background_image_url")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@map("menu_settings")
+}
+
+/// Per-brand toggles: max QR tables, ordering, waiter call (super admin).
+model OperationalSettings {
+  id                String   @id @default(uuid())
+  brandId           String   @unique @map("brand_id")
+  brand             Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  maxQrTables       Int      @default(30) @map("max_qr_tables")
+  ordersEnabled     Boolean  @default(true) @map("orders_enabled")
+  waiterCallEnabled Boolean  @default(true) @map("waiter_call_enabled")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("operational_settings")
+}
+
+/// Audit trail for operational (super admin) changes.
+model OperationalSettingsAuditLog {
+  id         String   @id @default(uuid())
+  brandId    String   @map("brand_id")
+  brand      Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  actorUserId String? @map("actor_user_id")
+  actorEmail  String? @map("actor_email")
+  action     String   @default("UPDATE")
+  before     Json
+  after      Json
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([brandId, createdAt(sort: Desc)])
+  @@map("operational_settings_audit_log")
 }

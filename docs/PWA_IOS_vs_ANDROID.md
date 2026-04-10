@@ -49,7 +49,7 @@
 
 ---
 
-## 🎯 Какво означава това за Luna Bar:
+## 🎯 Какво означава това за Malls:
 
 ### **За Development (сега):**
 
@@ -129,7 +129,7 @@ https://abc123.ngrok.io → твоя localhost:3000
 
 ---
 
-## 📊 Luna Bar Staff - Реална ситуация:
+## 📊 Malls Staff - Реална ситуация:
 
 **Вероятно разпределение:**
 - 70% Android phones (Samsung, Xiaomi, etc) → ✅ Работи сега

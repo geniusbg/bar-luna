@@ -9,7 +9,7 @@
     "currency": "Валута"
   },
   "home": {
-    "title": "LUNA Bar & Coffee",
+    "title": "Malts",
     "subtitle": "bar coffee lunch shisha & good mood",
     "cta": "Виж менюто",
     "location": "Русе, ул. Александровска 97"
@@ -32,7 +32,7 @@
   "events": {
     "title": "Събития",
     "upcoming": "Предстоящи събития",
-    "at_luna": "В LUNA Bar",
+    "at_malts": "В Malts",
     "partner_event": "Партньорско събитие",
     "learn_more": "Научи повече"
   },

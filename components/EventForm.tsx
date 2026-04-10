@@ -11,15 +11,15 @@ interface EventFormProps {
 type EventFormData = {
   title_bg: string;
   title_en: string;
-  title_de: string;
+  title_ro: string;
   description_bg: string;
   description_en: string;
-  description_de: string;
+  description_ro: string;
   event_date: string;
   location: string;
   location_bg: string;
   location_en: string;
-  location_de: string;
+  location_ro: string;
   is_external: boolean;
   external_url: string;
   contact_phone: string;
@@ -32,15 +32,15 @@ type EventFormData = {
 const defaultEventFormData: EventFormData = {
   title_bg: '',
   title_en: '',
-  title_de: '',
+  title_ro: '',
   description_bg: '',
   description_en: '',
-  description_de: '',
+  description_ro: '',
   event_date: '',
   location: '',
   location_bg: '',
   location_en: '',
-  location_de: '',
+  location_ro: '',
   is_external: false,
   external_url: '',
   contact_phone: '',
@@ -73,15 +73,15 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
 
   type TranslatableField =
     | 'title_en'
-    | 'title_de'
+    | 'title_ro'
     | 'description_en'
-    | 'description_de'
+    | 'description_ro'
     | 'location_en'
-    | 'location_de';
+    | 'location_ro';
 
   type SourceField = 'title_bg' | 'description_bg' | 'location_bg';
 
-  const handleTranslate = async (field: TranslatableField, targetLang: 'en' | 'de') => {
+  const handleTranslate = async (field: TranslatableField, targetLang: 'en' | 'ro') => {
     // Determine source field based on target; TypeScript knows these are valid keys
     const sourceField: SourceField = field.includes('title')
       ? 'title_bg'
@@ -138,17 +138,17 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
       let location = formData.location;
       let locationBg = null;
       let locationEn = null;
-      let locationDe = null;
+      let locationRo = null;
       
       if (formData.is_external) {
         // For external events, use language-specific fields
         location = formData.location_bg || formData.location || '';
         locationBg = formData.location_bg || null;
         locationEn = formData.location_en || null;
-        locationDe = formData.location_de || null;
+        locationRo = formData.location_ro || null;
       } else {
-        // For LUNA events, use default location
-        location = formData.location || 'LUNA Bar, Русе';
+        // Internal venue: default location if empty
+        location = formData.location || 'Malts, Русе';
       }
 
       // Build contact info from structured fields
@@ -165,15 +165,15 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
       const prismaData = {
         titleBg: formData.title_bg,
         titleEn: formData.title_en,
-        titleDe: formData.title_de,
+        titleRo: formData.title_ro,
         descriptionBg: formData.description_bg,
         descriptionEn: formData.description_en,
-        descriptionDe: formData.description_de,
+        descriptionRo: formData.description_ro,
         eventDate: new Date(formData.event_date).toISOString(),
         location: location,
         locationBg: locationBg,
         locationEn: locationEn,
-        locationDe: locationDe,
+        locationRo: locationRo,
         isExternal: formData.is_external,
         externalUrl: formData.external_url || null,
         contactInfo: contactInfo,
@@ -194,24 +194,24 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
       {/* Titles */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-gray-300 font-semibold mb-2">Заглавие (БГ) *</label>
+          <label className="malts-label">Заглавие (БГ) *</label>
           <input
             type="text"
             name="title_bg"
             value={formData.title_bg}
             onChange={handleChange}
-            className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white500 focus:outline-none"
+            className="malts-field"
             required
           />
         </div>
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-gray-300 font-semibold">Title (EN) *</label>
+            <label className="malts-label mb-0">Title (EN) *</label>
             <button
               type="button"
               onClick={() => handleTranslate('title_en', 'en')}
               disabled={!formData.title_bg || translatingField === 'title_en'}
-              className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+              className="text-sm px-3 py-1 rounded-md border border-[var(--malts-hairline)] text-[var(--malts-ink)] hover:bg-[var(--malts-accent-tint)] disabled:opacity-50"
             >
               {translatingField === 'title_en' ? 'Превеждам...' : 'Авто превод'}
             </button>
@@ -221,28 +221,28 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
             name="title_en"
             value={formData.title_en}
             onChange={handleChange}
-            className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white500 focus:outline-none"
+            className="malts-field"
             required
           />
         </div>
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-gray-300 font-semibold">Titel (DE) *</label>
+            <label className="malts-label mb-0">Title (RO) *</label>
             <button
               type="button"
-              onClick={() => handleTranslate('title_de', 'de')}
-              disabled={!formData.title_bg || translatingField === 'title_de'}
-              className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+              onClick={() => handleTranslate('title_ro', 'ro')}
+              disabled={!formData.title_bg || translatingField === 'title_ro'}
+              className="text-sm px-3 py-1 rounded-md border border-[var(--malts-hairline)] text-[var(--malts-ink)] hover:bg-[var(--malts-accent-tint)] disabled:opacity-50"
             >
-              {translatingField === 'title_de' ? 'Превеждам...' : 'Авто превод'}
+              {translatingField === 'title_ro' ? 'Превеждам...' : 'Авто превод'}
             </button>
           </div>
           <input
             type="text"
-            name="title_de"
-            value={formData.title_de}
+            name="title_ro"
+            value={formData.title_ro}
             onChange={handleChange}
-            className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white500 focus:outline-none"
+            className="malts-field"
             required
           />
         </div>
@@ -251,24 +251,24 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
       {/* Descriptions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-gray-300 font-semibold mb-2">Описание (БГ) *</label>
+          <label className="malts-label">Описание (БГ) *</label>
           <textarea
             name="description_bg"
             value={formData.description_bg}
             onChange={handleChange}
             rows={4}
-            className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white500 focus:outline-none"
+            className="malts-field"
             required
           />
         </div>
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-gray-300 font-semibold">Description (EN) *</label>
+            <label className="malts-label mb-0">Description (EN) *</label>
             <button
               type="button"
               onClick={() => handleTranslate('description_en', 'en')}
               disabled={!formData.description_bg || translatingField === 'description_en'}
-              className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+              className="text-sm px-3 py-1 rounded-md border border-[var(--malts-hairline)] text-[var(--malts-ink)] hover:bg-[var(--malts-accent-tint)] disabled:opacity-50"
             >
               {translatingField === 'description_en' ? 'Превеждам...' : 'Авто превод'}
             </button>
@@ -278,28 +278,28 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
             value={formData.description_en}
             onChange={handleChange}
             rows={4}
-            className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white500 focus:outline-none"
+            className="malts-field"
             required
           />
         </div>
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-gray-300 font-semibold">Beschreibung (DE) *</label>
+            <label className="malts-label mb-0">Description (RO) *</label>
             <button
               type="button"
-              onClick={() => handleTranslate('description_de', 'de')}
-              disabled={!formData.description_bg || translatingField === 'description_de'}
-              className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+              onClick={() => handleTranslate('description_ro', 'ro')}
+              disabled={!formData.description_bg || translatingField === 'description_ro'}
+              className="text-sm px-3 py-1 rounded-md border border-[var(--malts-hairline)] text-[var(--malts-ink)] hover:bg-[var(--malts-accent-tint)] disabled:opacity-50"
             >
-              {translatingField === 'description_de' ? 'Превеждам...' : 'Авто превод'}
+              {translatingField === 'description_ro' ? 'Превеждам...' : 'Авто превод'}
             </button>
           </div>
           <textarea
-            name="description_de"
-            value={formData.description_de}
+            name="description_ro"
+            value={formData.description_ro}
             onChange={handleChange}
             rows={4}
-            className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white500 focus:outline-none"
+            className="malts-field"
             required
           />
         </div>
@@ -307,13 +307,13 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
 
       {/* Event Date */}
       <div>
-        <label className="block text-gray-300 font-semibold mb-2">Дата и час *</label>
+        <label className="malts-label">Дата и час *</label>
         <input
           type="datetime-local"
           name="event_date"
           value={formData.event_date}
           onChange={handleChange}
-          className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white focus:outline-none"
+          className="malts-field"
           required
         />
       </div>
@@ -322,25 +322,25 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
       {formData.is_external ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-gray-300 font-semibold mb-2">Локация (БГ) *</label>
+            <label className="block malts-subtle font-semibold mb-2">Локация (БГ) *</label>
             <input
               type="text"
               name="location_bg"
               value={formData.location_bg}
               onChange={handleChange}
-              className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white focus:outline-none"
+              className="w-full px-4 py-3 malts-inset focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
               placeholder="София, бул. Витоша 1"
               required
             />
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-gray-300 font-semibold">Location (EN)</label>
+              <label className="block malts-subtle font-semibold">Location (EN)</label>
               <button
                 type="button"
                 onClick={() => handleTranslate('location_en', 'en')}
                 disabled={!formData.location_bg || translatingField === 'location_en'}
-                className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+                className="text-sm px-3 py-1 rounded-md border border-[var(--malts-hairline)] text-[var(--malts-ink)] hover:bg-[var(--malts-accent-tint)] disabled:opacity-50"
               >
                 {translatingField === 'location_en' ? 'Превеждам...' : 'Авто превод'}
               </button>
@@ -350,85 +350,85 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
               name="location_en"
               value={formData.location_en}
               onChange={handleChange}
-              className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white focus:outline-none"
+              className="w-full px-4 py-3 malts-inset focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
               placeholder="Sofia, Vitosha Blvd 1"
             />
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-gray-300 font-semibold">Standort (DE)</label>
+              <label className="block malts-subtle font-semibold">Location (RO)</label>
               <button
                 type="button"
-                onClick={() => handleTranslate('location_de', 'de')}
-                disabled={!formData.location_bg || translatingField === 'location_de'}
-                className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+                onClick={() => handleTranslate('location_ro', 'ro')}
+                disabled={!formData.location_bg || translatingField === 'location_ro'}
+                className="text-sm px-3 py-1 rounded-md border border-[var(--malts-hairline)] text-[var(--malts-ink)] hover:bg-[var(--malts-accent-tint)] disabled:opacity-50"
               >
-                {translatingField === 'location_de' ? 'Превеждам...' : 'Авто превод'}
+                {translatingField === 'location_ro' ? 'Превеждам...' : 'Авто превод'}
               </button>
             </div>
             <input
               type="text"
-              name="location_de"
-              value={formData.location_de}
+              name="location_ro"
+              value={formData.location_ro}
               onChange={handleChange}
-              className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white focus:outline-none"
+              className="w-full px-4 py-3 malts-inset focus:outline-none focus:ring-2 focus:ring-[var(--malts-accent-tint-border)]"
               placeholder="Sofia, Vitosha Blvd 1"
             />
           </div>
         </div>
       ) : (
         <div>
-          <label className="block text-gray-300 font-semibold mb-2">Локация *</label>
+          <label className="malts-label">Локация *</label>
           <input
             type="text"
             name="location"
             value={formData.location}
             onChange={handleChange}
-            className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white focus:outline-none"
-            placeholder="LUNA Bar, Русе"
+            className="malts-field"
+            placeholder="Malts, Русе"
             required
           />
         </div>
       )}
 
       {translationError && (
-        <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-lg text-sm">
+        <div className="malts-alert malts-alert-error text-sm">
           {translationError}
         </div>
       )}
 
       {/* Image URL */}
       <div>
-        <label className="block text-gray-300 font-semibold mb-2">URL на снимка</label>
+        <label className="malts-label">URL на снимка</label>
         <input
           type="text"
           name="image_url"
           value={formData.image_url}
           onChange={handleChange}
-          className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-white focus:outline-none"
+          className="malts-field"
           placeholder="https://..."
         />
       </div>
 
       {/* Checkboxes */}
       <div className="flex flex-col md:flex-row gap-6">
-        <label className="flex items-center gap-2 text-white cursor-pointer">
+        <label className="flex items-center gap-2 text-[var(--malts-ink)] cursor-pointer">
           <input
             type="checkbox"
             name="is_external"
             checked={formData.is_external}
             onChange={handleChange}
-            className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-gray-600 focus:ring-white"
+            className="w-5 h-5 rounded border-[var(--malts-hairline)] bg-[var(--malts-card)] text-[var(--malts-ink)] focus:ring-[var(--malts-accent-tint-border)]"
           />
-          <span>Партньорско събитие (не в LUNA)</span>
+          <span>Партньорско събитие (не в Malts)</span>
         </label>
-        <label className="flex items-center gap-2 text-white cursor-pointer">
+        <label className="flex items-center gap-2 text-[var(--malts-ink)] cursor-pointer">
           <input
             type="checkbox"
             name="is_published"
             checked={formData.is_published}
             onChange={handleChange}
-            className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-gray-600 focus:ring-white"
+            className="w-5 h-5 rounded border-[var(--malts-hairline)] bg-[var(--malts-card)] text-[var(--malts-ink)] focus:ring-[var(--malts-accent-tint-border)]"
           />
           <span>Публикувано</span>
         </label>
@@ -436,55 +436,55 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
 
       {/* External Event Fields - Show only when is_external is checked */}
       {formData.is_external && (
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6 space-y-4">
-          <h3 className="text-xl font-bold text-white mb-4">📌 Информация за партньорско събитие</h3>
+        <div className="malts-card p-6 space-y-4">
+          <h3 className="text-xl font-bold text-[var(--malts-ink)] mb-4">📌 Информация за партньорско събитие</h3>
           
           <div>
-            <label className="block text-gray-300 font-semibold mb-2">URL на събитието</label>
+            <label className="malts-label">URL на събитието</label>
             <input
               type="url"
               name="external_url"
               value={formData.external_url}
               onChange={handleChange}
-              className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none"
+              className="malts-field"
               placeholder="https://example.com/event"
             />
-            <p className="text-gray-400 text-sm mt-1">Линк към страницата на събитието</p>
+            <p className="malts-help mt-1">Линк към страницата на събитието</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Телефон</label>
+              <label className="malts-label">Телефон</label>
               <input
                 type="tel"
                 name="contact_phone"
                 value={formData.contact_phone}
                 onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none"
+                className="malts-field"
                 placeholder="+359 888 123 456"
               />
             </div>
             
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Email</label>
+              <label className="malts-label">Email</label>
               <input
                 type="email"
                 name="contact_email"
                 value={formData.contact_email}
                 onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none"
+                className="malts-field"
                 placeholder="contact@example.com"
               />
             </div>
             
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Facebook</label>
+              <label className="malts-label">Facebook</label>
               <input
                 type="text"
                 name="contact_facebook"
                 value={formData.contact_facebook}
                 onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none"
+                className="malts-field"
                 placeholder="/eventpage"
               />
             </div>
@@ -497,14 +497,14 @@ export default function EventForm({ initialData, onSubmit, locale }: EventFormPr
         <button
           type="submit"
           disabled={loading}
-          className="px-8 py-3 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all disabled:opacity-50"
+          className="px-8 py-3 malts-btn-primary font-semibold transition-all disabled:opacity-50"
         >
           {loading ? 'Запазване...' : 'Запази'}
         </button>
         <button
           type="button"
           onClick={() => window.history.back()}
-          className="px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-all"
+          className="px-8 py-3 malts-btn-secondary font-semibold transition-all"
         >
           Отказ
         </button>

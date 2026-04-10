@@ -42,10 +42,10 @@ export default function EditProductPage({
           category_id: p.categoryId,
           name_bg: p.nameBg,
           name_en: p.nameEn,
-          name_de: p.nameDe,
+          name_ro: p.nameRo,
           description_bg: p.descriptionBg || '',
           description_en: p.descriptionEn || '',
-          description_de: p.descriptionDe || '',
+          description_ro: p.descriptionRo || '',
           price_bgn: Number(p.priceBgn),
           price_eur: Number(p.priceEur),
           image_url: p.imageUrl || '',
@@ -109,9 +109,9 @@ export default function EditProductPage({
 
   return (
     <div>
-      <h1 className="text-4xl font-bold text-white mb-8">Редактирай продукт</h1>
+      <h1 className="text-4xl font-bold text-[var(--malts-ink)] mb-8">Редактирай продукт</h1>
       
-      <div className="bg-slate-800 rounded-xl border border-slate-700 p-8">
+      <div className="malts-card rounded-xl p-8">
         <ProductForm
           categories={categories}
           initialData={product}

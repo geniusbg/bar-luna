@@ -68,10 +68,10 @@ export async function POST(request: Request) {
           const payload = {
             title,
             body,
-            icon: '/luna-icon-192.png',
-            badge: '/luna-icon-192.png',
+            icon: '/malts-icon.svg',
+            badge: '/malts-icon.svg',
             url: url || '/bg/staff',
-            tag: 'luna-notification',
+            tag: 'malts-notification',
             requireInteraction: true,
             vibrate: [200, 100, 200, 100, 200],
             timestamp: Date.now()

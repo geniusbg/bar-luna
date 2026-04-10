@@ -4,17 +4,17 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Luna Bar Staff Dashboard',
+  title: 'Malts Staff Dashboard',
   manifest: '/manifest-staff.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Luna Staff'
+    title: 'Malts Staff'
   }
 };
 
 export const viewport = {
-  themeColor: '#000000',
+  themeColor: '#e8e0d4',
   width: 'device-width',
   initialScale: 1
 };
@@ -34,7 +34,7 @@ export default async function StaffLayout({
   return (
     <>
       <link rel="manifest" href="/manifest-staff.json" />
-      {children}
+      <div className="malts-surface">{children}</div>
     </>
   );
 }

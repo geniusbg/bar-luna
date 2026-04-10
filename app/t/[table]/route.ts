@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getDefaultBrandId } from '@/lib/brand';
 import { getSecuritySettings } from '@/lib/security-settings';
 import { createTableSession } from '@/lib/table-sessions';
 import { getBulgarianDateTime } from '@/lib/date-utils';
@@ -34,9 +35,9 @@ export async function GET(
       return NextResponse.redirect(new URL('/bg/menu', baseUrl));
     }
 
-    // Find table and increment scan count
+    const brandId = await getDefaultBrandId();
     const barTable = await prisma.barTable.findUnique({
-      where: { tableNumber }
+      where: { brandId_tableNumber: { brandId, tableNumber } },
     });
 
     if (!barTable) {

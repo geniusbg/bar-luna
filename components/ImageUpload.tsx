@@ -73,10 +73,10 @@ export default function ImageUpload({ currentImageUrl, onImageUploaded, bucket, 
 
   return (
     <div className="space-y-4">
-      <label className="block text-gray-300 font-semibold mb-2">Снимка</label>
+      <label className="malts-label">Снимка</label>
       
       {preview && (
-        <div className={`relative w-full rounded-lg overflow-hidden bg-gray-800 ${
+        <div className={`relative w-full rounded-lg overflow-hidden bg-[var(--malts-inset)] border border-[var(--malts-hairline)] ${
           bucket === 'menu-backgrounds' ? 'h-48' : 'h-64'
         }`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -99,7 +99,7 @@ export default function ImageUpload({ currentImageUrl, onImageUploaded, bucket, 
             className="hidden"
             disabled={uploading}
           />
-          <div className={`px-6 py-3 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold text-center transition-all ${
+          <div className={`px-6 py-3 malts-btn-primary rounded-lg font-semibold text-center transition-all ${
             uploading ? 'opacity-50 cursor-not-allowed' : ''
           }`}>
             {uploading ? 'Качване...' : 'Избери снимка'}
@@ -113,14 +113,14 @@ export default function ImageUpload({ currentImageUrl, onImageUploaded, bucket, 
               setPreview('');
               onImageUploaded('');
             }}
-            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all"
+            className="px-6 py-3 malts-btn-danger rounded-lg font-semibold transition-all"
           >
             Премахни
           </button>
         )}
       </div>
 
-      <p className="text-gray-400 text-sm">
+      <p className="malts-help">
         {recommendedSize ? `Препоръчителни размери: ${recommendedSize}, максимум 5MB` : 'Препоръчителни размери: 800x600px, максимум 5MB'}
       </p>
     </div>

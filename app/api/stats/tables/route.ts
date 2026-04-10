@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getDefaultBrandId } from '@/lib/brand';
 
 export async function GET(request: Request) {
   try {
+    const brandId = await getDefaultBrandId();
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || 'today'; // today, week, month
     const dateFrom = searchParams.get('dateFrom');
@@ -37,8 +39,9 @@ export async function GET(request: Request) {
     const tableStats = await prisma.order.groupBy({
       by: ['tableNumber'],
       where: {
+        brandId,
         status: 'completed',
-        ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter })
+        ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
       },
       _sum: {
         totalBgn: true,
@@ -59,7 +62,7 @@ export async function GET(request: Request) {
     const tablesWithDetails = await Promise.all(
       tableStats.map(async (stat) => {
         const table = await prisma.barTable.findUnique({
-          where: { tableNumber: stat.tableNumber },
+          where: { brandId_tableNumber: { brandId, tableNumber: stat.tableNumber } },
           select: {
             tableName: true,
             location: true,
@@ -85,7 +88,7 @@ export async function GET(request: Request) {
     );
 
     // Calculate total utilization
-    const totalTables = await prisma.barTable.count({ where: { isActive: true } });
+    const totalTables = await prisma.barTable.count({ where: { brandId, isActive: true } });
     const activeTablesCount = tableStats.length;
     const utilizationPercent = totalTables > 0 ? (activeTablesCount / totalTables) * 100 : 0;
     

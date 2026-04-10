@@ -15,19 +15,44 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
   const [formData, setFormData] = useState({
     name_bg: '',
     name_en: '',
-    name_de: '',
+    name_ro: '',
     order: 0,
     parent_category_id: ''
   });
   const [loading, setLoading] = useState(false);
-  const [translatingField, setTranslatingField] = useState<'name_en' | 'name_de' | null>(null);
+  const [translatingField, setTranslatingField] = useState<'name_en' | 'name_ro' | null>(null);
   const [translationError, setTranslationError] = useState<string | null>(null);
+
+  const flatCategories = categories as any[];
+  const byId = new Map<string, any>(flatCategories.map((c) => [c.id, c]));
+  const getPathLabel = (catId: string) => {
+    const parts: string[] = [];
+    let cur: any | undefined = byId.get(catId);
+    let guard = 0;
+    while (cur && guard < 20) {
+      parts.unshift(cur.nameBg || cur.slug || cur.id);
+      cur = cur.parentCategoryId ? byId.get(cur.parentCategoryId) : undefined;
+      guard += 1;
+    }
+    return parts.join(' → ');
+  };
+
+  const isDescendant = (ancestorId: string, nodeId: string) => {
+    let cur = byId.get(nodeId);
+    let guard = 0;
+    while (cur && guard < 50) {
+      if (cur.id === ancestorId) return true;
+      cur = cur.parentCategoryId ? byId.get(cur.parentCategoryId) : undefined;
+      guard += 1;
+    }
+    return false;
+  };
 
   // Lock scroll when modal is open (backdrop locked, modal can scroll)
   useLockScroll(isOpen);
 
 
-  const handleTranslate = async (field: 'name_en' | 'name_de', targetLang: 'en' | 'de') => {
+  const handleTranslate = async (field: 'name_en' | 'name_ro', targetLang: 'en' | 'ro') => {
     const source = formData.name_bg.trim();
     if (!source) {
       setTranslationError('Моля, въведете име на български, за да използвате автоматичен превод.');
@@ -74,7 +99,7 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
       setFormData({
         name_bg: category.nameBg || '',
         name_en: category.nameEn || '',
-        name_de: category.nameDe || '',
+        name_ro: category.nameRo || '',
         order: category.order || 0,
         parent_category_id: category.parentCategoryId || ''
       });
@@ -82,7 +107,7 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
       setFormData({
         name_bg: '',
         name_en: '',
-        name_de: '',
+        name_ro: '',
         order: 0,
         parent_category_id: ''
       });
@@ -125,24 +150,24 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+        className="fixed inset-0 bg-[var(--malts-paper)]/70 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-2xl mx-4 bg-gray-900 rounded-2xl border border-gray-700 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="relative z-10 w-full max-w-2xl mx-4 malts-card max-h-[90vh] overflow-y-auto">
         <div className="p-6 md:p-8">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl md:text-3xl font-bold text-white">
+            <h2 className="text-2xl md:text-3xl font-bold">
               {category ? 'Редактирай категория' : 'Добави нова категория'}
             </h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-[var(--malts-accent-tint)] rounded-lg transition-colors"
               aria-label="Close"
             >
-              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-[var(--malts-subtle)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -151,7 +176,7 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Име (БГ) *</label>
+              <label className="malts-label">Име (БГ) *</label>
               <input
                 type="text"
                 value={formData.name_bg}
@@ -161,7 +186,7 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
                     name_bg: e.target.value
                   }))
                 }
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
+                className="malts-field"
                 required
                 autoFocus
               />
@@ -169,12 +194,12 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-gray-300 font-semibold">Name (EN) *</label>
+                <label className="malts-label mb-0">Name (EN) *</label>
                 <button
                   type="button"
                   onClick={() => handleTranslate('name_en', 'en')}
                   disabled={!formData.name_bg || translatingField === 'name_en'}
-                  className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+                  className="text-sm px-3 py-1 rounded-md border border-[var(--malts-hairline)] text-[var(--malts-ink)] hover:bg-[var(--malts-accent-tint)] disabled:opacity-50"
                 >
                   {translatingField === 'name_en' ? 'Превеждам...' : 'Авто превод'}
                 </button>
@@ -188,33 +213,33 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
                     name_en: e.target.value
                   }))
                 }
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
+                className="malts-field"
                 required
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-gray-300 font-semibold">Name (DE) *</label>
+                <label className="malts-label mb-0">Name (RO) *</label>
                 <button
                   type="button"
-                  onClick={() => handleTranslate('name_de', 'de')}
-                  disabled={!formData.name_bg || translatingField === 'name_de'}
-                  className="text-sm px-3 py-1 rounded-md border border-gray-600 text-gray-200 hover:bg-gray-800 disabled:opacity-50"
+                  onClick={() => handleTranslate('name_ro', 'ro')}
+                  disabled={!formData.name_bg || translatingField === 'name_ro'}
+                  className="text-sm px-3 py-1 rounded-md border border-[var(--malts-hairline)] text-[var(--malts-ink)] hover:bg-[var(--malts-accent-tint)] disabled:opacity-50"
                 >
-                  {translatingField === 'name_de' ? 'Превеждам...' : 'Авто превод'}
+                  {translatingField === 'name_ro' ? 'Превеждам...' : 'Авто превод'}
                 </button>
               </div>
               <input
                 type="text"
-                value={formData.name_de}
+                value={formData.name_ro}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    name_de: e.target.value
+                    name_ro: e.target.value
                   }))
                 }
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
+                className="malts-field"
                 required
               />
             </div>
@@ -224,36 +249,41 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
             )}
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">
+              <label className="malts-label">
                 Родителска категория
-                <span className="ml-2 text-sm text-gray-400 font-normal">(остави празно за главна категория)</span>
+                <span className="ml-2 text-sm malts-muted font-normal">(остави празно за главна категория)</span>
               </label>
               <select
                 value={formData.parent_category_id}
                 onChange={(e) => setFormData({ ...formData, parent_category_id: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
+                className="malts-field"
               >
                 <option value="">-- Главна категория --</option>
-                {categories
-                  .filter((c: any) => !c.parentCategoryId && c.id !== category?.id) // Only parent categories, exclude self
-                  .map((c: any) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nameBg}
-                    </option>
-                  ))}
+                {flatCategories
+                  .filter((c: any) => c.id !== category?.id)
+                  .sort((a: any, b: any) => getPathLabel(a.id).localeCompare(getPathLabel(b.id), 'bg'))
+                  .map((c: any) => {
+                    const disabled =
+                      !!category?.id && isDescendant(category.id, c.id); // prevent selecting a child as parent
+                    return (
+                      <option key={c.id} value={c.id} disabled={disabled}>
+                        {getPathLabel(c.id)}
+                      </option>
+                    );
+                  })}
               </select>
             </div>
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">
+              <label className="malts-label">
                 Подредба
-                <span className="ml-2 text-sm text-gray-400 font-normal">(по-малко = показва се по-рано)</span>
+                <span className="ml-2 text-sm malts-muted font-normal">(по-малко = показва се по-рано)</span>
               </label>
               <input
                 type="number"
                 value={formData.order}
                 onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
+                className="malts-field"
               />
             </div>
 
@@ -262,7 +292,7 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
               <button
                 type="submit"
                 disabled={loading}
-                className="px-8 py-3 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 malts-btn-primary rounded-lg font-semibold transition-all flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -280,7 +310,7 @@ export default function CategoryModal({ isOpen, onClose, onSubmit, category, cat
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-8 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3 malts-btn-secondary rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Отказ
               </button>

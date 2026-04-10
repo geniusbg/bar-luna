@@ -2,10 +2,18 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { getDefaultBrandId } from '@/lib/brand';
 
 export async function POST(request: Request) {
   try {
     const data = await request.json();
+    const brandId = await getDefaultBrandId();
+    const category = await prisma.category.findFirst({
+      where: { id: data.category_id, brandId },
+    });
+    if (!category) {
+      return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
+    }
 
     // Map snake_case to camelCase for Prisma
     const product = await prisma.product.create({
@@ -13,10 +21,10 @@ export async function POST(request: Request) {
         categoryId: data.category_id,
         nameBg: data.name_bg,
         nameEn: data.name_en,
-        nameDe: data.name_de,
+        nameRo: data.name_ro,
         descriptionBg: data.description_bg || null,
         descriptionEn: data.description_en || null,
-        descriptionDe: data.description_de || null,
+        descriptionRo: data.description_ro || null,
         priceBgn: data.price_bgn,
         priceEur: data.price_eur,
         imageUrl: data.image_url || null,
@@ -42,16 +50,20 @@ export async function GET(request: Request) {
     const session = await getServerSession(authOptions);
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('category_id');
+    const brandId = await getDefaultBrandId();
 
     // Check if user is SUPER_ADMIN
     const userRole = (session?.user as any)?.role;
     const showHidden = userRole === 'SUPER_ADMIN';
 
-    // Get products with category information for sorting
+    const where: import('@prisma/client').Prisma.ProductWhereInput = {
+      category: { brandId },
+    };
+    if (categoryId) where.categoryId = categoryId;
+    if (!showHidden) where.isHidden = false;
+
     const products = await prisma.product.findMany({
-      where: categoryId 
-        ? { categoryId, isHidden: showHidden ? undefined : false }
-        : { isHidden: showHidden ? undefined : false },
+      where,
       include: {
         category: {
           select: {

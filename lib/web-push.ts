@@ -11,7 +11,7 @@ console.log('  Private key:', vapidPrivateKey ? '✅ Present' : '❌ MISSING');
 
 if (vapidPublicKey && vapidPrivateKey) {
   webpush.setVapidDetails(
-    'mailto:staff@lunabar.bg',
+    'mailto:info@malts-ruse.com',
     vapidPublicKey,
     vapidPrivateKey
   );

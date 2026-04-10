@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getDefaultBrandId } from '@/lib/brand';
 
 export async function GET() {
   try {
-    // Get today's orders (both active and completed)
+    const brandId = await getDefaultBrandId();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const orders = await prisma.order.findMany({
       where: {
-        createdAt: { gte: today }
+        brandId,
+        createdAt: { gte: today },
       },
       include: {
         items: true

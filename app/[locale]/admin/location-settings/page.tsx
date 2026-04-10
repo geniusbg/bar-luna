@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import LoadingScreen from '@/components/LoadingScreen';
+import AutoTranslateButton from '@/components/AutoTranslateButton';
 
 export default function LocationSettingsPage({
   params
@@ -41,12 +42,13 @@ export default function LocationSettingsPage({
     id: '',
     addressBg: '',
     addressEn: '',
-    addressDe: ''
+    addressRo: ''
   });
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [translationError, setTranslationError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,7 +62,7 @@ export default function LocationSettingsPage({
             id: data.settings.id || '',
             addressBg: data.settings.addressBg || '',
             addressEn: data.settings.addressEn || '',
-            addressDe: data.settings.addressDe || ''
+            addressRo: data.settings.addressRo || ''
           });
         }
       })
@@ -85,6 +87,7 @@ export default function LocationSettingsPage({
     }));
     setSettingsMessage(null);
     setSettingsError(null);
+    setTranslationError(null);
   };
 
   const handleSaveSettings = async () => {
@@ -99,7 +102,7 @@ export default function LocationSettingsPage({
         body: JSON.stringify({
           addressBg: locationSettings.addressBg,
           addressEn: locationSettings.addressEn,
-          addressDe: locationSettings.addressDe
+          addressRo: locationSettings.addressRo
         })
       });
 
@@ -111,7 +114,7 @@ export default function LocationSettingsPage({
           id: data.settings.id || locationSettings.id,
           addressBg: data.settings.addressBg ?? locationSettings.addressBg,
           addressEn: data.settings.addressEn ?? locationSettings.addressEn,
-          addressDe: data.settings.addressDe ?? locationSettings.addressDe
+          addressRo: data.settings.addressRo ?? locationSettings.addressRo
         });
         setTimeout(() => setSettingsMessage(null), 3000);
       } else {
@@ -129,36 +132,36 @@ export default function LocationSettingsPage({
   }
 
   return (
-    <div className="min-h-screen bg-black p-4 md:p-8">
+    <div className="p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <button
+            type="button"
             onClick={() => router.push(`/${locale}/admin`)}
-            className="text-gray-400 hover:text-white mb-4 flex items-center gap-2 transition-colors"
+            className="mb-4 flex items-center gap-2 malts-muted hover:text-[var(--malts-ink)] transition-colors"
           >
-            <span>←</span>
+            <span aria-hidden>←</span>
             <span>Назад към Dashboard</span>
           </button>
-          <h1 className="text-3xl md:text-4xl font-bold text-white">Адрес</h1>
-          <p className="text-gray-400 mt-2">
+          <h1 className="text-3xl md:text-4xl font-bold text-[var(--malts-ink)]">Адрес</h1>
+          <p className="mt-2 malts-muted max-w-2xl">
             Настрой адреса на заведението за всички езици. Адресът се показва на главната страница.
           </p>
         </div>
 
         {/* Settings Form */}
-        <div className="bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-800 rounded-2xl p-6 md:p-8">
+        <div className="malts-card p-6 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-white">Адрес по езици</h2>
-            </div>
+            <div />
             <button
+              type="button"
               onClick={handleSaveSettings}
               disabled={settingsLoading || savingSettings}
               className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                 settingsLoading || savingSettings
-                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-black hover:bg-gray-200'
+                  ? 'malts-btn-secondary opacity-50 cursor-not-allowed'
+                  : 'malts-btn-primary'
               }`}
             >
               {savingSettings ? 'Запазване...' : 'Запази настройките'}
@@ -166,62 +169,96 @@ export default function LocationSettingsPage({
           </div>
 
           {settingsMessage && (
-            <div className="mb-4 rounded-lg border border-green-500/50 bg-green-500/10 text-green-200 px-4 py-2">
+            <div
+              className="mb-4 malts-alert malts-alert-success"
+              role="status"
+            >
               {settingsMessage}
             </div>
           )}
           {settingsError && (
-            <div className="mb-4 rounded-lg border border-red-500/50 bg-red-500/10 text-red-200 px-4 py-2">
+            <div
+              className="mb-4 malts-alert malts-alert-error"
+              role="alert"
+            >
               {settingsError}
             </div>
           )}
 
           <div className="grid grid-cols-1 gap-6">
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-300">
-                Адрес (Български)
+              <label className="malts-label">
+                Адрес (български)
               </label>
               <input
                 type="text"
                 value={locationSettings.addressBg}
                 onChange={(e) => handleSettingsChange('addressBg', e.target.value)}
                 disabled={settingsLoading}
-                className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="malts-field"
                 placeholder="Русе, ул. Александровска 97"
               />
-              <p className="text-xs text-gray-500">Адресът който се показва на българската версия на сайта.</p>
+              <p className="malts-help">
+                Адресът, който се показва на българската версия на сайта. Използвай „Авто превод“ в EN/RO от този текст.
+              </p>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-300">
-                Address (English)
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="malts-label">
+                  Address (English)
+                </label>
+                <AutoTranslateButton
+                  sourceText={locationSettings.addressBg}
+                  targetLang="en"
+                  onTranslated={(text) => handleSettingsChange('addressEn', text)}
+                  onError={setTranslationError}
+                  disabled={settingsLoading}
+                />
+              </div>
               <input
                 type="text"
                 value={locationSettings.addressEn}
                 onChange={(e) => handleSettingsChange('addressEn', e.target.value)}
                 disabled={settingsLoading}
-                className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="malts-field"
                 placeholder="Ruse, 97 Alexandrovska St"
               />
-              <p className="text-xs text-gray-500">The address displayed on the English version of the site.</p>
+              <p className="malts-help">
+                The address displayed on the English version of the site.
+              </p>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-300">
-                Adresse (Deutsch)
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="malts-label">
+                  Address (Romanian)
+                </label>
+                <AutoTranslateButton
+                  sourceText={locationSettings.addressBg}
+                  targetLang="ro"
+                  onTranslated={(text) => handleSettingsChange('addressRo', text)}
+                  onError={setTranslationError}
+                  disabled={settingsLoading}
+                />
+              </div>
               <input
                 type="text"
-                value={locationSettings.addressDe}
-                onChange={(e) => handleSettingsChange('addressDe', e.target.value)}
+                value={locationSettings.addressRo}
+                onChange={(e) => handleSettingsChange('addressRo', e.target.value)}
                 disabled={settingsLoading}
-                className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="malts-field"
                 placeholder="Ruse, Alexandrovska Str. 97"
               />
-              <p className="text-xs text-gray-500">Die Adresse, die auf der deutschen Version der Website angezeigt wird.</p>
+              <p className="malts-help">
+                Adresa afișată pe versiunea română a site-ului.
+              </p>
             </div>
           </div>
+
+          {translationError && (
+            <div className="mt-2 malts-alert malts-alert-error" role="alert">{translationError}</div>
+          )}
         </div>
       </div>
     </div>

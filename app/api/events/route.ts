@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getDefaultBrandId } from '@/lib/brand';
 
 export async function POST(request: Request) {
   try {
     const data = await request.json();
+    const brandId = await getDefaultBrandId();
 
     // Convert eventDate to proper ISO format if needed
     if (data.eventDate && typeof data.eventDate === 'string') {
@@ -11,7 +13,10 @@ export async function POST(request: Request) {
     }
 
     const event = await prisma.event.create({
-      data: data
+      data: {
+        ...data,
+        brandId,
+      },
     });
 
     return NextResponse.json({ event }, { status: 201 });
@@ -25,10 +30,14 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const publishedOnly = searchParams.get('published') === 'true';
+    const brandId = await getDefaultBrandId();
 
     const events = await prisma.event.findMany({
-      where: publishedOnly ? { isPublished: true } : undefined,
-      orderBy: { eventDate: 'asc' }
+      where: {
+        brandId,
+        ...(publishedOnly ? { isPublished: true } : {}),
+      },
+      orderBy: { eventDate: 'asc' },
     });
 
     return NextResponse.json({ events }, { status: 200 });

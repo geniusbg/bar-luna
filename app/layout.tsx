@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Rubik_Doodle_Shadow, Pangolin, Reggae_One, Ruslan_Display } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,18 +12,48 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const maltsDisplay = Rubik_Doodle_Shadow({
+  variable: "--font-malts-display",
+  weight: "400",
+  subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
+});
+
+const maltsButtons = Pangolin({
+  variable: "--font-malts-buttons",
+  weight: "400",
+  subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
+});
+
+const maltsLang = Pangolin({
+  variable: "--font-malts-lang",
+  weight: "400",
+  subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
+});
+
+const maltsNav = Reggae_One({
+  variable: "--font-malts-nav",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const maltsSectionLabel = Ruslan_Display({
+  variable: "--font-malts-section-label",
+  weight: "400",
+  subsets: ["latin", "latin-ext", "cyrillic"],
+});
+
 export const metadata: Metadata = {
-  title: "LUNA Bar & Coffee - Русе",
-  description: "bar coffee lunch shisha & good mood - Русе, ул. Александровска 97",
+  title: "Malts – Русе",
+  description: "Malts – bar, кафе, меню и добро настроение. Русе.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Luna Bar"
+    title: "Malts"
   }
 };
 
 export const viewport = {
-  themeColor: '#000000',
+  themeColor: '#e8e0d4',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
@@ -38,17 +68,20 @@ export default function RootLayout({
   return (
     <html lang="bg" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/jpeg" sizes="32x32" href="/luna-logo.jpg" />
-        <link rel="icon" type="image/jpeg" sizes="16x16" href="/luna-logo.jpg" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/luna-logo.jpg" />
-        <link rel="shortcut icon" href="/luna-logo.jpg" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="icon" type="image/svg+xml" href="/malts-icon.svg" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="shortcut icon" href="/favicon-32x32.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="msapplication-TileImage" content="/luna-logo.jpg" />
+        <meta name="msapplication-TileImage" content="/malts-icon-192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#000000" />
+        <meta name="theme-color" content="#e8e0d4" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${maltsDisplay.variable} ${maltsButtons.variable} ${maltsLang.variable} ${maltsNav.variable} ${maltsSectionLabel.variable} antialiased`}
+      >
         {children}
       </body>
     </html>

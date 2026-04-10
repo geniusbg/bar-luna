@@ -1,6 +1,6 @@
 # Technical Implementation Details
 
-**Project:** Luna Bar Digital Ordering System  
+**Project:** Malts (malts-ruse.com)  
 **Date:** October 2025
 
 ---
@@ -18,15 +18,15 @@
 ### **Backend**
 - **Database:** PostgreSQL 
   - Host: 66.29.142.10
-  - Database: luna_bar
+  - Database: malts (PostgreSQL user + database name)
 - **ORM:** Prisma
 - **File Storage:** Local (`/public/uploads/`)
 - **Real-time:** Pusher Channels
 
 ### **Internationalization**
 - **Library:** next-intl
-- **Locales:** bg (default), en, de
-- **Routing:** Locale prefix (`/bg/`, `/en/`, `/de/`)
+- **Locales:** bg (default), en, ro
+- **Routing:** Locale prefix (`/bg/`, `/en/`, `/ro/`)
 - **Exceptions:** `/order` and `/uploads` routes excluded from i18n
 
 ---
@@ -252,7 +252,7 @@
 ### **Environment Variables Required**
 ```env
 DATABASE_URL=postgresql://...
-NEXT_PUBLIC_APP_URL=https://luna-bar.com
+NEXT_PUBLIC_APP_URL=https://malts-ruse.com
 NEXT_PUBLIC_PUSHER_KEY=...
 NEXT_PUBLIC_PUSHER_CLUSTER=...
 PUSHER_APP_ID=...

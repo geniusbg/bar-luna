@@ -1,6 +1,6 @@
 {
-  "name": "bar-luna",
-  "version": "0.1.0",
+  "name": "malts-web",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -49,6 +49,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.545.0",
+    "sharp": "^0.34.5",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",

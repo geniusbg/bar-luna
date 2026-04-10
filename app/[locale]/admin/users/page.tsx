@@ -95,11 +95,11 @@ export default function UsersPage({ params }: { params: Promise<{ locale: string
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white">👥 Потребители</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">👥 Потребители</h1>
         {canCreateAdmin && (
           <button
             onClick={() => setShowAddForm(true)}
-            className="px-4 sm:px-6 py-3 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 transition-colors whitespace-nowrap"
+            className="px-4 sm:px-6 py-3 malts-btn-primary rounded-lg font-semibold transition-colors whitespace-nowrap"
           >
             + Добави потребител
           </button>
@@ -113,12 +113,12 @@ export default function UsersPage({ params }: { params: Promise<{ locale: string
           {/* Mobile Card View */}
           <div className="md:hidden space-y-4">
             {users.map((user) => (
-              <div key={user.id} className="bg-gray-900 border border-gray-700 rounded-xl p-4">
+              <div key={user.id} className="malts-card p-4">
                 <div className="space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-white font-bold">{user.name}</h3>
-                      <p className="text-gray-400 text-sm">{user.email}</p>
+                      <h3 className="font-bold">{user.name}</h3>
+                      <p className="malts-muted text-sm">{user.email}</p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -133,25 +133,25 @@ export default function UsersPage({ params }: { params: Promise<{ locale: string
                     </span>
                     <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
                       user.isActive
-                        ? 'bg-green-500/20 text-green-300'
-                        : 'bg-gray-500/20 text-gray-400'
+                        ? 'bg-[rgba(22,101,52,0.12)] text-[var(--malts-success)] border border-[rgba(22,101,52,0.25)]'
+                        : 'bg-[var(--malts-card)] text-[var(--malts-subtle)] border border-[var(--malts-hairline)]'
                     }`}>
                       {user.isActive ? 'Активен' : 'Неактивен'}
                     </span>
                   </div>
-                  <p className="text-gray-400 text-sm">
+                  <p className="malts-muted text-sm">
                     Създаден: {formatBulgarianDate(user.createdAt)}
                   </p>
-                  <div className="flex gap-2 pt-2 border-t border-gray-700">
+                  <div className="flex gap-2 pt-2 border-t border-[var(--malts-hairline)]">
                     <button
                       onClick={() => handleEdit(user)}
-                      className="text-blue-400 hover:text-blue-300 text-sm"
+                      className="text-[var(--malts-info)] text-sm"
                     >
                       Редактирай
                     </button>
                     <button
                       onClick={() => handleDelete(user)}
-                      className="text-red-400 hover:text-red-300 text-sm"
+                      className="text-[var(--malts-danger)] text-sm"
                     >
                       Изтрий
                     </button>
@@ -162,24 +162,24 @@ export default function UsersPage({ params }: { params: Promise<{ locale: string
           </div>
 
           {/* Desktop Table View */}
-          <div className="hidden md:block bg-gray-900 border border-gray-700 rounded-xl overflow-hidden">
+          <div className="hidden md:block malts-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-800 border-b border-gray-700">
+                <thead className="bg-[var(--malts-inset)] border-b border-[var(--malts-hairline)]">
                   <tr>
-                    <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase">Име</th>
-                    <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase">Email</th>
-                    <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase">Роля</th>
-                    <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase">Статус</th>
-                    <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase">Създаден</th>
-                    <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase">Действия</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold malts-subtle uppercase">Име</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold malts-subtle uppercase">Email</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold malts-subtle uppercase">Роля</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold malts-subtle uppercase">Статус</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold malts-subtle uppercase">Създаден</th>
+                    <th className="px-4 py-4 text-left text-xs font-semibold malts-subtle uppercase">Действия</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((user) => (
-                    <tr key={user.id} className="border-b border-gray-800 hover:bg-gray-800/50">
-                      <td className="px-4 py-4 text-white text-sm">{user.name}</td>
-                      <td className="px-4 py-4 text-gray-300 text-sm">{user.email}</td>
+                    <tr key={user.id} className="border-b border-[var(--malts-hairline)] hover:bg-[var(--malts-accent-tint)]">
+                      <td className="px-4 py-4 text-sm">{user.name}</td>
+                      <td className="px-4 py-4 malts-muted text-sm">{user.email}</td>
                       <td className="px-4 py-4">
                         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
                           user.role === 'SUPER_ADMIN' 
@@ -194,25 +194,25 @@ export default function UsersPage({ params }: { params: Promise<{ locale: string
                       <td className="px-4 py-4">
                         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
                           user.isActive
-                            ? 'bg-green-500/20 text-green-300'
-                            : 'bg-gray-500/20 text-gray-400'
+                            ? 'bg-[rgba(22,101,52,0.12)] text-[var(--malts-success)] border border-[rgba(22,101,52,0.25)]'
+                            : 'bg-[var(--malts-card)] text-[var(--malts-subtle)] border border-[var(--malts-hairline)]'
                         }`}>
                           {user.isActive ? 'Активен' : 'Неактивен'}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-gray-400 text-sm">
+                      <td className="px-4 py-4 malts-muted text-sm">
                         {formatBulgarianDate(user.createdAt)}
                       </td>
                       <td className="px-4 py-4 flex gap-2">
                         <button
                           onClick={() => handleEdit(user)}
-                          className="text-blue-400 hover:text-blue-300 text-sm"
+                          className="text-[var(--malts-info)] text-sm"
                         >
                           Редактирай
                         </button>
                         <button
                           onClick={() => handleDelete(user)}
-                          className="text-red-400 hover:text-red-300 text-sm"
+                          className="text-[var(--malts-danger)] text-sm"
                         >
                           Изтрий
                         </button>
@@ -303,49 +303,49 @@ function EditUserForm({ user, locale, onClose, onSuccess }: { user: User; locale
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-xl p-8 max-w-md w-full">
-        <h2 className="text-2xl font-bold text-white mb-6">Редактирай потребител</h2>
+    <div className="fixed inset-0 bg-[var(--malts-paper)]/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="malts-card p-6 md:p-8 max-w-md w-full">
+        <h2 className="text-2xl font-bold text-[var(--malts-ink)] mb-6">Редактирай потребител</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Име</label>
+            <label className="malts-label">Име</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+              className="malts-field"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+            <label className="malts-label">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+              className="malts-field"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Нова парола (остави празно за запазване)</label>
+            <label className="malts-label">Нова парола (остави празно за запазване)</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+              className="malts-field"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Роля</label>
+            <label className="malts-label">Роля</label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as 'SUPER_ADMIN' | 'ADMIN' | 'STAFF')}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+              className="malts-field"
             >
               <option value="STAFF">STAFF</option>
               <option value="ADMIN">ADMIN</option>
@@ -354,7 +354,7 @@ function EditUserForm({ user, locale, onClose, onSuccess }: { user: User; locale
           </div>
 
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
+            <label className="flex items-center gap-2 text-sm font-medium text-[var(--malts-ink)]">
               <input
                 type="checkbox"
                 checked={isActive}
@@ -369,14 +369,14 @@ function EditUserForm({ user, locale, onClose, onSuccess }: { user: User; locale
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800"
+              className="flex-1 px-4 py-2 malts-btn-secondary rounded-lg font-semibold transition-colors"
             >
               Отказ
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              className="flex-1 px-4 py-2 malts-btn-primary rounded-lg font-semibold transition-colors disabled:opacity-50"
             >
               {loading ? 'Запазване...' : 'Запази'}
             </button>
@@ -389,22 +389,22 @@ function EditUserForm({ user, locale, onClose, onSuccess }: { user: User; locale
 
 function DeleteConfirmModal({ user, onClose, onConfirm }: { user: User; onClose: () => void; onConfirm: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-xl p-8 max-w-md w-full">
-        <h2 className="text-2xl font-bold text-white mb-2">Потвърди изтриване</h2>
-        <p className="text-gray-300 mb-6">
+    <div className="fixed inset-0 bg-[var(--malts-paper)]/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="malts-card p-6 md:p-8 max-w-md w-full">
+        <h2 className="text-2xl font-bold text-[var(--malts-ink)] mb-2">Потвърди изтриване</h2>
+        <p className="malts-muted mb-6">
           Сигурни ли сте, че искате да изтриете потребителя <strong>{user.name}</strong> ({user.email})?
         </p>
         <div className="flex gap-4">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800"
+            className="flex-1 px-4 py-2 malts-btn-secondary rounded-lg font-semibold transition-colors"
           >
             Отказ
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700"
+            className="flex-1 px-4 py-2 malts-btn-danger rounded-lg font-semibold transition-colors"
           >
             Изтрий
           </button>
@@ -458,50 +458,50 @@ function AddUserForm({ locale, onClose, onSuccess }: { locale: string; onClose: 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-xl p-8 max-w-md w-full">
-        <h2 className="text-2xl font-bold text-white mb-6">Добави потребител</h2>
+    <div className="fixed inset-0 bg-[var(--malts-paper)]/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="malts-card p-6 md:p-8 max-w-md w-full">
+        <h2 className="text-2xl font-bold text-[var(--malts-ink)] mb-6">Добави потребител</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Име</label>
+            <label className="malts-label">Име</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+              className="malts-field"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+            <label className="malts-label">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+              className="malts-field"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Парола</label>
+            <label className="malts-label">Парола</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+              className="malts-field"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Роля</label>
+            <label className="malts-label">Роля</label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as 'ADMIN' | 'STAFF')}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+              className="malts-field"
             >
               <option value="STAFF">STAFF</option>
               <option value="ADMIN">ADMIN</option>
@@ -512,14 +512,14 @@ function AddUserForm({ locale, onClose, onSuccess }: { locale: string; onClose: 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800"
+              className="flex-1 px-4 py-2 malts-btn-secondary rounded-lg font-semibold transition-colors"
             >
               Отказ
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              className="flex-1 px-4 py-2 malts-btn-primary rounded-lg font-semibold transition-colors disabled:opacity-50"
             >
               {loading ? 'Създаване...' : 'Създай'}
             </button>

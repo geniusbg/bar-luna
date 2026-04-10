@@ -1,20 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=WDXL+Lubrifont+TC&display=swap');
 @import "tailwindcss";
 
 :root {
-  /* L.U.N.A. Color Palette */
-  --luna-black: #000000;
-  --luna-white: #FFFFFF;
-  --luna-glow: #F5F5F5;
-  --luna-dark: #0A0A0A;
-  --luna-gray: #333333;
-  --luna-light-gray: #E5E5E5;
-  --luna-gold: #FFD700;
-  --luna-silver: #C0C0C0;
-  
-  /* Legacy variables for compatibility */
-  --background: var(--luna-black);
-  --foreground: var(--luna-white);
+  /* Beerhouse paper system (public + admin + staff) */
+  --malts-paper: #e8e0d4;
+  --malts-ink: #1a1810;
+  --malts-muted: #4a4437;
+  --malts-subtle: #6b6255;
+
+  --malts-card: #f7f1e7;
+  --malts-card-hover: #f3ecdf;
+  --malts-inset: #efe6d7;
+  --malts-hairline: #d3c6b4;
+
+  --malts-accent: #b0162f;
+  --malts-accent-hover: #921226;
+  --malts-accent-tint: rgba(176, 22, 47, 0.1);
+  --malts-accent-tint-border: rgba(176, 22, 47, 0.25);
+
+  --malts-success: #166534;
+  --malts-warning: #92400e;
+  --malts-danger: #991b1b;
+  --malts-info: #1d4ed8;
+
+  /* App-level fallbacks */
+  --background: var(--malts-paper);
+  --foreground: var(--malts-ink);
 }
 
 @theme inline {
@@ -24,9 +36,64 @@
   --font-mono: var(--font-geist-mono);
 }
 
+.malts-display {
+  font-family: var(--font-malts-display), 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.malts-display-outline {
+  /* Bold black outline (logo-like). Works best on large headings. */
+  -webkit-text-stroke: 2px rgba(0, 0, 0, 0.88);
+  paint-order: stroke fill;
+  /* Fallback outline for browsers without text-stroke */
+  text-shadow:
+    1px 0 rgba(0, 0, 0, 0.75),
+    -1px 0 rgba(0, 0, 0, 0.75),
+    0 1px rgba(0, 0, 0, 0.75),
+    0 -1px rgba(0, 0, 0, 0.75),
+    1px 1px rgba(0, 0, 0, 0.65),
+    -1px 1px rgba(0, 0, 0, 0.65),
+    1px -1px rgba(0, 0, 0, 0.65),
+    -1px -1px rgba(0, 0, 0, 0.65);
+}
+
+.malts-display-secondary {
+  /* “Next tier” display font. If glyphs are missing (e.g. BG), it falls back gracefully. */
+  font-family: 'WDXL Lubrifont TC', var(--font-malts-display), 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.malts-nav-font {
+  /* Navigation font. If glyphs are missing (e.g. BG), it falls back gracefully. */
+  font-family: var(--font-malts-nav), 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.malts-nav-links {
+  /* Trial: very tight navigation buttons */
+  letter-spacing: -0.2em;
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+
+.malts-breadcrumb-font {
+  font-family: var(--font-malts-nav), 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: 0;
+}
+
+.malts-section-label-font {
+  font-family: var(--font-malts-section-label), 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.malts-lang-font {
+  font-family: var(--font-malts-lang), 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.01em;
+}
+
 body {
-  background: var(--luna-black);
-  color: var(--luna-white);
+  background: var(--malts-paper);
+  color: var(--malts-ink);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-weight: 400;
   line-height: 1.6;
@@ -41,57 +108,209 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Select and Option styling */
+/* Hide scrollbars for horizontal navs, etc. */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Select defaults (paper theme) */
 select {
-  color: white !important;
-  background-color: #1f2937 !important;
+  color: var(--malts-ink);
+  background-color: var(--malts-inset);
+  border: 1px solid var(--malts-hairline);
 }
 
 select option {
-  color: white !important;
-  background-color: #1f2937 !important;
+  color: var(--malts-ink);
+  background-color: var(--malts-card);
   padding: 8px;
 }
 
-/* L.U.N.A. Moon Glow Effects */
-.luna-glow {
+/* Marketing CTA glow (home hero, etc.) */
+.malts-soft-glow {
   transition: all 0.3s ease-in-out;
   position: relative;
 }
 
-.luna-glow:hover {
-  box-shadow: 
+.malts-soft-glow:hover {
+  box-shadow:
     0 0 20px rgba(245, 245, 245, 0.3),
     0 0 40px rgba(245, 245, 245, 0.2),
     0 0 60px rgba(245, 245, 245, 0.1);
   transform: translateY(-2px);
 }
 
-.luna-glow-strong {
-  /* Permanent white moon glow - always visible, not just on hover */
-  box-shadow: 
+.malts-hero-glow {
+  box-shadow:
     0 0 25px rgba(255, 255, 255, 0.6),
     0 0 50px rgba(255, 255, 255, 0.4),
     0 0 80px rgba(255, 255, 255, 0.3);
 }
 
-.luna-glow-strong:hover {
-  box-shadow: 
+.malts-hero-glow:hover {
+  box-shadow:
     0 0 40px rgba(255, 255, 255, 0.8),
     0 0 70px rgba(255, 255, 255, 0.6),
     0 0 110px rgba(255, 255, 255, 0.4);
 }
 
-.luna-border {
-  border: 1px solid var(--luna-gray);
-  transition: all 0.3s ease-in-out;
+.malts-outline-glow {
+  border: 1px solid var(--malts-hairline);
+  transition: all 0.25s ease-in-out;
 }
 
-.luna-border:hover {
-  border-color: var(--luna-glow);
-  box-shadow: 
-    0 0 15px rgba(245, 245, 245, 0.2),
-    inset 0 0 15px rgba(245, 245, 245, 0.1);
+.malts-outline-glow:hover {
+  border-color: var(--malts-accent-tint-border);
+}
+
+/* Universal paper primitives */
+.malts-card {
+  background: var(--malts-card);
+  border: 1px solid var(--malts-hairline);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(26, 24, 16, 0.08);
+}
+
+.malts-card:hover {
+  background: var(--malts-card-hover);
+  border-color: var(--malts-accent-tint-border);
+}
+
+.malts-inset {
+  background: var(--malts-inset);
+  border: 1px solid var(--malts-hairline);
+  border-radius: 12px;
+  color: var(--malts-ink);
+}
+
+.malts-muted {
+  color: var(--malts-muted);
+}
+
+.malts-subtle {
+  color: var(--malts-subtle);
+}
+
+.malts-btn-primary {
+  background: var(--malts-accent);
+  color: #f5f0e6;
+  border-radius: 14px;
+  transition: background-color 0.2s ease;
+  font-family: var(--font-malts-buttons), 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.02em;
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
+.malts-btn-primary:hover {
+  background: var(--malts-accent-hover);
+}
+
+.malts-btn-secondary {
+  background: var(--malts-card);
+  color: var(--malts-ink);
+  border: 1px solid var(--malts-hairline);
+  border-radius: 14px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  font-family: var(--font-malts-buttons), 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.02em;
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
+.malts-btn-secondary:hover {
+  background: var(--malts-card-hover);
+  border-color: var(--malts-accent-tint-border);
+}
+
+.malts-btn-danger {
+  background: var(--malts-danger);
+  color: #fff;
+  border-radius: 14px;
+  transition: filter 0.2s ease;
+  font-family: var(--font-malts-buttons), 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.02em;
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
+.malts-btn-danger:hover {
+  filter: brightness(0.95);
+}
+
+.malts-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--malts-inset);
+  border: 1px solid var(--malts-hairline);
+  border-radius: 12px;
+  color: var(--malts-ink);
+  outline: none;
+}
+
+.malts-field::placeholder {
+  color: rgba(107, 98, 85, 0.75);
+}
+
+.malts-field:focus {
+  box-shadow: 0 0 0 2px rgba(176, 22, 47, 0.22);
+  border-color: var(--malts-accent-tint-border);
+}
+
+.malts-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--malts-subtle);
+}
+
+.malts-help {
+  color: var(--malts-muted);
+  font-size: 12px;
+}
+
+.malts-alert {
+  border-radius: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--malts-hairline);
+  background: var(--malts-card);
+  color: var(--malts-ink);
+}
+
+.malts-alert-error {
+  border-color: rgba(153, 27, 27, 0.35);
+  background: rgba(153, 27, 27, 0.08);
+  color: #3b0a0a;
+}
+
+.malts-alert-warning {
+  border-color: rgba(146, 64, 14, 0.35);
+  background: rgba(146, 64, 14, 0.08);
+  color: #3b1b06;
+}
+
+.malts-alert-success {
+  border-color: rgba(22, 101, 52, 0.28);
+  background: rgba(22, 101, 52, 0.08);
+  color: #05210f;
+}
+
+.malts-badge {
+  background: var(--malts-accent-tint);
+  border: 1px solid var(--malts-accent-tint-border);
+  color: var(--malts-accent);
+  border-radius: 9999px;
+}
+
+/* Brand wordmark: SVG reads too warm/reddish on cream paper — pull toward neutral brown */
+img[src='/malts.svg'],
+img[src='/malts-logo-landscape.svg'] {
+  filter: saturate(0.72) hue-rotate(6deg) brightness(1.03);
 }
 
 /* Logo optimizations */
@@ -315,6 +534,60 @@ select option {
   animation: loading-glow 2s ease-in-out infinite;
 }
 
+/* Malts loading — beer mug */
+@keyframes malts-beer-liquid {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.94);
+  }
+}
+
+.malts-beer-liquid {
+  transform-origin: center bottom;
+  animation: malts-beer-liquid 1.6s ease-in-out infinite;
+}
+
+@keyframes malts-beer-foam {
+  0%,
+  100% {
+    opacity: 0.92;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.malts-beer-foam {
+  animation: malts-beer-foam 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .malts-beer-liquid,
+  .malts-beer-foam {
+    animation: none !important;
+  }
+}
+
+/** Public marketing / menu — recycled paper */
+.malts-surface {
+  min-height: 100vh;
+  background-color: var(--malts-paper);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, transparent 42%),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 24px,
+      rgba(0, 0, 0, 0.018) 24px,
+      rgba(0, 0, 0, 0.018) 25px
+    );
+  color: var(--malts-ink);
+}
+
 /* Hide scrollbar but keep functionality */
 .hide-scrollbar {
   scrollbar-width: none; /* Firefox */
@@ -342,3 +615,4 @@ select option {
     background: white;
   }
 }
+

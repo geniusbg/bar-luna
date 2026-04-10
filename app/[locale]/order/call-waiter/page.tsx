@@ -21,36 +21,36 @@ function CallWaiterContent() {
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
 
   const getSessionMessageForReason = useCallback((reason?: string) => {
-    const messages: Record<string, { bg: string; en: string; de: string }> = {
+    const messages: Record<string, { bg: string; en: string; ro: string }> = {
       missing: {
         bg: 'Сесията е изтекла. Моля, сканирайте QR кода от масата отново.',
         en: 'Your session has expired. Please scan the table QR code again.',
-        de: 'Ihre Sitzung ist abgelaufen. Bitte scannen Sie den QR-Code erneut.'
+        ro: 'Sesiunea a expirat. Scanează din nou codul QR de la masă.',
       },
       expired: {
         bg: 'Сесията е изтекла. Моля, сканирайте QR кода от масата отново.',
         en: 'Your session has expired. Please scan the table QR code again.',
-        de: 'Ihre Sitzung ist abgelaufen. Bitte scannen Sie den QR-Code erneut.'
+        ro: 'Sesiunea a expirat. Scanează din nou codul QR de la masă.',
       },
       revoked: {
         bg: 'Сесията е невалидна. Моля, сканирайте QR кода от масата отново.',
         en: 'Your session is no longer valid. Please scan the table QR code again.',
-        de: 'Ihre Sitzung ist nicht mehr gültig. Bitte scannen Sie den QR-Code erneut.'
+        ro: 'Sesiunea nu mai este validă. Scanează din nou codul QR de la masă.',
       },
       invalid: {
         bg: 'Невалидна сесия. Моля, сканирайте QR кода от масата отново.',
         en: 'Invalid session. Please scan the table QR code again.',
-        de: 'Ungültige Sitzung. Bitte scannen Sie den QR-Code erneut.'
+        ro: 'Sesiune invalidă. Scanează din nou codul QR de la masă.',
       },
       default: {
         bg: 'Моля, сканирайте QR кода от масата, за да продължите.',
         en: 'Please scan the table QR code to continue.',
-        de: 'Bitte scannen Sie den QR-Code am Tisch, um fortzufahren.'
-      }
+        ro: 'Scanează codul QR de la masă pentru a continua.',
+      },
     };
 
     const localeMessages = messages[reason ?? 'default'] || messages.default;
-    return localeMessages[locale as 'bg' | 'en' | 'de'] || messages.default.bg;
+    return localeMessages[locale as 'bg' | 'en' | 'ro'] || messages.default.bg;
   }, [locale]);
 
   const validateSession = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
@@ -97,19 +97,19 @@ function CallWaiterContent() {
         ? 'Проверка на сесията...'
         : locale === 'en'
         ? 'Verifying your session...'
-        : 'Sitzung wird überprüft...')
+        : 'Se verifică sesiunea...')
     : (locale === 'bg'
         ? 'Сесията е изтекла'
         : locale === 'en'
         ? 'Session expired'
-        : 'Sitzung abgelaufen');
+        : 'Sesiune expirată');
 
   const sessionOverlayBody = sessionStatus === 'checking'
     ? (locale === 'bg'
         ? 'Моля, изчакайте докато проверим връзката със системата.'
         : locale === 'en'
         ? 'Please wait while we verify the connection to the system.'
-        : 'Bitte warten Sie, während wir die Verbindung überprüfen.')
+        : 'Așteptați verificarea conexiunii.')
     : (sessionMessage || getSessionMessageForReason());
   
   const callWaiter = async (callType: string) => {
@@ -138,21 +138,21 @@ function CallWaiterContent() {
         payment_cash: {
           bg: 'Плащане с брой',
           en: 'Payment with cash',
-          de: 'Zahlung mit Bargeld'
+          ro: 'Plată numerar',
         },
         payment_card: {
           bg: 'Плащане с карта',
           en: 'Payment with card',
-          de: 'Zahlung mit Karte'
+          ro: 'Plată cu cardul',
         },
         help: {
           bg: 'Нужна помощ',
           en: 'Need help',
-          de: 'Brauche Hilfe'
-        }
+          ro: 'Am nevoie de ajutor',
+        },
       };
 
-      const message = messages[callType as keyof typeof messages][locale as 'bg' | 'en' | 'de'];
+      const message = messages[callType as keyof typeof messages][locale as 'bg' | 'en' | 'ro'];
 
       const response = await fetch('/api/waiter-call', {
         method: 'POST',
@@ -196,15 +196,15 @@ function CallWaiterContent() {
 
   if (called) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen malts-surface flex items-center justify-center">
         <div className="text-center">
           <div className="text-8xl mb-8">✅</div>
-          <h1 className="text-4xl font-bold text-white mb-4">
+          <h1 className="text-4xl font-bold mb-4">
             {locale === 'bg' ? 'Сервитьорът е повикан!' : 
              locale === 'en' ? 'Waiter has been called!' : 
              'Kellner wurde gerufen!'}
           </h1>
-          <p className="text-xl text-gray-200">
+          <p className="text-xl malts-muted">
             {locale === 'bg' ? 'Маса' : locale === 'en' ? 'Table' : 'Tisch'} {tableNumber}
           </p>
         </div>
@@ -213,7 +213,7 @@ function CallWaiterContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen malts-surface">
       {/* Toast Notifications */}
       {toast && (
         <Toast
@@ -226,12 +226,12 @@ function CallWaiterContent() {
       <div className="container mx-auto px-4 py-20">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold text-white mb-4">
+            <h1 className="text-5xl font-bold mb-4">
               {locale === 'bg' ? 'Повикай сервитьор' : 
                locale === 'en' ? 'Call Waiter' : 
                'Kellner rufen'}
             </h1>
-            <p className="text-2xl text-gray-200">
+            <p className="text-2xl malts-muted">
               {locale === 'bg' ? 'Маса' : locale === 'en' ? 'Table' : 'Tisch'} {tableNumber}
             </p>
           </div>
@@ -241,24 +241,24 @@ function CallWaiterContent() {
             <button
               onClick={() => callWaiter('payment_cash')}
               disabled={calling || sessionStatus !== 'valid'}
-              className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 hover:bg-white/20 transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="malts-card p-12 hover:bg-[var(--malts-card-hover)] transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {calling ? (
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-gray-200">
-                    {locale === 'bg' ? 'Изпращане...' : locale === 'en' ? 'Sending...' : 'Wird gesendet...'}
+                  <div className="w-12 h-12 border-4 border-[var(--malts-accent)] border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="malts-muted">
+                    {locale === 'bg' ? 'Изпращане...' : locale === 'en' ? 'Sending...' : 'Se trimite...'}
                   </p>
                 </div>
               ) : (
                 <>
                   <div className="text-6xl mb-4">💵</div>
-                  <h2 className="text-2xl font-bold text-white mb-2">
+                  <h2 className="text-2xl font-bold mb-2">
                     {locale === 'bg' ? 'Плащане с брой' : 
                      locale === 'en' ? 'Payment with Cash' : 
                      'Zahlung mit Bargeld'}
                   </h2>
-                  <p className="text-gray-200">
+                  <p className="malts-muted">
                     {locale === 'bg' ? 'Сервитьорът ще дойде с бележката' : 
                      locale === 'en' ? 'Waiter will come with the bill' : 
                      'Kellner kommt mit der Rechnung'}
@@ -271,24 +271,24 @@ function CallWaiterContent() {
             <button
               onClick={() => callWaiter('payment_card')}
               disabled={calling || sessionStatus !== 'valid'}
-              className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 hover:bg-white/20 transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="malts-card p-12 hover:bg-[var(--malts-card-hover)] transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {calling ? (
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-gray-200">
-                    {locale === 'bg' ? 'Изпращане...' : locale === 'en' ? 'Sending...' : 'Wird gesendet...'}
+                  <div className="w-12 h-12 border-4 border-[var(--malts-accent)] border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="malts-muted">
+                    {locale === 'bg' ? 'Изпращане...' : locale === 'en' ? 'Sending...' : 'Se trimite...'}
                   </p>
                 </div>
               ) : (
                 <>
                   <div className="text-6xl mb-4">💳</div>
-                  <h2 className="text-2xl font-bold text-white mb-2">
+                  <h2 className="text-2xl font-bold mb-2">
                     {locale === 'bg' ? 'Плащане с карта' : 
                      locale === 'en' ? 'Payment with Card' : 
                      'Zahlung mit Karte'}
                   </h2>
-                  <p className="text-gray-200">
+                  <p className="malts-muted">
                     {locale === 'bg' ? 'Сервитьорът ще донесе POS терминал' : 
                      locale === 'en' ? 'Waiter will bring POS terminal' : 
                      'Kellner bringt POS-Terminal'}
@@ -301,24 +301,24 @@ function CallWaiterContent() {
             <button
               onClick={() => callWaiter('help')}
               disabled={calling || sessionStatus !== 'valid'}
-              className="bg-white/10 backdrop-blur-lg rounded-2xl p-12 hover:bg-white/20 transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed md:col-span-2"
+              className="malts-card rounded-2xl p-12 hover:bg-[var(--malts-card-hover)] transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed md:col-span-2"
             >
               {calling ? (
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-gray-200">
-                    {locale === 'bg' ? 'Изпращане...' : locale === 'en' ? 'Sending...' : 'Wird gesendet...'}
+                  <div className="w-12 h-12 border-4 border-[var(--malts-accent)] border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="malts-muted">
+                    {locale === 'bg' ? 'Изпращане...' : locale === 'en' ? 'Sending...' : 'Se trimite...'}
                   </p>
                 </div>
               ) : (
                 <>
                   <div className="text-6xl mb-4">🙋</div>
-                  <h2 className="text-2xl font-bold text-white mb-2">
+                  <h2 className="text-2xl font-bold mb-2">
                     {locale === 'bg' ? 'Нужна ми е помощ' : 
                      locale === 'en' ? 'I Need Help' : 
                      'Ich brauche Hilfe'}
                   </h2>
-                  <p className="text-gray-200">
+                  <p className="malts-muted">
                     {locale === 'bg' ? 'Сервитьорът ще дойде веднага' : 
                      locale === 'en' ? 'Waiter will come immediately' : 
                      'Kellner kommt sofort'}
@@ -331,7 +331,7 @@ function CallWaiterContent() {
           <div className="text-center mt-12">
             <button
               onClick={() => router.back()}
-              className="px-8 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-semibold transition-all"
+              className="px-8 py-3 malts-btn-secondary rounded-lg font-semibold transition-all"
             >
               ← {locale === 'bg' ? 'Назад към менюто' : 
                    locale === 'en' ? 'Back to Menu' : 
@@ -342,13 +342,13 @@ function CallWaiterContent() {
       </div>
 
       {sessionStatus !== 'valid' && (
-        <div className="fixed inset-0 z-40 bg-black/95 px-6 flex items-center justify-center text-center">
+        <div className="fixed inset-0 z-40 bg-[var(--malts-paper)]/85 backdrop-blur-md px-6 flex items-center justify-center text-center">
           <div className="max-w-2xl">
             <div className="text-6xl mb-6">
               {sessionStatus === 'checking' ? '🔄' : '🔒'}
             </div>
-            <h2 className="text-3xl font-bold text-white mb-4">{sessionOverlayTitle}</h2>
-            <p className="text-gray-300 text-lg mb-8 whitespace-pre-line">
+            <h2 className="text-3xl font-bold mb-4">{sessionOverlayTitle}</h2>
+            <p className="malts-muted text-lg mb-8 whitespace-pre-line">
               {sessionOverlayBody}
             </p>
 
@@ -356,20 +356,20 @@ function CallWaiterContent() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
                   onClick={() => validateSession()}
-                  className="px-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all"
+                  className="px-6 py-3 malts-btn-primary rounded-xl font-semibold transition-all"
                 >
                   🔄 {locale === 'bg' ? 'Провери отново' : locale === 'en' ? 'Check again' : 'Erneut prüfen'}
                 </button>
                 <button
                   onClick={() => window.location.reload()}
-                  className="px-6 py-3 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-600 transition-all"
+                  className="px-6 py-3 malts-btn-secondary rounded-xl font-semibold transition-all"
                 >
-                  ↻ {locale === 'bg' ? 'Обнови страницата' : locale === 'en' ? 'Refresh page' : 'Seite neu laden'}
+                  ↻ {locale === 'bg' ? 'Обнови страницата' : locale === 'en' ? 'Refresh page' : 'Reîncarcă pagina'}
                 </button>
               </div>
             ) : (
               <div className="flex justify-center">
-                <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-12 h-12 border-4 border-[var(--malts-accent)] border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
           </div>
@@ -384,17 +384,17 @@ function LoadingScreen() {
   const locale = pathname.split('/')[1] || 'bg';
   
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
+    <div className="min-h-screen malts-surface flex items-center justify-center">
       <div className="text-center">
         <div className="logo-container h-64 w-64 md:h-96 md:w-96 mx-auto mb-10 animate-pulse-glow">
           <img
-            src="/bg/luna-logo.svg"
-            alt="LUNA Logo"
+            src="/malts-logo-landscape.svg"
+            alt="Malt's"
             className="h-64 w-64 md:h-96 md:w-96"
           />
         </div>
-        <p className="text-white text-3xl font-medium">
-          {locale === 'bg' ? 'Зареждане...' : locale === 'en' ? 'Loading...' : 'Laden...'}
+        <p className="text-3xl font-medium">
+          {locale === 'bg' ? 'Зареждане...' : locale === 'en' ? 'Loading...' : 'Se încarcă...'}
         </p>
       </div>
     </div>

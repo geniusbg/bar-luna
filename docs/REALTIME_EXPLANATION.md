@@ -21,7 +21,7 @@ Pusher → JavaScript event → НАШ custom UI на сайта ✅
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  LUNA Bar - Staff Dashboard           [Logout] │
+│  Malls - Staff Dashboard              [Logout] │
 ├─────────────────────────────────────────────────┤
 │                                                 │
 │  Активни поръчки: 3                             │
@@ -36,7 +36,7 @@ Pusher → JavaScript event → НАШ custom UI на сайта ✅
     ↓ Клиент поръчва от Маса 7 ↓
 
 ┌─────────────────────────────────────────────────┐
-│  LUNA Bar - Staff Dashboard           [Logout] │
+│  Malls - Staff Dashboard              [Logout] │
 ├─────────────────────────────────────────────────┤
 │  ┌───────────────────────────────────────────┐ │
 │  │  🔔 НОВА ПОРЪЧКА!                         │ │ ← Custom popup
@@ -175,7 +175,7 @@ audio.loop = true;
 - Искате Chrome/Firefox system notification
 - Искате wake screen ако е заключен
 
-### За Luna Bar:
+### За Malls:
 - Staff dashboard е ОТВОРЕН на екран
 - Звукът играе директно
 - **НЯМА нужда от permissions!**

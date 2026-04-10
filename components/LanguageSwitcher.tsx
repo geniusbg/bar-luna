@@ -6,7 +6,7 @@ import { locales, type Locale } from '@/i18n';
 const languageNames: Record<Locale, string> = {
   bg: 'БГ',
   en: 'EN',
-  de: 'DE'
+  ro: 'RO',
 };
 
 export default function LanguageSwitcher() {
@@ -29,10 +29,10 @@ export default function LanguageSwitcher() {
         <button
           key={locale}
           onClick={() => switchLocale(locale)}
-          className={`px-3 py-1 rounded-md transition-all ${
+          className={`px-3 py-1 rounded-md transition-all malts-lang-font ${
             currentLocale === locale
-              ? 'bg-white text-black font-semibold'
-              : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
+              ? 'bg-[var(--malts-accent)] text-[#f5f0e6] font-semibold'
+              : 'bg-[var(--malts-card)] text-[var(--malts-ink)] border border-[var(--malts-hairline)] hover:bg-[var(--malts-card-hover)]'
           }`}
         >
           {languageNames[locale]}

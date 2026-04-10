@@ -128,36 +128,38 @@ export default function SecuritySettingsPage({
   }
 
   return (
-    <div className="min-h-screen bg-black p-4 md:p-8">
+    <div className="p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <button
+            type="button"
             onClick={() => router.push(`/${locale}/admin`)}
-            className="text-gray-400 hover:text-white mb-4 flex items-center gap-2 transition-colors"
+            className="mb-4 flex items-center gap-2 malts-muted hover:text-[var(--malts-ink)] transition-colors"
           >
-            <span>←</span>
+            <span aria-hidden>←</span>
             <span>Назад към Dashboard</span>
           </button>
-          <h1 className="text-3xl md:text-4xl font-bold text-white">Настройки за сигурност</h1>
-          <p className="text-gray-400 mt-2">
+          <h1 className="text-3xl md:text-4xl font-bold text-[var(--malts-ink)]">Настройки за сигурност</h1>
+          <p className="mt-2 malts-muted max-w-2xl">
             Определи след колко поръчки и в какъв период ще се изисква одобрение. Настройките се отразяват веднага.
           </p>
         </div>
 
         {/* Settings Form */}
-        <div className="bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-800 rounded-2xl p-6 md:p-8">
+        <div className="malts-card p-6 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-white">Конфигурация</h2>
+              <h2 className="text-2xl font-bold text-[var(--malts-ink)]">Конфигурация</h2>
             </div>
             <button
+              type="button"
               onClick={handleSaveSettings}
               disabled={settingsLoading || savingSettings}
               className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                 settingsLoading || savingSettings
-                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-black hover:bg-gray-200'
+                  ? 'malts-btn-secondary opacity-50 cursor-not-allowed'
+                  : 'malts-btn-primary'
               }`}
             >
               {savingSettings ? 'Запазване...' : 'Запази настройките'}
@@ -165,19 +167,25 @@ export default function SecuritySettingsPage({
           </div>
 
           {settingsMessage && (
-            <div className="mb-4 rounded-lg border border-green-500/50 bg-green-500/10 text-green-200 px-4 py-2">
+            <div
+              className="mb-4 malts-alert malts-alert-success"
+              role="status"
+            >
               {settingsMessage}
             </div>
           )}
           {settingsError && (
-            <div className="mb-4 rounded-lg border border-red-500/50 bg-red-500/10 text-red-200 px-4 py-2">
+            <div
+              className="mb-4 malts-alert malts-alert-error"
+              role="alert"
+            >
               {settingsError}
             </div>
           )}
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-300">
+              <label className="malts-label">
                 Брой поръчки преди одобрение
               </label>
               <input
@@ -187,13 +195,15 @@ export default function SecuritySettingsPage({
                 value={securitySettings.approvalOrderThreshold}
                 onChange={(e) => handleSettingsChange('approvalOrderThreshold', Number(e.target.value))}
                 disabled={settingsLoading}
-                className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="malts-field"
               />
-              <p className="text-xs text-gray-500">Колко поръчки от една маса преди да се изисква одобрение от администратор.</p>
+              <p className="malts-help">
+                Колко поръчки от една маса преди да се изисква одобрение от администратор.
+              </p>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-300">
+              <label className="malts-label">
                 Времеви прозорец (минути)
               </label>
               <input
@@ -203,13 +213,13 @@ export default function SecuritySettingsPage({
                 value={securitySettings.approvalTimeWindowMinutes}
                 onChange={(e) => handleSettingsChange('approvalTimeWindowMinutes', Number(e.target.value))}
                 disabled={settingsLoading}
-                className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="malts-field"
               />
-              <p className="text-xs text-gray-500">Периодът, в който се броят поръчките (например 5 минути).</p>
+              <p className="malts-help">Периодът, в който се броят поръчките (например 5 минути).</p>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-300">
+              <label className="malts-label">
                 Валидност на сесиите (часове)
               </label>
               <input
@@ -219,13 +229,13 @@ export default function SecuritySettingsPage({
                 value={securitySettings.sessionDurationHours}
                 onChange={(e) => handleSettingsChange('sessionDurationHours', Number(e.target.value))}
                 disabled={settingsLoading}
-                className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="malts-field"
               />
-              <p className="text-xs text-gray-500">Колко време QR сесията остава активна след сканиране.</p>
+              <p className="malts-help">Колко време QR сесията остава активна след сканиране.</p>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-300">
+              <label className="malts-label">
                 Автоматично отхвърляне (минути)
               </label>
               <input
@@ -235,9 +245,9 @@ export default function SecuritySettingsPage({
                 value={securitySettings.autoRejectMinutes}
                 onChange={(e) => handleSettingsChange('autoRejectMinutes', Number(e.target.value))}
                 disabled={settingsLoading}
-                className="w-full rounded-xl border border-gray-700 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="malts-field"
               />
-              <p className="text-xs text-gray-500">След колко време чакащите поръчки се отхвърлят автоматично.</p>
+              <p className="malts-help">След колко време чакащите поръчки се отхвърлят автоматично.</p>
             </div>
           </div>
         </div>

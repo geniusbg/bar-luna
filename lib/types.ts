@@ -2,7 +2,7 @@ export interface Category {
   id: string;
   name_bg: string;
   name_en: string;
-  name_de: string;
+  name_ro: string;
   slug: string;
   order: number;
   created_at: string;
@@ -14,14 +14,14 @@ export interface Product {
   category_id: string;
   name_bg: string;
   name_en: string;
-  name_de: string;
+  name_ro: string;
   description_bg?: string;
   description_en?: string;
-  description_de?: string;
+  description_ro?: string;
   price_bgn: number;
   price_eur: number;
   image_url?: string;
-  unit?: string; // ml, g, kg, pcs
+  unit?: string;
   quantity?: number;
   is_available: boolean;
   is_featured: boolean;
@@ -35,13 +35,13 @@ export interface Event {
   id: string;
   title_bg: string;
   title_en: string;
-  title_de: string;
+  title_ro: string;
   description_bg: string;
   description_en: string;
-  description_de: string;
+  description_ro: string;
   event_date: string;
   location: string;
-  is_external: boolean; // true for partner events, false for Luna events
+  is_external: boolean;
   image_url?: string;
   is_published: boolean;
   created_at: string;
@@ -51,7 +51,5 @@ export interface Event {
 export interface LocalizedText {
   bg: string;
   en: string;
-  de: string;
+  ro: string;
 }
-
-

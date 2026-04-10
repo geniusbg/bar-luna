@@ -12,12 +12,12 @@ interface AdminLayoutProps {
 }
 
 export const metadata: Metadata = {
-  title: 'Admin Panel - Luna Bar',
+  title: "Admin Panel – Malt's",
   manifest: '/manifest-admin.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Luna Admin'
+    title: "Malt's Admin"
   }
 };
 
@@ -30,7 +30,7 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
   return (
     <>
       <link rel="manifest" href="/manifest-admin.json" />
-      <div className="min-h-screen bg-black">
+      <div className="malts-surface">
         <ServiceWorkerUpdater />
         <AdminNav locale={locale} />
         <GlobalApprovalsBanner locale={locale} />

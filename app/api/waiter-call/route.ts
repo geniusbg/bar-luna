@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { TABLE_SESSION_COOKIE_NAME, TableSessionInvalidReason, validateTableSession } from '@/lib/table-sessions';
+import { getDefaultBrandId } from '@/lib/brand';
 
 const SESSION_ERROR_MESSAGES: Record<TableSessionInvalidReason, string> = {
   missing: 'Сесията е изтекла. Моля, сканирайте QR кода отново.',
@@ -43,14 +44,36 @@ export async function POST(request: NextRequest) {
       console.warn(`Waiter call: table mismatch (cookie ${tableNumber}, body ${bodyTableNumber})`);
     }
 
+    const brandId = await getDefaultBrandId();
+    const ops = await prisma.operationalSettings.findUnique({ where: { brandId } });
+    if (ops && !ops.waiterCallEnabled) {
+      return NextResponse.json(
+        { error: 'Повикването на сервитьор е временно изключено.' },
+        { status: 403 }
+      );
+    }
+    const maxTables = ops?.maxQrTables ?? 30;
+    if (tableNumber < 1 || tableNumber > maxTables) {
+      return NextResponse.json({ error: 'Невалидна маса' }, { status: 400 });
+    }
+
+    const barTable = await prisma.barTable.findFirst({
+      where: { brandId, tableNumber, isActive: true },
+    });
+    if (!barTable) {
+      return NextResponse.json({ error: 'Невалидна маса' }, { status: 400 });
+    }
+
     console.log('💾 Creating waiter call in DB...');
     const waiterCall = await prisma.waiterCall.create({
       data: {
+        brandId,
+        tableId: barTable.id,
         tableNumber,
         callType,
         message: message || null,
-        status: 'pending'
-      }
+        status: 'pending',
+      },
     });
     console.log('✅ Waiter call created:', waiterCall.id);
 
@@ -108,12 +131,14 @@ export async function GET() {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const brandId = await getDefaultBrandId();
 
     const calls = await prisma.waiterCall.findMany({
       where: {
-        createdAt: { gte: today }
+        brandId,
+        createdAt: { gte: today },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json({ calls });

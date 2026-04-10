@@ -70,18 +70,18 @@ export default function ConditionalNav({ children }: { children?: ReactNode }) {
           {children}
         </div>
       </div>
-      <footer className="text-center py-4 text-gray-500 text-sm">
+      <footer className="text-center py-4 malts-muted text-sm bg-[var(--malts-paper)]/80 border-t border-[var(--malts-hairline)]">
         <div className="flex flex-col items-center gap-1">
           <a 
             href="https://gsoft.bg" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+            className="hover:text-[var(--malts-accent)] transition-colors"
           >
             Реализирано от GSoft.bg
           </a>
           {swVersion && (
-            <span className="text-xs text-gray-400 font-mono">
+            <span className="text-xs text-[var(--malts-subtle)] font-mono">
               версия - {swVersion}
             </span>
           )}

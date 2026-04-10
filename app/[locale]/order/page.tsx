@@ -9,12 +9,13 @@ import Toast from '@/components/Toast';
 import { getPusherClient } from '@/lib/pusher-client';
 import LoadingScreen from '@/components/LoadingScreen';
 import { useLockScroll } from '@/lib/use-lock-scroll';
+import { getChildrenOf } from '@/lib/category-navigation';
 
 interface CartItem {
   productId: string;
   nameBg: string;
   nameEn: string;
-  nameDe: string;
+  nameRo: string;
   priceBgn: number;
   quantity: number;
   unit?: string;
@@ -38,6 +39,8 @@ function OrderPageContent() {
   const [showLoadingScreen, setShowLoadingScreen] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('');
   const [activeSubCategory, setActiveSubCategory] = useState<string>('');
+  const [activeSubSubCategory, setActiveSubSubCategory] = useState<string>('');
+  const [loadProgress, setLoadProgress] = useState(0);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; persistent?: boolean } | null>(null);
   const [sessionStatus, setSessionStatus] = useState<'checking' | 'valid' | 'invalid'>('checking');
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
@@ -112,7 +115,7 @@ function OrderPageContent() {
             ? '✅ Поръчката е одобрена!'
             : locale === 'en'
             ? '✅ Order approved!'
-            : '✅ Bestellung genehmigt!') + itemsList;
+            : '✅ Comanda a fost aprobată!') + itemsList;
 
         setToast({ message, type: 'success' });
         setCart([]);
@@ -123,7 +126,7 @@ function OrderPageContent() {
             ? '❌ Поръчката е отхвърлена'
             : locale === 'en'
             ? '❌ Order rejected'
-            : '❌ Bestellung abgelehnt') + (data?.reason ? `: ${data.reason}` : '') + itemsList;
+            : '❌ Comanda a fost respinsă') + (data?.reason ? `: ${data.reason}` : '') + itemsList;
 
         setToast({ message: rejectionMessage, type: 'error' });
       } else if (status === 'auto-rejected') {
@@ -132,7 +135,7 @@ function OrderPageContent() {
             ? `⏱️ Поръчката беше автоматично отхвърлена след ${autoRejectMinutesValue} минути`
             : locale === 'en'
             ? `⏱️ Order was automatically rejected after ${autoRejectMinutesValue} minutes`
-            : `⏱️ Bestellung wurde nach ${autoRejectMinutesValue} Minuten automatisch abgelehnt`) +
+            : `⏱️ Comanda a fost respinsă automat după ${autoRejectMinutesValue} minute`) +
           (data?.reason ? `: ${data.reason}` : '') +
           itemsList;
 
@@ -171,36 +174,36 @@ function OrderPageContent() {
 
   // Save session token from URL to localStorage
   const getSessionMessageForReason = useCallback((reason?: string) => {
-    const messages: Record<string, { bg: string; en: string; de: string }> = {
+    const messages: Record<string, { bg: string; en: string; ro: string }> = {
       missing: {
         bg: 'Сесията е изтекла. Моля, сканирайте QR кода от масата отново.',
         en: 'Your session has expired. Please scan the table QR code again.',
-        de: 'Ihre Sitzung ist abgelaufen. Bitte scannen Sie den QR-Code erneut.'
+        ro: 'Sesiunea a expirat. Scanează din nou codul QR de la masă.',
       },
       expired: {
         bg: 'Сесията е изтекла. Моля, сканирайте QR кода от масата отново.',
         en: 'Your session has expired. Please scan the table QR code again.',
-        de: 'Ihre Sitzung ist abgelaufen. Bitte scannen Sie den QR-Code erneut.'
+        ro: 'Sesiunea a expirat. Scanează din nou codul QR de la masă.',
       },
       revoked: {
         bg: 'Сесията е невалидна. Моля, сканирайте QR кода от масата отново.',
         en: 'Your session is no longer valid. Please scan the table QR code again.',
-        de: 'Ihre Sitzung ist nicht mehr gültig. Bitte scannen Sie den QR-Code erneut.'
+        ro: 'Sesiunea nu mai este validă. Scanează din nou codul QR de la masă.',
       },
       invalid: {
         bg: 'Невалидна сесия. Моля, сканирайте QR кода от масата отново.',
         en: 'Invalid session. Please scan the table QR code again.',
-        de: 'Ungültige Sitzung. Bitte scannen Sie den QR-Code erneut.'
+        ro: 'Sesiune invalidă. Scanează din nou codul QR de la masă.',
       },
       default: {
         bg: 'Моля, сканирайте QR кода от масата, за да продължите.',
         en: 'Please scan the table QR code to continue.',
-        de: 'Bitte scannen Sie den QR-Code am Tisch, um fortzufahren.'
-      }
+        ro: 'Scanează codul QR de la masă pentru a continua.',
+      },
     };
 
     const localeMessages = messages[reason ?? 'default'] || messages.default;
-    return localeMessages[locale as 'bg' | 'en' | 'de'] || messages.default.bg;
+    return localeMessages[locale as 'bg' | 'en' | 'ro'] || messages.default.bg;
   }, [locale]);
 
   const validateSession = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
@@ -281,7 +284,7 @@ function OrderPageContent() {
               ? `🔄 Поръчка #${data.orderNumber} е приета и се подготвя`
               : locale === 'en'
               ? `🔄 Order #${data.orderNumber} accepted and being prepared`
-              : `🔄 Bestellung #${data.orderNumber} akzeptiert und wird vorbereitet`) + itemsList;
+              : `🔄 Comanda #${data.orderNumber} a fost acceptată și se pregătește`) + itemsList;
           break;
         case 'preparing':
           message =
@@ -289,7 +292,7 @@ function OrderPageContent() {
               ? `👨‍🍳 Поръчка #${data.orderNumber} се приготвя`
               : locale === 'en'
               ? `👨‍🍳 Order #${data.orderNumber} is being prepared`
-              : `👨‍🍳 Bestellung #${data.orderNumber} wird vorbereitet`) + itemsList;
+              : `👨‍🍳 Comanda #${data.orderNumber} se pregătește`) + itemsList;
           break;
         case 'ready':
           message =
@@ -297,7 +300,7 @@ function OrderPageContent() {
               ? `✅ Поръчка #${data.orderNumber} е готова!`
               : locale === 'en'
               ? `✅ Order #${data.orderNumber} is ready!`
-              : `✅ Bestellung #${data.orderNumber} ist fertig!`) + itemsList;
+              : `✅ Comanda #${data.orderNumber} este gata!`) + itemsList;
           break;
         case 'completed':
           message =
@@ -305,7 +308,7 @@ function OrderPageContent() {
               ? `✅ Поръчка #${data.orderNumber} е завършена`
               : locale === 'en'
               ? `✅ Order #${data.orderNumber} completed`
-              : `✅ Bestellung #${data.orderNumber} abgeschlossen`) + itemsList;
+              : `✅ Comanda #${data.orderNumber} a fost finalizată`) + itemsList;
           break;
         case 'cancelled':
           message =
@@ -313,7 +316,7 @@ function OrderPageContent() {
               ? `❌ Поръчка #${data.orderNumber} е отменена${data.cancellationReason ? ': ' + data.cancellationReason : ''}`
               : locale === 'en'
               ? `❌ Order #${data.orderNumber} cancelled${data.cancellationReason ? ': ' + data.cancellationReason : ''}`
-              : `❌ Bestellung #${data.orderNumber} storniert${data.cancellationReason ? ': ' + data.cancellationReason : ''}`) + itemsList;
+              : `❌ Comanda #${data.orderNumber} a fost anulată${data.cancellationReason ? ': ' + data.cancellationReason : ''}`) + itemsList;
           type = 'error';
           break;
         default:
@@ -353,19 +356,19 @@ function OrderPageContent() {
           ? '✅ Сервитьорът е уведомен и ще дойде скоро'
           : locale === 'en'
           ? '✅ Waiter has been notified and will arrive soon'
-          : '✅ Der Kellner wurde benachrichtigt und wird bald kommen';
+          : '✅ Chelnerul a fost anunțat și va veni în curând';
       } else if (data.status === 'completed') {
         const callTypeText = data.callType === 'payment_cash'
-          ? (locale === 'bg' ? 'Плащане с брой' : locale === 'en' ? 'Payment with cash' : 'Zahlung mit Bargeld')
+          ? (locale === 'bg' ? 'Плащане с брой' : locale === 'en' ? 'Payment with cash' : 'Plată numerar')
           : data.callType === 'payment_card'
-          ? (locale === 'bg' ? 'Плащане с карта' : locale === 'en' ? 'Payment with card' : 'Zahlung mit Karte')
-          : (locale === 'bg' ? 'Помощ' : locale === 'en' ? 'Help' : 'Hilfe');
+          ? (locale === 'bg' ? 'Плащане с карта' : locale === 'en' ? 'Payment with card' : 'Plată cu cardul')
+          : (locale === 'bg' ? 'Помощ' : locale === 'en' ? 'Help' : 'Ajutor');
         
         message = locale === 'bg'
           ? `✅ ${callTypeText} - завършено`
           : locale === 'en'
           ? `✅ ${callTypeText} - completed`
-          : `✅ ${callTypeText} - abgeschlossen`;
+          : `✅ ${callTypeText} - finalizat`;
       }
       
       if (message) {
@@ -418,30 +421,35 @@ function OrderPageContent() {
   useEffect(() => {
     async function loadMenu() {
       try {
-        const [categoriesRes, productsRes] = await Promise.all([
-          fetch('/api/categories'),
-          fetch('/api/menu')
-        ]);
-        
+        setLoadProgress(10);
+        const categoriesRes = await fetch('/api/categories');
+        setLoadProgress(45);
+        const productsRes = await fetch('/api/menu');
+        setLoadProgress(85);
+
         const categoriesData = await categoriesRes.json();
         const productsData = await productsRes.json();
-        
-        setCategories(categoriesData.categories || []);
+
+        const cats: any[] = categoriesData.categories || [];
+        setCategories(cats);
         setProducts(productsData.products || []);
-        
-        // Set initial active category
-        if (categoriesData.categories && categoriesData.categories.length > 0) {
-          const firstParent = categoriesData.categories.find((c: any) => !c.parentCategoryId);
+
+        if (cats.length > 0) {
+          const firstParent = cats.find((c: any) => !c.parentCategoryId);
           if (firstParent) {
             setActiveCategory(firstParent.id);
-            const firstSub = categoriesData.categories.find((c: any) => c.parentCategoryId === firstParent.id);
-            if (firstSub) {
-              setActiveSubCategory(firstSub.id);
+            const subs = getChildrenOf(cats, firstParent.id);
+            if (subs[0]) {
+              setActiveSubCategory(subs[0].id);
+              const ss = getChildrenOf(cats, subs[0].id);
+              setActiveSubSubCategory(ss[0]?.id ?? '');
             } else {
               setActiveSubCategory('');
+              setActiveSubSubCategory('');
             }
           }
         }
+        setLoadProgress(100);
       } catch (error) {
         // Error loading menu
       } finally {
@@ -465,7 +473,7 @@ function OrderPageContent() {
         productId: product.id,
         nameBg: product.nameBg,
         nameEn: product.nameEn,
-        nameDe: product.nameDe,
+        nameRo: product.nameRo,
         priceBgn: Number(product.priceBgn),
         quantity: 1,
         unit: product.unit,
@@ -474,9 +482,9 @@ function OrderPageContent() {
     });
 
     // Show toast notification
-    const productName = locale === 'bg' ? product.nameBg : locale === 'en' ? product.nameEn : product.nameDe;
+    const productName = locale === 'bg' ? product.nameBg : locale === 'en' ? product.nameEn : product.nameRo;
     setToast({
-      message: `${productName} ${locale === 'bg' ? 'добавено в кошницата' : locale === 'en' ? 'added to cart' : 'zum Warenkorb hinzugefügt'}`,
+      message: `${productName} ${locale === 'bg' ? 'добавено в кошницата' : locale === 'en' ? 'added to cart' : 'adăugat în coș'}`,
       type: 'success'
     });
   };
@@ -499,6 +507,35 @@ function OrderPageContent() {
 
   const cartTotal = cart.reduce((sum, item) => sum + item.priceBgn * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const parentCategories = categories.filter((c: any) => !c.parentCategoryId);
+  const subCategories = getChildrenOf(categories, activeCategory);
+  const subSubCategories = activeSubCategory ? getChildrenOf(categories, activeSubCategory) : [];
+  const displayCategoryId = activeSubSubCategory || activeSubCategory || activeCategory;
+  const categoryProducts = products.filter((p: any) => p.categoryId === displayCategoryId);
+
+  const handleOrderCategorySelect = (categoryId: string) => {
+    setActiveCategory(categoryId);
+    const subs = getChildrenOf(categories, categoryId);
+    if (subs[0]) {
+      setActiveSubCategory(subs[0].id);
+      const ss = getChildrenOf(categories, subs[0].id);
+      setActiveSubSubCategory(ss[0]?.id ?? '');
+    } else {
+      setActiveSubCategory('');
+      setActiveSubSubCategory('');
+    }
+  };
+
+  const handleOrderSubSelect = (subCategoryId: string) => {
+    setActiveSubCategory(subCategoryId);
+    const ss = getChildrenOf(categories, subCategoryId);
+    setActiveSubSubCategory(ss[0]?.id ?? '');
+  };
+
+  const handleOrderSubSubSelect = (id: string) => {
+    setActiveSubSubCategory(id);
+  };
 
   const pollApprovalStatus = useCallback(
     (orderId: string) => {
@@ -652,7 +689,7 @@ function OrderPageContent() {
             ? '⚠️ Поръчката изисква одобрение от администратор'
             : locale === 'en'
             ? '⚠️ Order requires admin approval'
-            : '⚠️ Bestellung erfordert Admin-Genehmigung',
+            : '⚠️ Comanda necesită aprobare de la administrator',
           type: 'error' 
         });
       } else {
@@ -661,7 +698,7 @@ function OrderPageContent() {
             ? `✅ Поръчка #${responseData.orderNumber} е създадена успешно!`
             : locale === 'en'
             ? `✅ Order #${responseData.orderNumber} created successfully!`
-            : `✅ Bestellung #${responseData.orderNumber} erfolgreich erstellt!`,
+            : `✅ Comanda #${responseData.orderNumber} a fost creată cu succes!`,
           type: 'success' 
         });
         setCart([]);
@@ -676,7 +713,7 @@ function OrderPageContent() {
           ? 'Грешка при създаване на поръчка. Моля, опитайте отново.'
           : locale === 'en'
           ? 'Error creating order. Please try again.'
-          : 'Fehler beim Erstellen der Bestellung. Bitte versuchen Sie es erneut.',
+          : 'Eroare la crearea comenzii. Încercați din nou.',
         type: 'error' 
       });
       setSubmitting(false);
@@ -688,27 +725,27 @@ function OrderPageContent() {
         ? 'Проверка на сесията...'
         : locale === 'en'
         ? 'Verifying your session...'
-        : 'Sitzung wird überprüft...')
+        : 'Se verifică sesiunea...')
     : (locale === 'bg'
         ? 'Сесията е изтекла'
         : locale === 'en'
         ? 'Session expired'
-        : 'Sitzung abgelaufen');
+        : 'Sesiune expirată');
 
   const sessionOverlayBody = sessionStatus === 'checking'
     ? (locale === 'bg'
         ? 'Моля, изчакайте докато проверим връзката със системата.'
         : locale === 'en'
         ? 'Please wait while we verify the connection to the system.'
-        : 'Bitte warten Sie, während wir die Verbindung überprüfen.')
+        : 'Vă rugăm așteptați în timp ce verificăm conexiunea.')
     : (sessionMessage || getSessionMessageForReason());
 
   if (showLoadingScreen) {
-    return <LoadingScreen locale={locale} />;
+    return <LoadingScreen locale={locale} progress={loading ? loadProgress : undefined} />;
   }
 
   return (
-    <main className="min-h-screen bg-black pb-8">
+    <main className="min-h-screen malts-surface pb-8">
       {/* Toast Notifications - hidden when server is offline */}
       {toast && !isOffline && (
         <Toast
@@ -730,14 +767,14 @@ function OrderPageContent() {
                 <p className="font-semibold text-lg mb-2">
                   {locale === 'bg' ? 'Поръчката изисква одобрение' : 
                    locale === 'en' ? 'Order requires approval' : 
-                   'Bestellung erfordert Genehmigung'}
+                   'Comanda necesită aprobare'}
                 </p>
                 <p className="text-sm mb-2">
                   {locale === 'bg' 
                     ? `Направени са ${approvalThresholdValue} поръчки за последните ${approvalWindowValue} минути. Заради съображения за сигурност и превантивно действие при потенциално неправомерни действия и хакерски атаки, тази поръчка изисква одобрение.`
                     : locale === 'en'
                     ? `${approvalThresholdValue} orders have been placed in the last ${approvalWindowValue} minutes. Due to security concerns and preventive action against potentially unauthorized actions and hacking attacks, this order requires approval.`
-                    : `${approvalThresholdValue} Bestellungen wurden in den letzten ${approvalWindowValue} Minuten aufgegeben. Aufgrund von Sicherheitsbedenken und präventiven Maßnahmen gegen möglicherweise unbefugte Aktionen und Hacking-Angriffe erfordert diese Bestellung eine Genehmigung.`}
+                    : `Au fost plasate ${approvalThresholdValue} comenzi în ultimele ${approvalWindowValue} minute. Din motive de securitate și ca măsură preventivă împotriva acțiunilor neautorizate și a atacurilor, această comandă necesită aprobare.`}
                 </p>
                 {approvalStatus === 'pending' && (
                   <p className="text-sm font-medium">
@@ -745,7 +782,7 @@ function OrderPageContent() {
                       ? '⏳ Очакване на одобрение от администратор...'
                       : locale === 'en'
                       ? '⏳ Waiting for admin approval...'
-                      : '⏳ Warten auf Admin-Genehmigung...'}
+                      : '⏳ Se așteaptă aprobarea administratorului...'}
                   </p>
                 )}
                 {approvalStatus === 'approved' && (
@@ -754,7 +791,7 @@ function OrderPageContent() {
                       ? '✅ Поръчката е одобрена!'
                       : locale === 'en'
                       ? '✅ Order approved!'
-                      : '✅ Bestellung genehmigt!'}
+                      : '✅ Comanda a fost aprobată!'}
                   </p>
                 )}
                 {approvalStatus === 'rejected' && (
@@ -763,7 +800,7 @@ function OrderPageContent() {
                       ? '❌ Поръчката е отхвърлена'
                       : locale === 'en'
                       ? '❌ Order rejected'
-                      : '❌ Bestellung abgelehnt'}
+                      : '❌ Comanda a fost respinsă'}
                   </p>
                 )}
                 {approvalStatus === 'auto-rejected' && (
@@ -772,7 +809,7 @@ function OrderPageContent() {
                       ? `⏱️ Поръчката беше автоматично отхвърлена след ${autoRejectMinutesValue} минути`
                       : locale === 'en'
                       ? `⏱️ Order was automatically rejected after ${autoRejectMinutesValue} minutes`
-                      : `⏱️ Bestellung wurde nach ${autoRejectMinutesValue} Minuten automatisch abgelehnt`}
+                      : `⏱️ Comanda a fost respinsă automat după ${autoRejectMinutesValue} minute`}
                   </p>
                 )}
               </div>
@@ -782,13 +819,13 @@ function OrderPageContent() {
       )}
 
       {/* Header */}
-      <div className="bg-black/95 backdrop-blur-lg border-b border-gray-800 sticky top-0 z-40">
+      <div className="bg-[var(--malts-paper)]/92 backdrop-blur-lg border-b border-[var(--malts-hairline)] sticky top-0 z-40">
         <div className="container mx-auto px-4 py-2">
           <div className="flex justify-between items-center gap-4">
             <div className="h-16 md:h-24 overflow-hidden flex items-center">
               <Image 
-                src="/bg/logo_luna2.svg" 
-                alt="L.U.N.A." 
+                src="/malts-logo-landscape.svg" 
+                alt="Malt's" 
                 width={192}
                 height={192}
                 className="w-auto h-full object-contain"
@@ -799,9 +836,9 @@ function OrderPageContent() {
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center gap-2 md:gap-3">
                 {tableNumber && (
-                  <div className="bg-white/10 px-3 py-1 rounded-full border border-white/20 -ml-2 md:ml-0">
-                    <p className="text-white font-semibold text-sm whitespace-nowrap">
-                      {locale === 'bg' ? 'Маса' : locale === 'en' ? 'Table' : 'Tisch'} {tableNumber}
+                  <div className="bg-[var(--malts-accent-tint)] px-3 py-1 rounded-full border border-[var(--malts-accent-tint-border)] -ml-2 md:ml-0">
+                    <p className="text-[var(--malts-ink)] font-semibold text-sm whitespace-nowrap">
+                      {locale === 'bg' ? 'Маса' : locale === 'en' ? 'Table' : 'Masă'} {tableNumber}
                     </p>
                   </div>
                 )}
@@ -809,11 +846,11 @@ function OrderPageContent() {
                 {/* Cart Button */}
                 <button
                   onClick={() => setShowCart(!showCart)}
-                  className="relative px-4 py-2.5 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all text-sm md:text-base"
+                  className="relative px-4 py-2.5 malts-btn-secondary rounded-lg font-semibold transition-all text-sm md:text-base"
                 >
-                  🛒 {locale === 'bg' ? 'Количка' : locale === 'en' ? 'Cart' : 'Warenkorb'}
+                  🛒 {locale === 'bg' ? 'Количка' : locale === 'en' ? 'Cart' : 'Coș'}
                   {cartCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 md:w-7 md:h-7 flex items-center justify-center text-xs md:text-sm font-bold">
+                    <span className="absolute -top-2 -right-2 bg-[var(--malts-danger)] text-[#f5f0e6] rounded-full w-5 h-5 md:w-7 md:h-7 flex items-center justify-center text-xs md:text-sm font-bold">
                       {cartCount}
                     </span>
                   )}
@@ -828,45 +865,24 @@ function OrderPageContent() {
       </div>
 
       {/* Category Filter */}
-      <div className="bg-black/95 backdrop-blur-lg border-b border-gray-800 py-4">
+      <div className="bg-[var(--malts-paper)]/92 backdrop-blur-lg border-b border-[var(--malts-hairline)] py-4">
         <div className="container mx-auto px-4">
           {/* Get parent categories and subcategories */}
-          {(() => {
-            const parentCategories = categories.filter((c: any) => !c.parentCategoryId);
-            const subCategories = categories.filter((c: any) => c.parentCategoryId === activeCategory);
-            const displayCategoryId = activeSubCategory || activeCategory;
-            const categoryProducts = products.filter((p: any) => p.categoryId === displayCategoryId);
-            
-            const handleCategorySelect = (categoryId: string) => {
-              setActiveCategory(categoryId);
-              const subs = categories.filter((c: any) => c.parentCategoryId === categoryId);
-              if (subs.length > 0) {
-                setActiveSubCategory(subs[0].id);
-              } else {
-                setActiveSubCategory('');
-              }
-            };
-            
-            const handleSubCategorySelect = (subCategoryId: string) => {
-              setActiveSubCategory(subCategoryId);
-            };
-            
-            return (
-              <>
+          <>
                 {/* Parent Categories - Mobile (horizontal scroll on all mobile orientations, including landscape) */}
                 <div className="lg:hidden overflow-x-auto overflow-y-hidden hide-scrollbar mb-3 -mx-4 px-4">
                   <div className="flex gap-3 min-w-max">
                     {parentCategories.map((category: any) => {
-                      const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameDe;
+                      const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameRo;
                       const isActive = category.id === activeCategory;
                       return (
                         <button
                           key={category.id}
-                          onClick={() => handleCategorySelect(category.id)}
+                          onClick={() => handleOrderCategorySelect(category.id)}
                           className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
                             isActive
-                              ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
-                              : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
+                              ? 'bg-[var(--malts-accent)] text-[#f5f0e6] shadow-lg scale-105'
+                              : 'bg-[var(--malts-card)] text-[var(--malts-ink)] hover:bg-[var(--malts-card-hover)] border border-[var(--malts-hairline)]'
                           }`}
                         >
                           {categoryName}
@@ -880,16 +896,16 @@ function OrderPageContent() {
                 <div className="hidden lg:block mb-3">
                   <div className="flex flex-wrap gap-3 justify-center max-w-6xl mx-auto">
                     {parentCategories.map((category: any) => {
-                      const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameDe;
+                      const categoryName = locale === 'bg' ? category.nameBg : locale === 'en' ? category.nameEn : category.nameRo;
                       const isActive = category.id === activeCategory;
                       return (
                         <button
                           key={category.id}
-                          onClick={() => handleCategorySelect(category.id)}
+                          onClick={() => handleOrderCategorySelect(category.id)}
                           className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 whitespace-nowrap ${
                             isActive
-                              ? 'bg-white text-black shadow-lg shadow-white/20 scale-105'
-                              : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
+                              ? 'bg-[var(--malts-accent)] text-[#f5f0e6] shadow-lg scale-105'
+                              : 'bg-[var(--malts-card)] text-[var(--malts-ink)] hover:bg-[var(--malts-card-hover)] border border-[var(--malts-hairline)]'
                           }`}
                         >
                           {categoryName}
@@ -906,16 +922,16 @@ function OrderPageContent() {
                     <div className="lg:hidden overflow-x-auto overflow-y-hidden hide-scrollbar -mx-4 px-4">
                       <div className="flex gap-2 min-w-max">
                         {subCategories.map((subCategory: any) => {
-                          const subCategoryName = locale === 'bg' ? subCategory.nameBg : locale === 'en' ? subCategory.nameEn : subCategory.nameDe;
+                          const subCategoryName = locale === 'bg' ? subCategory.nameBg : locale === 'en' ? subCategory.nameEn : subCategory.nameRo;
                           const isActive = subCategory.id === activeSubCategory;
                           return (
                             <button
                               key={subCategory.id}
-                              onClick={() => handleSubCategorySelect(subCategory.id)}
+                              onClick={() => handleOrderSubSelect(subCategory.id)}
                               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 whitespace-nowrap text-sm ${
                                 isActive
-                                  ? 'bg-gray-700 text-white border-2 border-white/50'
-                                  : 'bg-gray-800/30 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300 border border-gray-700/50'
+                                  ? 'bg-[var(--malts-accent)] text-[#f5f0e6] border-2 border-[var(--malts-accent)]'
+                                  : 'bg-[var(--malts-card)] text-[var(--malts-ink)] hover:bg-[var(--malts-card-hover)] border border-[var(--malts-hairline)]'
                               }`}
                             >
                               {subCategoryName}
@@ -929,16 +945,16 @@ function OrderPageContent() {
                     <div className="hidden md:block">
                       <div className="flex flex-wrap gap-2 justify-center max-w-6xl mx-auto">
                         {subCategories.map((subCategory: any) => {
-                          const subCategoryName = locale === 'bg' ? subCategory.nameBg : locale === 'en' ? subCategory.nameEn : subCategory.nameDe;
+                          const subCategoryName = locale === 'bg' ? subCategory.nameBg : locale === 'en' ? subCategory.nameEn : subCategory.nameRo;
                           const isActive = subCategory.id === activeSubCategory;
                           return (
                             <button
                               key={subCategory.id}
-                              onClick={() => handleSubCategorySelect(subCategory.id)}
+                              onClick={() => handleOrderSubSelect(subCategory.id)}
                               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 whitespace-nowrap text-sm ${
                                 isActive
-                                  ? 'bg-gray-700 text-white border-2 border-white/50'
-                                  : 'bg-gray-800/30 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300 border border-gray-700/50'
+                                  ? 'bg-[var(--malts-accent)] text-[#f5f0e6] border-2 border-[var(--malts-accent)]'
+                                  : 'bg-[var(--malts-card)] text-[var(--malts-ink)] hover:bg-[var(--malts-card-hover)] border border-[var(--malts-hairline)]'
                               }`}
                             >
                               {subCategoryName}
@@ -949,26 +965,68 @@ function OrderPageContent() {
                     </div>
                   </>
                 )}
+
+                {subSubCategories.length > 0 && (
+                  <>
+                    <div className="lg:hidden overflow-x-auto overflow-y-hidden hide-scrollbar mt-3 -mx-4 px-4">
+                      <div className="flex gap-2 min-w-max">
+                        {subSubCategories.map((sub: any) => {
+                          const name = locale === 'bg' ? sub.nameBg : locale === 'en' ? sub.nameEn : sub.nameRo;
+                          const isActive = sub.id === activeSubSubCategory;
+                          return (
+                            <button
+                              key={sub.id}
+                              onClick={() => handleOrderSubSubSelect(sub.id)}
+                              className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap ${
+                                isActive
+                                  ? 'bg-[var(--malts-accent)] text-[#f5f0e6]'
+                                  : 'bg-[var(--malts-card)] text-[var(--malts-ink)] border border-[var(--malts-hairline)]'
+                              }`}
+                            >
+                              {name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="hidden lg:block mt-3">
+                      <div className="flex flex-wrap gap-2 justify-center max-w-6xl mx-auto">
+                        {subSubCategories.map((sub: any) => {
+                          const name = locale === 'bg' ? sub.nameBg : locale === 'en' ? sub.nameEn : sub.nameRo;
+                          const isActive = sub.id === activeSubSubCategory;
+                          return (
+                            <button
+                              key={sub.id}
+                              onClick={() => handleOrderSubSubSelect(sub.id)}
+                              className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap ${
+                                isActive
+                                  ? 'bg-[var(--malts-accent)] text-[#f5f0e6]'
+                                  : 'bg-[var(--malts-card)] text-[var(--malts-ink)] border border-[var(--malts-hairline)]'
+                              }`}
+                            >
+                              {name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
-            );
-          })()}
         </div>
       </div>
 
       {/* Menu */}
       <div className="container mx-auto px-4 py-8">
         {(() => {
-          const displayCategoryId = activeSubCategory || activeCategory;
-          const categoryProducts = products.filter((p: any) => p.categoryId === displayCategoryId);
-          
           if (categoryProducts.length === 0) {
             return (
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">🔍</div>
-                <p className="text-gray-300 text-xl">
+                <p className="malts-muted text-xl">
                   {locale === 'bg' ? 'Няма продукти в тази категория' : 
                    locale === 'en' ? 'No products in this category' : 
-                   'Keine Produkte in dieser Kategorie'}
+                   'Nu există produse în această categorie'}
                 </p>
               </div>
             );
@@ -977,27 +1035,32 @@ function OrderPageContent() {
           // Get category name for display
           const currentCategory = categories.find((c: any) => c.id === displayCategoryId);
           const categoryName = currentCategory 
-            ? (locale === 'bg' ? currentCategory.nameBg : locale === 'en' ? currentCategory.nameEn : currentCategory.nameDe)
+            ? (locale === 'bg' ? currentCategory.nameBg : locale === 'en' ? currentCategory.nameEn : currentCategory.nameRo)
             : '';
           
           return (
             <div className="mb-8">
               {/* Category Header */}
               <div className="flex items-center gap-3 mb-6">
-                <div className="h-1 w-8 bg-white rounded-full"></div>
-                <h2 className="text-3xl md:text-4xl font-bold text-white">{categoryName}</h2>
-                <div className="flex-1 h-px bg-gray-800"></div>
+                <div className="h-1 w-8 bg-[var(--malts-accent)] rounded-full"></div>
+                <h2 className="text-3xl md:text-4xl font-bold text-[var(--malts-ink)]">{categoryName}</h2>
+                <div className="flex-1 h-px bg-[var(--malts-hairline)]"></div>
               </div>
               
               {/* Products Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {categoryProducts.map((product: any) => {
-                  const productName = locale === 'bg' ? product.nameBg : locale === 'en' ? product.nameEn : product.nameDe;
+                  const productName = locale === 'bg' ? product.nameBg : locale === 'en' ? product.nameEn : product.nameRo;
                   return (
                     <div
                       key={product.id}
-                      className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl overflow-hidden hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300"
+                      className="group relative malts-card rounded-2xl overflow-hidden hover:border-[var(--malts-accent-tint-border)] hover:shadow-lg transition-all duration-300"
                     >
+                      {product.isPromoted && (
+                        <div className="absolute top-3 left-3 z-10 bg-[var(--malts-accent)] text-[#f5f0e6] px-2.5 py-1 rounded-full text-xs font-bold shadow-lg">
+                          {locale === 'bg' ? 'Промо' : locale === 'en' ? 'Promo' : 'Promo'}
+                        </div>
+                      )}
                       {/* Product Image */}
                       {product.imageUrl && (
                         <div className="relative h-48 overflow-hidden">
@@ -1014,31 +1077,38 @@ function OrderPageContent() {
                       
                       {/* Product Info */}
                       <div className="p-4">
-                        <h3 className="text-lg md:text-xl font-bold text-white mb-3 group-hover:text-gray-200 transition-colors">
+                        <h3 className="text-lg md:text-xl font-bold text-[var(--malts-ink)] mb-3 group-hover:text-[var(--malts-accent)] transition-colors">
                           {productName}
                         </h3>
                         
-                        {product.descriptionBg || product.descriptionEn || product.descriptionDe ? (
-                          <p className="text-gray-400 text-sm mb-4 leading-relaxed break-words whitespace-pre-wrap">
+                        {product.descriptionBg || product.descriptionEn || product.descriptionRo ? (
+                          <p className="malts-muted text-sm mb-4 leading-relaxed break-words whitespace-pre-wrap">
                             {locale === 'bg' && product.descriptionBg ? product.descriptionBg :
                              locale === 'en' && product.descriptionEn ? product.descriptionEn :
-                             locale === 'de' && product.descriptionDe ? product.descriptionDe :
-                             product.descriptionBg || product.descriptionEn || product.descriptionDe}
+                             locale === 'ro' && product.descriptionRo ? product.descriptionRo :
+                             product.descriptionBg || product.descriptionEn || product.descriptionRo}
                           </p>
                         ) : null}
                       
-                        <div className="flex justify-between items-center pt-4 border-t border-gray-700/50">
-                          <Price
-                            priceBgn={Number(product.priceBgn)}
-                            className="text-2xl font-bold text-white"
-                            showBoth={true}
-                            inline={true}
-                          />
+                        <div className="flex justify-between items-center pt-4 border-t border-[var(--malts-hairline)] gap-2">
+                          <div className="flex flex-col items-start gap-0.5">
+                            {product.basePriceBgn != null && (
+                              <span className="text-[var(--malts-subtle)] line-through text-sm">
+                                {Number(product.basePriceBgn).toFixed(2)} лв
+                              </span>
+                            )}
+                            <Price
+                              priceBgn={Number(product.priceBgn)}
+                              className="text-2xl font-bold text-[var(--malts-ink)]"
+                              showBoth={true}
+                              inline={true}
+                            />
+                          </div>
                           <button
                             onClick={() => addToCart(product)}
-                            className="px-6 py-2 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all text-sm md:text-base"
+                            className="px-6 py-2 malts-btn-primary rounded-lg font-semibold transition-all text-sm md:text-base"
                           >
-                            {locale === 'bg' ? '+ Добави' : locale === 'en' ? '+ Add' : '+ Hinzufügen'}
+                            {locale === 'bg' ? '+ Добави' : locale === 'en' ? '+ Add' : '+ Adaugă'}
                           </button>
                         </div>
                       </div>
@@ -1053,15 +1123,15 @@ function OrderPageContent() {
 
       {/* Cart Modal */}
       {showCart && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center">
-          <div className="bg-slate-800 rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-700 flex justify-between items-center sticky top-0 bg-slate-800">
-              <h2 className="text-2xl font-bold text-white">
-                {locale === 'bg' ? 'Вашата поръчка' : locale === 'en' ? 'Your Order' : 'Ihre Bestellung'}
+        <div className="fixed inset-0 bg-[var(--malts-paper)]/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center">
+          <div className="malts-card rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-[var(--malts-hairline)] flex justify-between items-center sticky top-0 bg-[var(--malts-card)]/95 backdrop-blur-sm">
+              <h2 className="text-2xl font-bold">
+                {locale === 'bg' ? 'Вашата поръчка' : locale === 'en' ? 'Your Order' : 'Comanda ta'}
               </h2>
               <button
                 onClick={() => setShowCart(false)}
-                className="text-white text-3xl hover:text-gray-300"
+                className="text-[var(--malts-ink)] text-3xl hover:text-[var(--malts-accent)]"
               >
                 ×
               </button>
@@ -1069,8 +1139,8 @@ function OrderPageContent() {
 
             <div className="p-6">
               {cart.length === 0 ? (
-                <p className="text-gray-200 text-center py-8">
-                  {locale === 'bg' ? 'Количката е празна' : locale === 'en' ? 'Cart is empty' : 'Warenkorb ist leer'}
+                <p className="malts-muted text-center py-8">
+                  {locale === 'bg' ? 'Количката е празна' : locale === 'en' ? 'Cart is empty' : 'Coșul este gol'}
                 </p>
               ) : (
                 <>
@@ -1083,14 +1153,14 @@ function OrderPageContent() {
                           <p className="font-semibold text-lg mb-2 text-yellow-200">
                             {locale === 'bg' ? 'Поръчката изисква одобрение' : 
                              locale === 'en' ? 'Order requires approval' : 
-                             'Bestellung erfordert Genehmigung'}
+                             'Comanda necesită aprobare'}
                           </p>
                           <p className="text-sm mb-2 text-yellow-100">
                             {locale === 'bg' 
                               ? `Направени са ${approvalThresholdValue} поръчки за последните ${approvalWindowValue} минути. Заради съображения за сигурност и превантивно действие при потенциално неправомерни действия и хакерски атаки, тази поръчка изисква одобрение.`
                               : locale === 'en'
                               ? `${approvalThresholdValue} orders have been placed in the last ${approvalWindowValue} minutes. Due to security concerns and preventive action against potentially unauthorized actions and hacking attacks, this order requires approval.`
-                              : `${approvalThresholdValue} Bestellungen wurden in den letzten ${approvalWindowValue} Minuten aufgegeben. Aufgrund von Sicherheitsbedenken und präventiven Maßnahmen gegen möglicherweise unbefugte Aktionen und Hacking-Angriffe erfordert diese Bestellung eine Genehmigung.`}
+                              : `Au fost plasate ${approvalThresholdValue} comenzi în ultimele ${approvalWindowValue} minute. Din motive de securitate și ca măsură preventivă împotriva acțiunilor neautorizate și a atacurilor, această comandă necesită aprobare.`}
                           </p>
                           {approvalStatus === 'pending' && (
                             <p className="text-sm font-medium text-yellow-200">
@@ -1098,7 +1168,7 @@ function OrderPageContent() {
                                 ? '⏳ Очакване на одобрение от администратор...'
                                 : locale === 'en'
                                 ? '⏳ Waiting for admin approval...'
-                                : '⏳ Warten auf Admin-Genehmigung...'}
+                                : '⏳ Se așteaptă aprobarea administratorului...'}
                             </p>
                           )}
                           {approvalStatus === 'approved' && (
@@ -1107,7 +1177,7 @@ function OrderPageContent() {
                                 ? '✅ Поръчката е одобрена!'
                                 : locale === 'en'
                                 ? '✅ Order approved!'
-                                : '✅ Bestellung genehmigt!'}
+                                : '✅ Comanda a fost aprobată!'}
                             </p>
                           )}
                           {approvalStatus === 'rejected' && (
@@ -1116,7 +1186,7 @@ function OrderPageContent() {
                                 ? '❌ Поръчката е отхвърлена'
                                 : locale === 'en'
                                 ? '❌ Order rejected'
-                                : '❌ Bestellung abgelehnt'}
+                                : '❌ Comanda a fost respinsă'}
                             </p>
                           )}
                         </div>
@@ -1126,36 +1196,36 @@ function OrderPageContent() {
 
                   <div className="space-y-4 mb-6">
                     {cart.map(item => {
-                      const itemName = locale === 'bg' ? item.nameBg : locale === 'en' ? item.nameEn : item.nameDe;
+                      const itemName = locale === 'bg' ? item.nameBg : locale === 'en' ? item.nameEn : item.nameRo;
                       return (
-                      <div key={item.productId} className="bg-slate-700 rounded-lg p-4 flex flex-col">
+                      <div key={item.productId} className="bg-[var(--malts-inset)] border border-[var(--malts-hairline)] rounded-lg p-4 flex flex-col">
                         <div className="flex justify-between items-start mb-2">
-                          <h4 className="text-white font-semibold">{itemName}</h4>
+                          <h4 className="font-semibold">{itemName}</h4>
                           {item.unit && item.productQuantity && (
-                            <span className="text-sm text-gray-400">
+                            <span className="text-sm malts-muted">
                               {item.productQuantity} {item.unit === 'pcs' ? 'бр.' : item.unit}
                             </span>
                           )}
                         </div>
                         <div className="flex justify-between items-center">
-                          <p className="text-gray-300">{item.priceBgn.toFixed(2)} лв.</p>
+                          <p className="malts-muted">{item.priceBgn.toFixed(2)} лв.</p>
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                              className="w-8 h-8 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-bold"
+                              className="w-8 h-8 bg-[var(--malts-card)] hover:bg-[var(--malts-card-hover)] border border-[var(--malts-hairline)] rounded-lg font-bold"
                             >
                               −
                             </button>
-                            <span className="text-white font-bold w-8 text-center">{item.quantity}</span>
+                            <span className="font-bold w-8 text-center">{item.quantity}</span>
                             <button
                               onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                              className="w-8 h-8 bg-white hover:bg-gray-200 text-black rounded-lg font-bold"
+                              className="w-8 h-8 malts-btn-primary rounded-lg font-bold"
                             >
                               +
                             </button>
                             <button
                               onClick={() => removeFromCart(item.productId)}
-                              className="ml-2 text-red-400 hover:text-red-300"
+                              className="ml-2 text-[var(--malts-danger)]"
                             >
                               🗑️
                             </button>
@@ -1166,9 +1236,9 @@ function OrderPageContent() {
                     })}
                   </div>
 
-                  <div className="border-t border-slate-700 pt-4 mb-6">
-                    <div className="flex justify-between items-center text-xl font-bold text-white">
-                      <span>{locale === 'bg' ? 'Общо:' : locale === 'en' ? 'Total:' : 'Gesamt:'}</span>
+                  <div className="border-t border-[var(--malts-hairline)] pt-4 mb-6">
+                    <div className="flex justify-between items-center text-xl font-bold">
+                      <span>{locale === 'bg' ? 'Общо:' : locale === 'en' ? 'Total:' : 'Total:'}</span>
                       <Price priceBgn={cartTotal} className="text-2xl" />
                     </div>
                   </div>
@@ -1176,24 +1246,24 @@ function OrderPageContent() {
                   <button
                     onClick={submitOrder}
                     disabled={submitting || cart.length === 0}
-                    className="w-full px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2"
+                    className="w-full px-8 py-4 malts-btn-primary disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2"
                   >
                     {submitting ? (
                       <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>{locale === 'bg' ? 'Изпращане...' : locale === 'en' ? 'Sending...' : 'Wird gesendet...'}</span>
+                        <div className="w-5 h-5 border-2 border-[#f5f0e6] border-t-transparent rounded-full animate-spin"></div>
+                        <span>{locale === 'bg' ? 'Изпращане...' : locale === 'en' ? 'Sending...' : 'Se trimite...'}</span>
                       </>
                     ) : (
                       <>
-                        ✅ {locale === 'bg' ? 'Изпрати поръчка' : locale === 'en' ? 'Send Order' : 'Bestellung senden'}
+                        ✅ {locale === 'bg' ? 'Изпрати поръчка' : locale === 'en' ? 'Send Order' : 'Trimite comanda'}
                       </>
                     )}
                   </button>
 
-                  <p className="text-gray-300 text-sm text-center mt-4">
+                  <p className="malts-muted text-sm text-center mt-4">
                     {locale === 'bg' ? 'Поръчката ще бъде изпратена към персонала' : 
                      locale === 'en' ? 'Order will be sent to staff' : 
-                     'Bestellung wird an Personal gesendet'}
+                     'Comanda va fi trimisă către personal'}
                   </p>
                 </>
               )}
@@ -1207,23 +1277,23 @@ function OrderPageContent() {
         <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 z-40">
           <a
             href={`/${locale}/order/call-waiter?table=${tableNumber}`}
-            className="block w-full md:w-auto px-8 py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-lg text-center transition-all shadow-2xl"
+            className="block w-full md:w-auto px-8 py-4 malts-btn-danger rounded-xl font-bold text-lg text-center transition-all shadow-2xl"
           >
             🔔 {locale === 'bg' ? 'Повикай сервитьор' : 
                  locale === 'en' ? 'Call Waiter' : 
-                 'Kellner rufen'}
+                 'Cheamă chelnerul'}
           </a>
         </div>
       )}
 
       {sessionStatus !== 'valid' && (
-        <div className="fixed inset-0 z-[60] bg-black/95 px-6 flex items-center justify-center text-center">
+        <div className="fixed inset-0 z-[60] bg-[var(--malts-paper)]/85 backdrop-blur-md px-6 flex items-center justify-center text-center">
           <div className="max-w-2xl">
             <div className="text-6xl mb-6">
               {sessionStatus === 'checking' ? '🔄' : '🔒'}
             </div>
-            <h2 className="text-3xl font-bold text-white mb-4">{sessionOverlayTitle}</h2>
-            <p className="text-gray-300 text-lg mb-8 whitespace-pre-line">
+            <h2 className="text-3xl font-bold mb-4">{sessionOverlayTitle}</h2>
+            <p className="malts-muted text-lg mb-8 whitespace-pre-line">
               {sessionOverlayBody}
             </p>
 
@@ -1231,20 +1301,20 @@ function OrderPageContent() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
                   onClick={() => validateSession()}
-                  className="px-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all"
+                  className="px-6 py-3 malts-btn-primary rounded-xl font-semibold transition-all"
                 >
-                  🔄 {locale === 'bg' ? 'Провери отново' : locale === 'en' ? 'Check again' : 'Erneut prüfen'}
+                  🔄 {locale === 'bg' ? 'Провери отново' : locale === 'en' ? 'Check again' : 'Verifică din nou'}
                 </button>
                 <button
                   onClick={() => window.location.reload()}
-                  className="px-6 py-3 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-600 transition-all"
+                  className="px-6 py-3 malts-btn-secondary rounded-xl font-semibold transition-all"
                 >
-                  ↻ {locale === 'bg' ? 'Обнови страницата' : locale === 'en' ? 'Refresh page' : 'Seite neu laden'}
+                  ↻ {locale === 'bg' ? 'Обнови страницата' : locale === 'en' ? 'Refresh page' : 'Reîncarcă pagina'}
                 </button>
               </div>
             ) : (
               <div className="flex justify-center">
-                <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-12 h-12 border-4 border-[var(--malts-accent)] border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
           </div>

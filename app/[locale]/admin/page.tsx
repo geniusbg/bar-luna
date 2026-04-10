@@ -79,20 +79,20 @@ export default function AdminDashboard({
     <div className="max-w-7xl mx-auto">
       {/* Welcome Header */}
       <div className="mb-10">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">Админ Панел</h1>
-        <p className="text-gray-400 text-lg">Управление на LUNA Bar</p>
+        <h1 className="text-4xl md:text-5xl font-bold text-[var(--malts-ink)] mb-3">Админ Панел</h1>
+        <p className="malts-muted text-lg">Управление на Malts</p>
       </div>
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <a
           href="/bg/admin/categories"
-          className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 cursor-pointer"
+          className="group malts-card rounded-2xl p-8 hover:bg-[var(--malts-card-hover)] transition-all duration-300 cursor-pointer"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm uppercase tracking-wide mb-3">Категории</p>
-              <p className="text-4xl md:text-5xl font-bold text-white">{stats.categories}</p>
+              <p className="malts-subtle text-sm uppercase tracking-wide mb-3">Категории</p>
+              <p className="text-4xl md:text-5xl font-bold text-[var(--malts-ink)]">{stats.categories}</p>
             </div>
             <div className="text-6xl group-hover:scale-110 transition-transform duration-300">📁</div>
           </div>
@@ -100,25 +100,25 @@ export default function AdminDashboard({
 
         <a
           href="/bg/admin/products"
-          className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 cursor-pointer"
+          className="group malts-card rounded-2xl p-8 hover:bg-[var(--malts-card-hover)] transition-all duration-300 cursor-pointer"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm uppercase tracking-wide mb-3">Продукти</p>
-              <p className="text-4xl md:text-5xl font-bold text-white">{stats.products}</p>
+              <p className="malts-subtle text-sm uppercase tracking-wide mb-3">Продукти</p>
+              <p className="text-4xl md:text-5xl font-bold text-[var(--malts-ink)]">{stats.products}</p>
             </div>
-            <div className="text-6xl group-hover:scale-110 transition-transform duration-300">🍸</div>
+            <div className="text-6xl group-hover:scale-110 transition-transform duration-300">🍽️</div>
           </div>
         </a>
 
         <a
           href="/bg/admin/events"
-          className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-8 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 sm:col-span-2 lg:col-span-1 cursor-pointer"
+          className="group malts-card rounded-2xl p-8 hover:bg-[var(--malts-card-hover)] transition-all duration-300 sm:col-span-2 lg:col-span-1 cursor-pointer"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-400 text-sm uppercase tracking-wide mb-3">Събития</p>
-              <p className="text-4xl md:text-5xl font-bold text-white">{stats.events}</p>
+              <p className="malts-subtle text-sm uppercase tracking-wide mb-3">Събития</p>
+              <p className="text-4xl md:text-5xl font-bold text-[var(--malts-ink)]">{stats.events}</p>
             </div>
             <div className="text-6xl group-hover:scale-110 transition-transform duration-300">🎉</div>
           </div>
@@ -127,70 +127,70 @@ export default function AdminDashboard({
 
       {/* Quick Actions */}
       <div className="mt-12">
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Бързи действия</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-[var(--malts-ink)] mb-6">Бързи действия</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <a
             href="/bg/admin/products/new"
-            className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-6 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 text-center"
+            className="group malts-card rounded-2xl p-6 hover:bg-[var(--malts-card-hover)] transition-all duration-300 text-center"
           >
-            <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">🍸</div>
-            <h3 className="text-white font-bold text-lg">Добави продукт</h3>
+            <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">🍽️</div>
+            <h3 className="text-[var(--malts-ink)] font-bold text-lg">Добави продукт</h3>
           </a>
           <a
             href="/bg/admin/events/new"
-            className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-6 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 text-center"
+            className="group malts-card rounded-2xl p-6 hover:bg-[var(--malts-card-hover)] transition-all duration-300 text-center"
           >
             <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">🎉</div>
-            <h3 className="text-white font-bold text-lg">Добави събитие</h3>
+            <h3 className="text-[var(--malts-ink)] font-bold text-lg">Добави събитие</h3>
           </a>
           <a
             href="/bg/admin/categories"
-            className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-6 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 text-center"
+            className="group malts-card rounded-2xl p-6 hover:bg-[var(--malts-card-hover)] transition-all duration-300 text-center"
           >
             <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">📁</div>
-            <h3 className="text-white font-bold text-lg">Категории</h3>
+            <h3 className="text-[var(--malts-ink)] font-bold text-lg">Категории</h3>
           </a>
           <a
             href="/bg/admin/qr"
-            className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-6 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 text-center"
+            className="group malts-card rounded-2xl p-6 hover:bg-[var(--malts-card-hover)] transition-all duration-300 text-center"
           >
             <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">📱</div>
-            <h3 className="text-white font-bold text-lg">QR Кодове</h3>
+            <h3 className="text-[var(--malts-ink)] font-bold text-lg">QR Кодове</h3>
           </a>
           <a
             href="/bg/admin/working-hours"
-            className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-6 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 text-center"
+            className="group malts-card rounded-2xl p-6 hover:bg-[var(--malts-card-hover)] transition-all duration-300 text-center"
           >
             <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">🕐</div>
-            <h3 className="text-white font-bold text-lg">Работно време</h3>
+            <h3 className="text-[var(--malts-ink)] font-bold text-lg">Работно време</h3>
           </a>
           <a
             href="/bg/admin/security-settings"
-            className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-6 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 text-center"
+            className="group malts-card rounded-2xl p-6 hover:bg-[var(--malts-card-hover)] transition-all duration-300 text-center"
           >
             <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">🛡️</div>
-            <h3 className="text-white font-bold text-lg">Настройки за сигурност</h3>
+            <h3 className="text-[var(--malts-ink)] font-bold text-lg">Настройки за сигурност</h3>
           </a>
           <a
             href="/bg/admin/location-settings"
-            className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-6 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 text-center"
+            className="group malts-card rounded-2xl p-6 hover:bg-[var(--malts-card-hover)] transition-all duration-300 text-center"
           >
             <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">📍</div>
-            <h3 className="text-white font-bold text-lg">Адрес</h3>
+            <h3 className="text-[var(--malts-ink)] font-bold text-lg">Адрес</h3>
           </a>
           <a
             href="/bg/admin/homepage-settings"
-            className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-6 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 text-center"
+            className="group malts-card rounded-2xl p-6 hover:bg-[var(--malts-card-hover)] transition-all duration-300 text-center"
           >
             <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">🏠</div>
-            <h3 className="text-white font-bold text-lg">Начална страница</h3>
+            <h3 className="text-[var(--malts-ink)] font-bold text-lg">Начална страница</h3>
           </a>
           <a
             href="/bg/admin/menu-settings"
-            className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl p-6 hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300 text-center"
+            className="group malts-card rounded-2xl p-6 hover:bg-[var(--malts-card-hover)] transition-all duration-300 text-center"
           >
             <div className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">📋</div>
-            <h3 className="text-white font-bold text-lg">Настройки на меню</h3>
+            <h3 className="text-[var(--malts-ink)] font-bold text-lg">Настройки на меню</h3>
           </a>
         </div>
       </div>

@@ -323,7 +323,7 @@
 - **Файл:** `/public/smartphone_10450488.png`
 - **Middleware:** Файлът е изключен от локалната обработка в `middleware.ts`:
   ```typescript
-  '/((?!api|_next/static|_next/image|favicon.ico|uploads|t|manifest.*\.json|sw\.js|luna-icon|luna-logo|smartphone.*\.png).*)'
+  '/((?!api|_next/static|_next/image|favicon.ico|favicon-.*\\.png|apple-touch-icon\\.png|uploads|t|manifest.*\\.json|sw\\.js|malts\\.svg|malts\\.png|malts-icon|smartphone.*\\.png).*)'
   ```
 - **Размер:** `4rem x 5rem` (64px x 80px)
 - **Object fit:** `contain` (запазва съотношението)

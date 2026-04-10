@@ -127,11 +127,10 @@ export const config = {
     // Match all pathnames except for
     // - API routes
     // - _next (Next.js internals)
-    // - Static files (uploads, images, etc)
+    // - Static files (any file with extension: images, icons, manifests, etc)
     // - PWA files (manifest, service worker, icons)
     // - /t (QR redirect short links)
-    '/((?!api|_next/static|_next/image|favicon.ico|uploads|t|manifest.*\.json|sw\.js|luna-icon|luna-logo|smartphone.*\.png).*)',
+    '/((?!api|_next/static|_next/image|uploads|t|.*\\..*).*)',
   ]
 };
-
 

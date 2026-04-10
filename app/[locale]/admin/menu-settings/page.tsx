@@ -6,15 +6,16 @@ import { useRouter } from 'next/navigation';
 import ImageUpload from '@/components/ImageUpload';
 import Toast from '@/components/Toast';
 import LoadingScreen from '@/components/LoadingScreen';
+import AutoTranslateButton from '@/components/AutoTranslateButton';
 
 interface MenuSettings {
   id: string;
   titleBg: string;
   titleEn: string;
-  titleDe: string;
+  titleRo: string;
   subtitleBg: string;
   subtitleEn: string;
-  subtitleDe: string;
+  subtitleRo: string;
   backgroundImageUrl: string | null;
 }
 
@@ -54,6 +55,7 @@ export default function MenuSettingsPage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [translationError, setTranslationError] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -70,12 +72,12 @@ export default function MenuSettingsPage({
         // Initialize with defaults if no settings exist
         const defaultSettings: MenuSettings = {
           id: '',
-          titleBg: '🍸 Нашето Меню',
-          titleEn: '🍸 Our Menu',
-          titleDe: '🍸 Unser Menü',
+          titleBg: '🍽️ Нашето Меню',
+          titleEn: '🍽️ Our Menu',
+          titleRo: '🍸 Unser Menü',
           subtitleBg: 'Открийте нашата селекция от напитки и деликатеси',
           subtitleEn: 'Discover our selection of drinks and delicacies',
-          subtitleDe: 'Entdecken Sie unsere Auswahl an Getränken und Köstlichkeiten',
+          subtitleRo: 'Entdecken Sie unsere Auswahl an Getränken und Köstlichkeiten',
           backgroundImageUrl: null
         };
         setSettings(defaultSettings);
@@ -86,12 +88,12 @@ export default function MenuSettingsPage({
       // Set defaults on error
       const defaultSettings: MenuSettings = {
         id: '',
-        titleBg: '🍸 Нашето Меню',
-        titleEn: '🍸 Our Menu',
-        titleDe: '🍸 Unser Menü',
+        titleBg: '🍽️ Нашето Меню',
+        titleEn: '🍽️ Our Menu',
+        titleRo: '🍸 Unser Menü',
         subtitleBg: 'Открийте нашата селекция от напитки и деликатеси',
         subtitleEn: 'Discover our selection of drinks and delicacies',
-        subtitleDe: 'Entdecken Sie unsere Auswahl an Getränken und Köstlichkeiten',
+        subtitleRo: 'Entdecken Sie unsere Auswahl an Getränken und Köstlichkeiten',
         backgroundImageUrl: null
       };
       setSettings(defaultSettings);
@@ -111,10 +113,10 @@ export default function MenuSettingsPage({
         body: JSON.stringify({
           titleBg: settings.titleBg,
           titleEn: settings.titleEn,
-          titleDe: settings.titleDe,
+          titleRo: settings.titleRo,
           subtitleBg: settings.subtitleBg,
           subtitleEn: settings.subtitleEn,
-          subtitleDe: settings.subtitleDe,
+          subtitleRo: settings.subtitleRo,
           backgroundImageUrl: settings.backgroundImageUrl
         })
       });
@@ -156,61 +158,85 @@ export default function MenuSettingsPage({
       <div className="mb-8">
         <button
           onClick={() => router.push(`/${locale}/admin`)}
-          className="text-gray-400 hover:text-white mb-4 flex items-center gap-2 transition-colors"
+          className="malts-muted hover:text-[var(--malts-ink)] mb-4 flex items-center gap-2 transition-colors"
         >
           <span>←</span>
           <span>Назад към Dashboard</span>
         </button>
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white">Настройки на меню</h1>
-            <p className="text-gray-400 mt-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-[var(--malts-ink)]">Настройки на меню</h1>
+            <p className="malts-muted mt-2">
               Настрой заглавието, подзаглавието и фоновото изображение на меню страницата.
             </p>
           </div>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-3 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 malts-btn-primary rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Запазване...' : 'Запази'}
           </button>
         </div>
       </div>
 
-      {/* Settings Form */}
-      <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 md:p-8 space-y-8">
+        {translationError && (
+          <p className="text-sm malts-alert malts-alert-error mb-4" role="alert">
+            {translationError}
+          </p>
+        )}
+
+        {/* Settings Form */}
+      <div className="malts-card rounded-xl p-6 md:p-8 space-y-8">
         {/* Titles */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-white mb-4">Заглавие</h2>
+          <h2 className="text-xl font-bold text-[var(--malts-ink)] mb-4">Заглавие</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Заглавие (БГ) *</label>
+              <label className="malts-label">Заглавие (БГ) *</label>
               <input
                 type="text"
                 value={settings?.titleBg || ''}
                 onChange={(e) => setSettings({ ...settings!, titleBg: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
+                className="malts-field"
                 required
               />
             </div>
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Title (EN) *</label>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <label className="malts-label">Title (EN) *</label>
+                <AutoTranslateButton
+                  variant="dark"
+                  sourceText={settings?.titleBg || ''}
+                  targetLang="en"
+                  onTranslated={(text) => setSettings({ ...settings!, titleEn: text })}
+                  onError={setTranslationError}
+                />
+              </div>
               <input
                 type="text"
                 value={settings?.titleEn || ''}
                 onChange={(e) => setSettings({ ...settings!, titleEn: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
+                className="malts-field"
                 required
               />
             </div>
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Titel (DE) *</label>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <label className="malts-label">Titlu (RO) *</label>
+                <AutoTranslateButton
+                  variant="dark"
+                  sourceText={settings?.titleBg || ''}
+                  targetLang="ro"
+                  onTranslated={(text) => setSettings({ ...settings!, titleRo: text })}
+                  onError={setTranslationError}
+                />
+              </div>
               <input
                 type="text"
-                value={settings?.titleDe || ''}
-                onChange={(e) => setSettings({ ...settings!, titleDe: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
+                value={settings?.titleRo || ''}
+                onChange={(e) => setSettings({ ...settings!, titleRo: e.target.value })}
+                className="malts-field"
                 required
               />
             </div>
@@ -219,35 +245,53 @@ export default function MenuSettingsPage({
 
         {/* Subtitles */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-white mb-4">Подзаглавие</h2>
+          <h2 className="text-xl font-bold text-[var(--malts-ink)] mb-4">Подзаглавие</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Подзаглавие (БГ) *</label>
+              <label className="malts-label">Подзаглавие (БГ) *</label>
               <textarea
                 value={settings?.subtitleBg || ''}
                 onChange={(e) => setSettings({ ...settings!, subtitleBg: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
+                className="malts-field"
                 required
               />
             </div>
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Subtitle (EN) *</label>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <label className="malts-label">Subtitle (EN) *</label>
+                <AutoTranslateButton
+                  variant="dark"
+                  sourceText={settings?.subtitleBg || ''}
+                  targetLang="en"
+                  onTranslated={(text) => setSettings({ ...settings!, subtitleEn: text })}
+                  onError={setTranslationError}
+                />
+              </div>
               <textarea
                 value={settings?.subtitleEn || ''}
                 onChange={(e) => setSettings({ ...settings!, subtitleEn: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
+                className="malts-field"
                 required
               />
             </div>
             <div>
-              <label className="block text-gray-300 font-semibold mb-2">Untertitel (DE) *</label>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <label className="malts-label">Subtitlu (RO) *</label>
+                <AutoTranslateButton
+                  variant="dark"
+                  sourceText={settings?.subtitleBg || ''}
+                  targetLang="ro"
+                  onTranslated={(text) => setSettings({ ...settings!, subtitleRo: text })}
+                  onError={setTranslationError}
+                />
+              </div>
               <textarea
-                value={settings?.subtitleDe || ''}
-                onChange={(e) => setSettings({ ...settings!, subtitleDe: e.target.value })}
+                value={settings?.subtitleRo || ''}
+                onChange={(e) => setSettings({ ...settings!, subtitleRo: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-white focus:outline-none"
+                className="malts-field"
                 required
               />
             </div>
@@ -256,12 +300,12 @@ export default function MenuSettingsPage({
 
         {/* Background Image */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-white mb-4">Фоново изображение</h2>
-          <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-            <p className="text-gray-300 mb-4">
-              Препоръчителни размери: <span className="font-semibold text-white">1920x600px</span> (широк формат за hero секция)
+          <h2 className="text-xl font-bold text-[var(--malts-ink)] mb-4">Фоново изображение</h2>
+          <div className="bg-[var(--malts-inset)] p-6 rounded-xl border border-[var(--malts-hairline)]">
+            <p className="malts-muted mb-4">
+              Препоръчителни размери: <span className="font-semibold text-[var(--malts-ink)]">1920x600px</span> (широк формат за hero секция)
             </p>
-            <p className="text-gray-400 text-sm mb-4">
+            <p className="malts-muted text-sm mb-4">
               Изображението ще се показва като фон в hero секцията на меню страницата. За най-добър резултат използвайте широко изображение с височина около 600px.
             </p>
             <ImageUpload

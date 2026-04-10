@@ -1,9 +1,9 @@
 import { cookies } from 'next/headers';
 
-export type Locale = 'bg' | 'en' | 'de';
+export type Locale = 'bg' | 'en' | 'ro';
 
 export const defaultLocale: Locale = 'bg';
-export const locales: Locale[] = ['bg', 'en', 'de'];
+export const locales: Locale[] = ['bg', 'en', 'ro'];
 
 // Get locale from query parameter or cookie
 export async function getLocale(searchParams?: { lang?: string }): Promise<Locale> {
@@ -59,7 +59,7 @@ export function setLocaleCookie(locale: Locale) {
 // Get localized text based on current locale
 export function getLocalizedText(
   locale: Locale,
-  texts: { bg: string; en: string; de: string }
+  texts: { bg: string; en: string; ro: string }
 ): string {
   return texts[locale] || texts[defaultLocale];
 }

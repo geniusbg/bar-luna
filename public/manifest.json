@@ -1,23 +1,30 @@
 {
-  "name": "Luna Bar",
-  "short_name": "Luna",
-  "description": "Luna Bar & Coffee",
+  "name": "Malts",
+  "short_name": "Malts",
+  "description": "Malts – Русе",
   "start_url": "/bg",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#000000",
-  "background_color": "#000000",
+  "theme_color": "#e8e0d4",
+  "background_color": "#e8e0d4",
   "icons": [
     {
-      "src": "/luna-logo.jpg",
+      "src": "/malts-icon-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/luna-logo.jpg",
+      "src": "/malts-icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/malts-icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

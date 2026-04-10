@@ -1,8 +1,8 @@
-// Luna Bar - Service Worker for PWA & Push Notifications
+// Malts — Service Worker (PWA & push)
 
 // ⚠️ SW VERSION - Single source of truth (no duplicates)
-const CACHE_VERSION = 'v3.3.27';
-const CACHE_NAME = `luna-bar-${CACHE_VERSION}`;
+const CACHE_VERSION = 'v1.0.0';
+const CACHE_NAME = `malts-web-${CACHE_VERSION}`;
 const urlsToCache = [
   '/bg/staff',
   '/bg/admin',
@@ -440,11 +440,11 @@ self.addEventListener('push', (event) => {
   console.log('Has data:', !!event.data);
   
   let data = {
-    title: 'Luna Bar',
+    title: 'Malts',
     body: 'Ново известие',
-    icon: '/luna-icon-192.png',
-    badge: '/luna-icon-192.png',
-    tag: 'luna-notification-' + Date.now(),
+    icon: '/malts-icon.svg',
+    badge: '/malts-icon.svg',
+    tag: 'malts-notification-' + Date.now(),
     vibrate: [200, 100, 200, 100, 200],
     requireInteraction: true,
     silent: false,
@@ -472,8 +472,8 @@ self.addEventListener('push', (event) => {
 
   const notificationOptions = {
     body: data.body,
-    icon: data.icon || '/luna-icon-192.png',
-    badge: data.badge || '/luna-icon-192.png',
+    icon: data.icon || '/malts-icon.svg',
+    badge: data.badge || '/malts-icon.svg',
     tag: data.tag,
     vibrate: data.vibrate,
     requireInteraction: data.requireInteraction,

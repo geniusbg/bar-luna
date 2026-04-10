@@ -1,4 +1,20 @@
-# Technical Overview - Luna Bar
+# Technical Overview — Malts
+
+**Current stack (v1):** Next.js 15 (App Router) + TypeScript, Prisma + PostgreSQL (`malts` DB/user), NextAuth, Pusher, next-intl (`bg` / `en` / `ro`).
+
+## Key architecture decisions
+- **Multi-brand ready**: DB schema has `Brand` + `brandId` FK so we can expand later without rewriting. See ADR: `.knowledge-base/architectural-decisions/2026-04-08-multi-brand-platform-strategy.md`.
+- **Portals**: public pages + admin + staff under locale prefix routes (App Router).
+- **PWA**: separate manifests for public/admin/staff in `public/manifest*.json`; icons generated into `public/` and excluded from locale middleware.
+
+## Operational notes
+- **No `next build` required for local checks**: use `npx tsc --noEmit` (avoids regenerating `.next` just for verification).
+- **Static assets**: `middleware.ts` matcher excludes icons/manifests so they are served from `/public` without locale redirects.
+
+---
+
+## Legacy notes (historical)
+Older Luna Bar tech notes were removed during cleanup.
 
 ## Recommended Technology Stack
 

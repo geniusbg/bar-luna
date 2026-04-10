@@ -1,4 +1,4 @@
-# Getting Started with Luna Bar Website
+# Getting Started — Malts (malts-ruse.com)
 
 ## 🎯 Бърз старт (за разработчици)
 
@@ -7,7 +7,7 @@
 ```bash
 # Клониране на проекта
 git clone <repository-url>
-cd luna
+cd Malls
 
 # Инсталиране на зависимости
 npm install
@@ -15,24 +15,23 @@ npm install
 
 ### 2. Environment Setup
 
-Създайте `.env.local` файл в root директорията:
+Създайте `.env` файл в root директорията (копирайте от `env.example`):
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+DATABASE_URL="postgresql://malts:pass@host:5432/malts"
+NEXT_PUBLIC_APP_URL=http://localhost:4000
+NEXTAUTH_SECRET=change-this-to-random-secure-string
+APP_NAME=malts-web
+PORT=4000
 ```
 
-### 3. Database Setup
+### 3. Database Setup (Prisma)
 
-1. Създайте Supabase проект на [https://supabase.com](https://supabase.com)
-2. Отворете SQL Editor
-3. Копирайте съдържанието на `supabase/schema.sql`
-4. Изпълнете query-то
-5. Проверете дали таблиците са създадени
-
-**Детайлни инструкции:** Вижте `supabase/SETUP.md`
+```bash
+npx prisma generate
+npx prisma db push
+npm run db:seed
+```
 
 ### 4. Стартиране на Dev Server
 
@@ -40,11 +39,11 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 npm run dev
 ```
 
-Отворете [http://localhost:3000](http://localhost:3000) в браузъра.
+Отворете `http://localhost:4000/bg` в браузъра.
 
 ## 📁 Какво е създадено?
 
-### Public Pages (БГ/EN/DE)
+### Public Pages (BG/EN/RO)
 - ✅ **Homepage** - `http://localhost:3000/bg`
 - ✅ **Menu** - `http://localhost:3000/bg/menu`
 - ✅ **Events** - `http://localhost:3000/bg/events`
@@ -66,7 +65,7 @@ npm run dev
 ### 1. Multi-Language
 - Български (основен)
 - English
-- Deutsch (German)
+- Romanian (RO)
 - Превключвател в navigation
 
 ### 2. Dual Currency
@@ -77,8 +76,8 @@ npm run dev
 
 ### 3. Admin Panel
 - Product management с мултиезична поддръжка
-- Event management (Luna + партньорски събития)
-- Image upload директно към Supabase
+- Event management (вътрешни + партньорски събития)
+- Image upload (според конфигурацията на проекта)
 - Автоматично EUR цени от BGN
 
 ### 4. Database Structure
@@ -89,7 +88,7 @@ npm run dev
 - Custom ordering
 
 **Products:**
-- Multi-language (БГ/EN/DE)
+- Multi-language (BG/EN/RO)
 - Dual pricing (BGN/EUR)
 - Availability status
 - Featured flag
@@ -98,7 +97,7 @@ npm run dev
 
 **Events:**
 - Multi-language
-- Luna events / External events
+- Internal events / External events
 - Image support
 - Published/Draft status
 - Date & location
@@ -124,7 +123,6 @@ npm run lint
 - **README.md** - Project overview and setup
 - **DEPLOYMENT.md** - Step-by-step deployment guide
 - **API_DOCUMENTATION.md** - REST API reference
-- **supabase/SETUP.md** - Database setup guide
 - **env.example** - Environment variables template
 
 ## 🎨 UI/UX
@@ -151,13 +149,10 @@ npm run lint
 - **Tailwind CSS** - Styling
 
 ### Backend
-- **Supabase** - PostgreSQL database
-- **Supabase Storage** - Image hosting
-- **Supabase Auth** - Authentication (ready)
+- **PostgreSQL + Prisma** - Database and ORM
 
 ### Libraries
 - **next-intl** - Internationalization
-- **@supabase/supabase-js** - Supabase client
 
 ## 🔄 Development Workflow
 
@@ -166,7 +161,7 @@ npm run lint
 1. Go to `/bg/admin/products`
 2. Click "Добави продукт"
 3. Fill in:
-   - Bulgarian, English, German names
+   - Bulgarian, English, Romanian names
    - Descriptions (optional)
    - Category
    - Price in BGN (EUR auto-calculated)
@@ -179,8 +174,8 @@ npm run lint
 1. Go to `/bg/admin/events`
 2. Click "Добави събитие"
 3. Fill in:
-   - Titles (БГ/EN/DE)
-   - Descriptions (БГ/EN/DE)
+   - Titles (BG/EN/RO)
+   - Descriptions (BG/EN/RO)
    - Date & time
    - Location
    - External event checkbox
@@ -191,8 +186,8 @@ npm run lint
 ### Testing Multi-Language
 
 1. Navigate to homepage
-2. Click language buttons (БГ/EN/DE)
-3. Verify URL changes to `/bg`, `/en`, `/de`
+2. Click language buttons (BG/EN/RO)
+3. Verify URL changes to `/bg`, `/en`, `/ro`
 4. Check content updates
 5. Test on all pages
 
@@ -213,15 +208,9 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
-### Supabase connection fails
-- Check `.env.local` has correct values
-- Verify Supabase project is active
-- Check API keys are valid
-
-### Images not uploading
-- Verify storage buckets exist in Supabase
-- Check storage policies are created
-- Ensure `SUPABASE_SERVICE_ROLE_KEY` is set
+### Database connection fails
+- Check `.env` has a valid `DATABASE_URL`
+- Ensure PostgreSQL is reachable from the server where Next.js runs
 
 ### Build fails
 ```bash
@@ -268,7 +257,7 @@ Before deploying:
 1. ✅ All tests passing
 2. ✅ Environment variables configured
 3. ✅ Database schema deployed
-4. ✅ Storage buckets created
+4. ✅ Upload/storage configured (if used)
 5. ✅ Initial content added
 6. ✅ Admin authentication setup
 7. ✅ Performance tested
@@ -299,11 +288,9 @@ Before deploying:
 - 📖 README.md - Main documentation
 - 🚀 DEPLOYMENT.md - Deployment guide
 - 🔌 API_DOCUMENTATION.md - API reference
-- 💾 supabase/SETUP.md - Database setup
 
 ### Resources
 - [Next.js Docs](https://nextjs.org/docs)
-- [Supabase Docs](https://supabase.com/docs)
 - [Tailwind CSS](https://tailwindcss.com/docs)
 - [next-intl Docs](https://next-intl-docs.vercel.app)
 

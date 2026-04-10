@@ -68,10 +68,10 @@ export default function AdminEventsPage() {
         />
       )}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-white">Събития</h1>
+        <h1 className="text-3xl md:text-4xl font-bold">Събития</h1>
         <Link
           href={`/${locale}/admin/events/new`}
-          className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all text-center"
+          className="w-full sm:w-auto px-6 py-3 malts-btn-primary rounded-lg font-semibold transition-all text-center"
         >
           + Добави събитие
         </Link>
@@ -85,27 +85,27 @@ export default function AdminEventsPage() {
           return (
             <div
               key={event.id}
-              className="group bg-gradient-to-br from-gray-900/80 to-gray-900/40 border border-gray-700 rounded-2xl overflow-hidden hover:border-white/40 hover:shadow-2xl hover:shadow-white/5 transition-all duration-300"
+              className="group malts-card overflow-hidden transition-all duration-300"
             >
               {event.imageUrl && (
-                <div className="h-48 bg-gradient-to-br from-gray-900/80 to-gray-900/40 relative overflow-hidden">
+                <div className="h-48 bg-[var(--malts-inset)] relative overflow-hidden">
                   <img
                     src={event.imageUrl}
                     alt={event.titleBg}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-60"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[rgba(26,24,16,0.65)] via-transparent to-transparent opacity-60"></div>
                 </div>
               )}
               
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-3">
                   {event.isPublished ? (
-                    <span className="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-sm">
+                    <span className="px-3 py-1 bg-[rgba(22,101,52,0.12)] text-[var(--malts-success)] border border-[rgba(22,101,52,0.25)] rounded-full text-sm">
                       Публикувано
                     </span>
                   ) : (
-                    <span className="px-3 py-1 bg-gray-500/20 text-gray-300 rounded-full text-sm">
+                    <span className="px-3 py-1 bg-[var(--malts-accent-tint)] text-[var(--malts-accent)] border border-[var(--malts-accent-tint-border)] rounded-full text-sm">
                       Чернова
                     </span>
                   )}
@@ -117,34 +117,34 @@ export default function AdminEventsPage() {
                   )}
                   
                   {isPast && (
-                    <span className="px-3 py-1 bg-red-500/20 text-red-300 rounded-full text-sm">
+                    <span className="px-3 py-1 bg-[rgba(153,27,27,0.10)] text-[var(--malts-danger)] border border-[rgba(153,27,27,0.25)] rounded-full text-sm">
                       Минало
                     </span>
                   )}
                 </div>
                 
-                <h3 className="text-xl font-bold text-white mb-2">
+                <h3 className="text-xl font-bold mb-2">
                   {event.titleBg}
                 </h3>
                 
-                <p className="text-gray-200 text-sm mb-3">
+                <p className="malts-muted text-sm mb-3">
                   {formatBulgarianDateWithMonth(eventDate)}
                 </p>
                 
-                <p className="text-gray-200 text-sm mb-4 line-clamp-2">
+                <p className="malts-muted text-sm mb-4 line-clamp-2">
                   {event.descriptionBg}
                 </p>
                 
                 <div className="flex gap-2">
                   <Link
                     href={`/${locale}/admin/events/${event.id}/edit`}
-                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm text-center transition-all"
+                    className="flex-1 px-4 py-2 malts-btn-secondary rounded-lg text-sm text-center transition-all"
                   >
                     Редактирай
                   </Link>
                   <button
                     onClick={() => handleDelete(event.id, event.titleBg)}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-all"
+                    className="px-4 py-2 malts-btn-danger rounded-lg text-sm transition-all"
                   >
                     Изтрий
                   </button>
@@ -157,7 +157,7 @@ export default function AdminEventsPage() {
 
       {events.length === 0 && (
         <div className="text-center py-20">
-          <p className="text-gray-200 text-xl">Няма създадени събития</p>
+          <p className="malts-muted text-xl">Няма създадени събития</p>
         </div>
       )}
     </div>

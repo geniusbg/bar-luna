@@ -1,4 +1,4 @@
-# PostgreSQL Setup за Luna Bar
+# PostgreSQL Setup за Malts
 
 ## 📋 Подготовка
 
@@ -22,7 +22,7 @@ psql --version
 1. Отворете pgAdmin
 2. Connect към PostgreSQL
 3. Right-click на "Databases" → "Create" → "Database"
-4. Name: `luna_bar`
+4. Name: `malts`
 5. Click "Save"
 
 ### Опция 2: Чрез команден ред (препоръчвам)
@@ -32,13 +32,13 @@ psql --version
 psql -U postgres
 
 # В PostgreSQL prompt създайте database
-CREATE DATABASE luna_bar;
+CREATE DATABASE malts;
 
-# Създайте user за приложението (optional, за по-добра security)
-CREATE USER luna_user WITH PASSWORD 'your_secure_password';
+# Създайте user за приложението (препоръчително: отделен user `malts`)
+CREATE USER malts WITH PASSWORD 'your_secure_password';
 
 # Дайте права на user-a
-GRANT ALL PRIVILEGES ON DATABASE luna_bar TO luna_user;
+GRANT ALL PRIVILEGES ON DATABASE malts TO malts;
 
 # Излезте
 \q
@@ -50,10 +50,10 @@ GRANT ALL PRIVILEGES ON DATABASE luna_bar TO luna_user;
 
 ```env
 # Database Connection
-DATABASE_URL="postgresql://postgres:your_password@localhost:5432/luna_bar"
+DATABASE_URL="postgresql://postgres:your_password@localhost:5432/malts"
 
-# Ако създадохте custom user:
-# DATABASE_URL="postgresql://luna_user:your_secure_password@localhost:5432/luna_bar"
+# Ако използвате отделен user `malts`:
+# DATABASE_URL="postgresql://malts:your_secure_password@localhost:5432/malts"
 
 # Pusher Configuration (за real-time notifications)
 # Регистрирайте се на https://pusher.com (безплатно)
@@ -81,7 +81,7 @@ AUTH_SECRET=change-this-to-random-secure-string
 1. Отидете на https://pusher.com
 2. Sign Up (безплатно)
 3. Create new app:
-   - Name: `luna-bar`
+   - Name: `malts-web`
    - Cluster: `eu` (Europe)
    - Tech stack: `Next.js`
 4. Копирайте credentials в `.env`
@@ -180,7 +180,7 @@ main()
 
 ```powershell
 # Влезте в database
-psql -U postgres -d luna_bar
+psql -U postgres -d malts
 
 # Проверете таблиците
 \dt
@@ -225,7 +225,7 @@ npm run dev
 ### "database does not exist"
 ```powershell
 psql -U postgres
-CREATE DATABASE luna_bar;
+CREATE DATABASE malts;
 \q
 ```
 

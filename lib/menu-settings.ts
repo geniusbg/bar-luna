@@ -1,13 +1,14 @@
 import { prisma } from './prisma';
+import { getDefaultBrandId } from './brand';
 
 export interface MenuSettings {
   id: string;
   titleBg: string;
   titleEn: string;
-  titleDe: string;
+  titleRo: string;
   subtitleBg: string;
   subtitleEn: string;
-  subtitleDe: string;
+  subtitleRo: string;
   backgroundImageUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -16,17 +17,18 @@ export interface MenuSettings {
 const DEFAULT_SETTINGS = {
   titleBg: '🍸 Нашето Меню',
   titleEn: '🍸 Our Menu',
-  titleDe: '🍸 Unser Menü',
+  titleRo: '🍸 Meniul nostru',
   subtitleBg: 'Открийте нашата селекция от напитки и деликатеси',
   subtitleEn: 'Discover our selection of drinks and delicacies',
-  subtitleDe: 'Entdecken Sie unsere Auswahl an Getränken und Köstlichkeiten',
-  backgroundImageUrl: null
+  subtitleRo: 'Descoperă selecția noastră de băuturi și delicatese',
+  backgroundImageUrl: null as string | null,
 };
 
 export async function getMenuSettings(): Promise<MenuSettings | null> {
   try {
-    const settings = await prisma.menuSettings.findFirst({
-      orderBy: { createdAt: 'desc' }
+    const brandId = await getDefaultBrandId();
+    const settings = await prisma.menuSettings.findUnique({
+      where: { brandId },
     });
     return settings;
   } catch (error) {
@@ -38,14 +40,15 @@ export async function getMenuSettings(): Promise<MenuSettings | null> {
 export async function updateMenuSettings(data: {
   titleBg?: string;
   titleEn?: string;
-  titleDe?: string;
+  titleRo?: string;
   subtitleBg?: string;
   subtitleEn?: string;
-  subtitleDe?: string;
+  subtitleRo?: string;
   backgroundImageUrl?: string | null;
 }): Promise<MenuSettings> {
-  const existing = await prisma.menuSettings.findFirst({
-    orderBy: { createdAt: 'desc' }
+  const brandId = await getDefaultBrandId();
+  const existing = await prisma.menuSettings.findUnique({
+    where: { brandId },
   });
 
   if (existing) {
@@ -54,25 +57,25 @@ export async function updateMenuSettings(data: {
       data: {
         titleBg: data.titleBg ?? existing.titleBg,
         titleEn: data.titleEn ?? existing.titleEn,
-        titleDe: data.titleDe ?? existing.titleDe,
+        titleRo: data.titleRo ?? existing.titleRo,
         subtitleBg: data.subtitleBg ?? existing.subtitleBg,
         subtitleEn: data.subtitleEn ?? existing.subtitleEn,
-        subtitleDe: data.subtitleDe ?? existing.subtitleDe,
-        backgroundImageUrl: data.backgroundImageUrl !== undefined ? data.backgroundImageUrl : existing.backgroundImageUrl
-      }
-    });
-  } else {
-    return await prisma.menuSettings.create({
-      data: {
-        titleBg: data.titleBg ?? DEFAULT_SETTINGS.titleBg,
-        titleEn: data.titleEn ?? DEFAULT_SETTINGS.titleEn,
-        titleDe: data.titleDe ?? DEFAULT_SETTINGS.titleDe,
-        subtitleBg: data.subtitleBg ?? DEFAULT_SETTINGS.subtitleBg,
-        subtitleEn: data.subtitleEn ?? DEFAULT_SETTINGS.subtitleEn,
-        subtitleDe: data.subtitleDe ?? DEFAULT_SETTINGS.subtitleDe,
-        backgroundImageUrl: data.backgroundImageUrl ?? DEFAULT_SETTINGS.backgroundImageUrl
-      }
+        subtitleRo: data.subtitleRo ?? existing.subtitleRo,
+        backgroundImageUrl:
+          data.backgroundImageUrl !== undefined ? data.backgroundImageUrl : existing.backgroundImageUrl,
+      },
     });
   }
+  return await prisma.menuSettings.create({
+    data: {
+      brandId,
+      titleBg: data.titleBg ?? DEFAULT_SETTINGS.titleBg,
+      titleEn: data.titleEn ?? DEFAULT_SETTINGS.titleEn,
+      titleRo: data.titleRo ?? DEFAULT_SETTINGS.titleRo,
+      subtitleBg: data.subtitleBg ?? DEFAULT_SETTINGS.subtitleBg,
+      subtitleEn: data.subtitleEn ?? DEFAULT_SETTINGS.subtitleEn,
+      subtitleRo: data.subtitleRo ?? DEFAULT_SETTINGS.subtitleRo,
+      backgroundImageUrl: data.backgroundImageUrl ?? DEFAULT_SETTINGS.backgroundImageUrl,
+    },
+  });
 }
-

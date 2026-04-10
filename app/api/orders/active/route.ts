@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getDefaultBrandId } from '@/lib/brand';
 
 export async function GET() {
   try {
-    // Get ALL active orders (pending, preparing, ready) - no date filter
-    // This allows admin to see and manage orders from previous days that are still active
+    const brandId = await getDefaultBrandId();
     const orders = await prisma.order.findMany({
       where: {
-        status: { in: ['pending', 'preparing', 'ready'] }
+        brandId,
+        status: { in: ['pending', 'preparing', 'ready'] },
       },
       include: {
         items: true

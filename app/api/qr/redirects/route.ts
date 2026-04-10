@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getDefaultBrandId } from '@/lib/brand';
 
 // Get all QR redirect configurations
 export async function GET(request: Request) {
@@ -7,9 +8,11 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
+    const brandId = await getDefaultBrandId();
 
     // Get all tables
     const tables = await prisma.barTable.findMany({
+      where: { brandId },
       orderBy: { tableNumber: 'asc' },
       select: {
         id: true,
@@ -109,12 +112,13 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const { tableNumber, redirectUrl, isActive, tableName } = await request.json();
+    const brandId = await getDefaultBrandId();
 
     if (!tableNumber) {
       return NextResponse.json({ error: 'Table number required' }, { status: 400 });
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (redirectUrl !== undefined) {
       updateData.redirectUrl = redirectUrl || null;
     }
@@ -126,8 +130,10 @@ export async function PUT(request: Request) {
     }
 
     const table = await prisma.barTable.update({
-      where: { tableNumber: parseInt(tableNumber) },
-      data: updateData
+      where: {
+        brandId_tableNumber: { brandId, tableNumber: parseInt(String(tableNumber), 10) },
+      },
+      data: updateData,
     });
 
     return NextResponse.json({ 

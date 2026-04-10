@@ -1,17 +1,17 @@
 # Client Information
 
-## Luna Bar & Coffee
+## Malts — Русе
 
 **Location:** ул. "Александровска" 97, Русе, България
 
 **Contact:**
 - Phone: 089 853 6542
-- Instagram: @luna2224
-- Facebook: [LUNA Bar Coffee](https://www.facebook.com/p/LUNA-Bar-Coffee-61556563603176/?locale=bg_BG)
+- Instagram: (TBD)
+- Facebook: (TBD)
 
 **Business Type:** Bar, Coffee, Lunch, Shisha
 
-**Current Menu:** [OddMenu Temporary Menu](https://oddmenu.com/bg/p/luna)
+**Current Menu:** (TBD)
 
 **Description:** 𝘣𝘢𝘳 𝘤𝘰𝘧𝘧𝘦𝘦 𝘭𝘶𝘯𝘤𝘩 𝘴𝘩𝘪𝘴𝘩𝘢 & 𝘨𝘰𝘰𝘥 𝘮𝘰𝘰𝘥
 
@@ -32,7 +32,7 @@
 ## Client Requirements & Preferences
 
 ### **Language & Currency**
-- ✅ 3 languages: Bulgarian (primary), English, German
+- ✅ 3 languages: Bulgarian (primary), English, Romanian
 - ✅ Dual currency display: BGN and EUR together
 - ✅ Fixed rate: €1 = 1.95583 BGN
 - **Reason:** Bulgaria adopting Euro in 2026, transition period requirement
